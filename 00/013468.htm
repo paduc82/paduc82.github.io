@@ -1,0 +1,1917 @@
+    <title>Exchange 2007 to Office 365 staged migration in hybrid config - Microsoft Community</title>
+<h3> brian hoyt- &#91;o365&#93;  say:</h3>
+<h2>            Exchange 2007 to Office 365 staged migration in hybrid config</h2>
+                    
+<p>I want to layout our current config to help in answering.</p>
+<p>We have an on premise Exchange 2007 server with all mailboxes having @xxxx.org [domain name is removed by moderator] email addresses. All email already passes through our Exchange Online Protection within our Office 365 environment. I am running Azure AD
+ Connect to synchronize my on premise AD / Exchange to Azure AD / Office 365.</p>
+<p>We have about 50% of our&nbsp;users already on Office 365 as Exchange Online users with mailboxes having @student.xxxx.org.</p>
+<p>Our original Office 365 (from live.edu) domain is @xxxx.onmicrosoft.com.</p>
+<p>I am trying to do a staged migration of our on premise users from Exchange 2007 to Exchange Online. I have read
+<a href="https://technet.microsoft.com/en-us/library/jj874018(v=exchg.150).aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/en-us/library/jj874018(v=exchg.150).aspx</a> and <a href="https://support.office.com/en-us/article/Perform-a-staged-migration-of-email-to-Office-365-83bc0b69-de47-4cc4-a57d-47e478e4894e" target="_blank" rel="noreferrer nofollow">
+https://support.office.com/en-us/article/Perform-a-staged-migration-of-email-to-Office-365-83bc0b69-de47-4cc4-a57d-47e478e4894e</a>.</p>
+<p>I used Exchange admin&nbsp;center from within Office 365 admin center to create a new migration branch of staged type. I imported a CSV with one user to test. I got this error:</p>
+<p>MigrationTransientException: Failed to update the on-premises mailbox with the target address ‎(SMTP:*** Email address is removed for privacy ***)‎. The mail sent to the user will not reach user's hosted mailbox. The error might be due to account credentials used for migration
+ not having enough permission to write data back into the on-premise AD. Please ensure that the account credential has Domain Admin privilege. --&gt; We weren't able to connect to the remote server. Please verify that the migration endpoint settings are correct
+ and your certificate is valid, and then try again. Consider using the Exchange Remote Connectivity Analyzer ‎(testexchangeconnectivity.com)‎ to diagnose the connectivity issues.</p>
+<p>&nbsp;Since the mailbox is synchronized you can't edit exchange attributes from Office 365 which seems like it would cause this error. Am I missing something here? I have created a new user via Office 365 admin center with @xxxx.org email address and can confirm
+ it works for sending / receiving email.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> young yang msft support  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Brian,</p>
+<p>Staged migration service will configure mail forwarding by configuring the <strong>
+TargetAddress</strong> property on the on-premises mailbox with the email address of the Exchange Online mailbox.</p>
+<p>1. According to the error message:</p>
+<p>“<em>The error might be due to account credentials used for migration not having enough permission to write data back into the on-premise AD. Please ensure that the account credential has Domain Admin privilege”</em></p>
+<p>This might be a permission issue. For the on-premise admin account that you use to perform the migration, please make sure the admin must have one of the following permission sets:</p>
+<p>a. Be assigned the <strong>FullAccess</strong> permission for each on-premises mailbox and be assigned the
+<strong>WriteProperty</strong> permission to modify the TargetAddress property on the on-premises user accounts.</p>
+<p>or</p>
+<p>b. Be assigned the <strong>Receive As</strong> permission on the on-premises mailbox database that stores user mailboxes, and the
+<strong>WriteProperty</strong> permission to modify the TargetAddress property on the on-premises user accounts.</p>
+<p>2. Please check if you can manually change this on-premise mailbox’s TargetAddress property using the migration account.</p>
+<p>After confirming 1 &amp; 2, please re-run the migration wizard to check if the issue persists.</p>
+<p>3. The error message also indicates that there is a connection issue. Please use the following PowerShell command to verify you can connect to your on-premises Exchange organization using Outlook Anywhere.</p>
+<p><strong>Test-MigrationServerAvailability -ExchangeOutlookAnywhere -Autodiscover -EmailAddress &lt;email address for on-premises administrator account&gt; -Credentials $Credentials</strong></p>
+<p>For more information about the command, please see: <a href="https://technet.microsoft.com/en-us/library/jj874458(v=exchg.150).aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/en-us/library/jj874458(v=exchg.150).aspx</a></p>
+<p>With the detailed information, I will further analyze the issue.</p>
+<p>Thanks,</p>
+<p>Young</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brian hoyt- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>1. The migration account was granted access via the command Get-Mailbox -ResultSize unlimited -Filter {(RecipientTypeDetails -eq 'UserMailbox')} | Add-MailboxPermission -User migadmin -AccessRights FullAccess -InheritanceType all</p>
+<p>It was also granted Domain Admin rights.</p>
+<p>2. I logged into Domain Controller as the migration account and verified I could edit the TargetAddress property via Users and Computers MMC.</p>
+<p>3. Where do I run this command? I attempted it from the Exchange Management Shell via my on premise Exchange 2007 server and it said the command was not recognized. Is that command only available in Exchange 2010 and newer?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brian hoyt- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I figured out 3.</p>
+<p>Test-MigrationServerAvailability -ExchangeOutlookAnywhere -Autodiscover -EmailAddress *** Email address is removed for privacy *** -Credentials $Credentials</p>
+<p>RunspaceId &nbsp; &nbsp; &nbsp; &nbsp; : 15e2db02-f795-4c74-b30f-c96a6fa438ec</p>
+<p>Result &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; : Success</p>
+<p>Message &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;:</p>
+<p>ConnectionSettings : &lt;ExchangeConnectionSettings HasAdminPrivilege="True" HasAutodiscovery="True" HasMrsProxy="False" AutodiscoverUrl="" IncomingEmailAddress="*** Email address is removed for privacy ***" IncomingRPCProxyServer="mail.xxxxx.org" IncomingExchangeServer="FAS-EXCH.xxxxx.local"
+ IncomingNSPIServer="FAS-EXCH.xxxxx.local" IncomingDomain="xxxxx" IncomingUserName="migadmin" EncryptedIncomingPassword="" IncomingAuthentication="Ntlm" ServerVersion="" TargetDomainName="" SourceMailboxLegDn="" PublicFolderDatabaseServerLegacyDN="" /&gt;</p>
+<p>SupportsCutover &nbsp; &nbsp;: False</p>
+<p>ErrorDetail &nbsp; &nbsp; &nbsp; &nbsp;:</p>
+<p>IsValid &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;: True</p>
+<p>Identity &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :</p>
+<p>ObjectState &nbsp; &nbsp; &nbsp; &nbsp;: New</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> young yang msft support  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Brian,</p>
+<p>Thanks for the update.</p>
+<p>From your information, the permission and connection are fine. So the two clues from the error message have been excluded. Let’s continue analyzing the issue.</p>
+<p>1. Now, please try to re-run the migration batch. The same error?</p>
+<p>2. If the issue persists, we can also use PowerShell to get detailed migration information. Let’s check if PowerShell commands can get more clues.</p>
+<p>a. Connect PowerShell to Exchange Online: <a href="https://technet.microsoft.com/library/jj984289(v=exchg.160).aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/library/jj984289(v=exchg.160).aspx</a></p>
+<p>b. Run the following commands:</p>
+<p><strong>Get-MigrationBatch | fl</strong></p>
+<p><strong>Get-MigrationStatistics | fl</strong></p>
+<p><strong>Get-MigrationUserStatistics -Identity *** Email address is removed for privacy *** -IncludeReport | FL</strong></p>
+<p><strong>Get-MigrationUser *** Email address is removed for privacy *** | fl</strong></p>
+<p>Note: <strong>*** Email address is removed for privacy ***</strong> is the problematic user.</p>
+<p>To protect your privacy, I have sent a private message to request the PowerShell outputs. Please use this link to access the private message:
+https://community.office365.com/user/conversations</p>
+<p>Thanks,</p>
+<p>Young</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> young yang msft support  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Brian,</p>
+<p>Thanks for your information. From PowerShell outputs:</p>
+<p>1. The affected user <strong>*** Email address is removed for privacy ***</strong> is already a mailbox user in Office 365.</p>
+<p>2. The error message is the same “Failed to update the on-premises mailbox with the target address……”.</p>
+<p>So, the issue should be still related to migration admin account’s permission. Usually, our troubleshooting steps are: re-configure the permission and create a new migration batch, or use another new admin.</p>
+<p>Now, migration service has already provisioned the Exchange Online mailbox for this user. It is not proper to re-create a new migration batch to migrate this mailbox now. The new migration batch would detect that this mailbox is already created in cloud,
+ migration might fail.</p>
+<p>After analysis, my suggestions are:</p>
+<p>1. Check this user *** Email address is removed for privacy ***’s Exchange Online mailbox, make sure mailbox items are migrated.</p>
+<p>Manually update this user’s on-premise target address (SMTP:*** Email address is removed for privacy ***). Make sure newly-incoming emails are forwarded to online mailbox.</p>
+<p>If both are fine, there is no issue for this user now.</p>
+<p>2. To dig into the original issue, we need to migrate another test mailbox. Now, please make sure the migration admin has all the following permissions:</p>
+<p><strong>Organization Management</strong></p>
+<p><strong>Recipient Management</strong></p>
+<p>For detailed information, please see "Migration" entry in this article: <a href="https://technet.microsoft.com/en-us/library/dd638132(v=exchg.150).aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/en-us/library/dd638132(v=exchg.150).aspx</a></p>
+<p>Then, please try to create a new migration batch. If the issue persists, I will collect detailed error message for further analysis.</p>
+<p>Thanks,</p>
+<p>Young</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> young yang msft support  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Brian,</p>
+<p>If you need any further assistance, please feel free to let us know.</p>
+<p>Always here to help you.</p>
+<p>Thanks,</p>
+<p>Young</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jonathanali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Brian,</p>
+<p>My name is Jonathan, I work for Microsoft and I noticed your post and wanted to provide you with some helpful links. I provided you with two links below, the first is for staged migration guidance and the second is to the Mail Setup Advisor. Please check
+ the links and let me know if they were of any help.</p>
+<p>1. &nbsp;Staged Guidance.</p>
+<table>
+<tbody>
+<tr>
+<td><a href="http://aka.ms/stagedguidance" target="_blank" rel="noreferrer nofollow">http://aka.ms/stagedguidance</a></td>
+</tr>
+</tbody>
+</table>
+<p>2. Mail Setup Advisor</p>
+<table>
+<tbody>
+<tr>
+<td><a href="http://aka.ms/office365setupassistant" target="_blank" rel="noreferrer nofollow">http://aka.ms/office365setupassistant</a></td>
+</tr>
+</tbody>
+</table>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>issue to use voip call international - Microsoft Community</title>
+<h3> saiprasadkonda  say:</h3>
+<h2>            issue to use voip call international</h2>
+                    <p>Iam using nokia Lumia 520.</p>
+<p>
+</p><p>Is this phone not working iTel mobile dailer</p>
+<p>
+</p><p>
+</p><p>Ihave successfully registered with valid recharge card.But call not going is</p>
+<p>showing "Open dailer and send flexiload" but what's this I don't know how to do it pls help me.</p>
+<p>
+</p><p>
+Thanks in advance.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Mhm. Which VoIP/SIP Service Provider are you using?</p>
+<p>
+</p><p>iTel by REVE Systems are a white-label apps. Therefore, you do not contact Microsoft Mobile, Microsoft, or REVE System but your original VoIP Service Provider. However, your provider suggests iTel to you. Not the other way around. Therefore, I am bit confused
+ were you registered and which recharge card you bought. Please, clarify.</p>
+<p>
+</p><p>You posted this question in the category ‘Continuum for Phones’ which is about the new big-screen experience for some Windows 10 Mobile based phones. Therefore and to increase the visibility of your question, please, edit your post and change its category
+ to: Mobile Devices » Lumia » Tips » 500-series.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=continuum">continuum, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how do I disable automatic email &#38; password sign in on my tablet - Microsoft Community</title>
+<h3> naomiegglestone  say:</h3>
+<h2>            how do I disable automatic email  &#38; password sign in on my tablet which does not have IE  n</h2>
+                    Only my tablet remembers my password.I want to stop this
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>What does your post have to do with composing email?</p>
+<p>You gave so little detail that a helpful reply is impossible.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi <a href="http://answers.microsoft.com/en-us/profile/5ade9ef8-226d-44c6-ab99-fbac3ae0970d" title="naomiegglestone">
+naomiegglestone,</a></p>
+<p>
+</p><p>I understand that you wanted to disable the automatic email and password login on your tablet. First of all we apologize for the late response.
+</p>
+<p>
+</p><p>For us to better assist you we would like to know what type of browser are you using? Is it Google Chrome, Firefox, Safari, etc.? You may try to contact the support team of the browser you're using to help you disable the auto sign in feature to avoid having
+ your account logged in automatically.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> naomiegglestone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you Cristi,that is helpful.I will get back to you with more info if I need further assistance.</p>
+<p>I understand from Ron Summer's&nbsp; reply which arrived 1st,that I asked my question in the wrong place &amp; poorly.His reply was curt &amp; unhelpful.</p>
+<p>Naomi Egglestone</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Eternal crash loop, explorer.exe - Microsoft Community</title>
+<h3> jonas karlstr&#246;m  say:</h3>
+<h2>            Eternal crash loop, explorer.exe</h2>
+                    <p>This time, I will start with a video showing my problem.</p>
+<p>
+</p><p>https://www.youtube.com/watch?v=Jiy8lzb3rsw</p>
+<p>
+</p><p>Windows 10, build 9879</p>
+<p>Nvidia driver 344.75, GTX 660ti</p>
+<p>
+</p><p>This time it started after installing the 5 windows updates.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    0 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Error&#58; line 15 char 2 error&#58; object doesn&#39;t support this - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Error&#58; line 15 char 2 error&#58; object doesn&#39;t support this property or method code 0 URL file&#58;&#47;&#47;&#47;C&#58;Programs&#37;20Files&#47;Microsoft&#37;20Office&#47;Office12INTLBAND.HTM everytime I open Internet Explorer 9 RC</h2>
+                    
+<p><strong>Original title: line 15 char 2 error: object doesn't support this property or method code 0 URL</strong><strong>file:///C:Programs%20Files/Microsoft%20Office/Office12INTLBAND.HTM</strong></p>
+<p>Please tell me why this message comes up everytime I open Exployer 9 RC?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> admindd  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>In my case, it works after I disabled two add-ons:</p>
+<p>
+</p><p>Groove GFS Browser Helper<br />
+Groove Folder Synchronization</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_vista">windows_vista, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Getting an issue when verify domain &#34;Our services aren&#39;t - Microsoft Community</title>
+<h3> rotamulia  say:</h3>
+<h2>            Getting an issue when verify domain &#34;Our services aren&#39;t available right now&#34;</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>When i want to update dns setting,&nbsp;this issue always come out.</p>
+<p>page says:</p>
+<div style="color: rgba(169, 68, 66, 1)">
+
+Our services aren't available right now
+<p>We're working to restore all services as soon as possible. Please check back soon.</p>
+</div>
+<div style="color: rgba(169, 68, 66, 1)">
+<span>Ref A: 91707D88E35844DEB86D7C7DBE8E40A6 Ref B: SG2EDGE1018 Ref C: Fri Feb 17 20:25:49 2017 PST</span></div>
+<span>Ref A: 91707D88E35844DEB86D7C7DBE8E40A6 Ref B: SG2EDGE1018 Ref C: Fri Feb 17 20:25:49 2017 PST</span></div>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Is this just happening for me?</span></p>
+<p>
+</p><p>Thanks.<br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cliff Gu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "CG"); this.style="display: inline-block";'
+<h3> cliff gu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+Hi Rotamulia,</p>
+<p>
+&nbsp;</p>
+<p>
+To clarify the issue, I’d like you to confirm and provide the following.</p>
+<p>
+1. Who managed the custom domain, Office 365 or the third-party DNS hosting provider?</p>
+<p>
+2. Provide us with the reproducing steps of the issue you are experiencing and some related screenshots for our troubleshooting.</p>
+<p>
+3. To check if it is a temporary issue, I suggest you change a browser or clear IE cache via Tools&gt;Safety&gt;Deleting browser history, wait some time and do a test again to see the result.</p>
+<p style="color: rgba(0, 0, 0, 1)">
+&nbsp;</p>
+<p style="color: rgba(0, 0, 0, 1)">
+Thanks,</p>
+<p style="color: rgba(0, 0, 0, 1)">
+Cliff</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cliff Gu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "CG"); this.style="display: inline-block";'
+<h3> cliff gu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Rotamulia,</p>
+<p>
+</p><p>Do you need further help?</p>
+<p>
+</p><p>Thanks,</p>
+<p>Cliff</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=domains_in_microsoft_365">domains_in_microsoft_365, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Prevent special characters in an Excel 2010 cell - Microsoft Community</title>
+<h3> socallmecrazy  say:</h3>
+<h2>            Prevent special characters in an Excel 2010 cell</h2>
+                    <p>I have searched and searched with no luck.</p>
+<p>
+</p><p>I am trying to prevent users of a spreadsheet from using special characters, lower case characters, or spaces in a series of cells.&nbsp; In other words, they can only use UPPER CASE characters and numerals.&nbsp; That's all.&nbsp; And I don't really care how many characters
+ they use.&nbsp; Can anyone provide assistance?&nbsp; I didn't realize this was going to be such a struggle.</p>
+<p>
+</p><p>TIA,</p>
+<p>
+</p><p>The Black Widow</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="E.J. GUN" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "EG"); this.style="display: inline-block";'
+<h3> e.j. gun  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I don't think you'll be able to do this without some VBA in the background.&nbsp; Data validation is limited to using only built-in Excel functions (as demonstrated above), and none of those functions allow you to do character by character examination of strings.</p>
+<p>
+</p><p>You could add some code to the WorkSheet_Change event to detect when the contents of a cell change due to user actions, and then check each of the changed cells to see if they violate your rules.&nbsp; If any of the cells do, you can Undo the action and send
+ the user a message.</p>
+<p>
+</p><p>Something like the code below, which goes in the Worksheet code module (right-click on Worksheet tab, select "View Code"):</p>
+<p>
+</p><p>Option Explicit</p>
+<p>
+</p><p>Private Sub Worksheet_Change(ByVal Target as Range)</p>
+<p>&nbsp;&nbsp;&nbsp; Dim myRange as Range, intRange as Range, myCell as Range</p>
+<p>'</p>
+<p>&nbsp;&nbsp;&nbsp; Set myRange = Target.Worksheet.Range("A1:A20") ' What range do you want to restrict?</p>
+<p>'</p>
+<p>' See if any of the changed cells are in the range of interest...</p>
+<p>'</p>
+<p>&nbsp;&nbsp;&nbsp; Set intRange = Intersect(Target, myRange)</p>
+<p>&nbsp;&nbsp;&nbsp; If (Not intRange Is Nothing) Then ' changed cells intersect range of interest</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For Each myCell In intRange.Cells</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If (isUpperOrNumber(myCell.Text) = False) Then</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox "These cells are limited to UPPER CASE characters and 0123456789 ONLY!", vbCritical + vbOKOnly, "Disallowed Input"</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Application.Undo</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit Sub</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next myCell</p>
+<p>&nbsp;&nbsp;&nbsp; End If</p>
+<p>End Sub</p>
+<p>
+</p><p>Private Function IsUpperOrNumber(theString as Variant) as Boolean</p>
+<p>&nbsp;&nbsp;&nbsp; Dim i as Long, j as Long</p>
+<p>
+</p><p>&nbsp;&nbsp;&nbsp; IsUpperOrNumber = True</p>
+<p>
+</p><p>&nbsp;&nbsp;&nbsp; For i = 1 To Len(theString)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; j = AscW(Mid$(theString, i, 1))</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If (Not ((j &gt;= 65 And j &lt;= 90) Or (j &gt;= 48 And j &lt;= 57))) Then</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IsUpperOrNumber = False</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit Function</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If</p>
+<p>&nbsp;&nbsp;&nbsp; Next i</p>
+<p>End Function</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>LG Xenon Help - Microsoft Community</title>
+<h3> stew5770  say:</h3>
+<h2>            LG Xenon Help</h2>
+                    I just bought the LG Xenon and I have not been able to connect it to my pc to add music and pictures.&nbsp; I have searched for the software but have been unable to locate it.&nbsp; I have formated the memory card and I have attempted to use media player to add
+ items, but media player does not see my phone.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> richie weldon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi stew5770 -<br />
+<br />
+You might want to post your question/concern in the <a href="http://social.microsoft.com/Forums/en-US/windowsmobileactivesync/threads" target="_blank" rel="noreferrer nofollow">
+ActiveSync/WMDC</a> area instead of the My Phone area.&nbsp; Microsoft My Phone will help you synchronize data (including photos and music) between your device and an online account.&nbsp;&nbsp;For more details on Microsoft My Phone, you can review the information on http://myphone.microsoft.com.<br />
+<br />
+Thanks!<br />
+Richie &nbsp;
+<hr />
+Richie Weldon, SDE/T WCF
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote sharing and synching - Microsoft Community</title>
+<h3> anand inamdar  say:</h3>
+<h2>            OneNote sharing and synching</h2>
+                    Error e0000578 - OneNote notebooks shared on OneDrive, cannot synch with OneNote Application on Android 6.0 phone MotoX Play after trying repeatedly
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi Anand,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Welcome to Microsoft Community.</span></p>
+<p>
+</p><p><span>Let us try to access OneDrive from the website
+</span><a href="http://www.onedrive.com/" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">www.onedrive.com</span></a><span>
+<span>&nbsp;</span>using the phone browser and check.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>You may try to uninstall the OneDrive app and try to reinstall it and check.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Hope this information helps you. Please let us know if you need additional information.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Whatsapp - Microsoft Community</title>
+<h3> alhaji mamman  say:</h3>
+<h2>            Whatsapp</h2>
+                    <p>Hi.... my window phone&nbsp;7 whatsapp&nbsp;can not register with my phone number.</p>
+<p>
+</p><p><em>***Post moved by the moderator to the appropriate forum category.***</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> markinkent  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Not sure that this is the right forum, this is the Windows Insider forum for testing of the latest builds of windows, not windows 7.</p>
+<p>
+</p><p>Might be worth trying WhatsApp forums?</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=other_windows_mobile_devices">other_windows_mobile_devices, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=windows_phone_7">windows_phone_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Equation for adding multiple number and letter combinations in excel - Microsoft Community</title>
+<h3> stacyferrari  say:</h3>
+<h2>            Equation for adding multiple number and letter combinations in excel spread sheet&#33;</h2>
+                    <p>Hello!</p>
+<p>
+</p><p>I am having trouble coming up with an equation or solution to my problem so figure I would try to post it here to get some advice/suggestions. I am making an excel spreadsheet that tracks Vacation time, Sick Time, Roving Time, and Other Vacation time used.
+ Right now I have an equation set up that allows me to input vacation time like 5V into a date in the worksheet and it will sum that into the vacation time. I can also put a 4R for roving, or 3O for other, or 8S for Sick so this works great. The equation I
+ have developed for this is:&nbsp;</p>
+<p>
+</p><p>=SUM(IF(ISNUMBER(FIND(A33,$G$6:$BS$6)),VALUE(LEFT($G$6:$BS$6,FIND(A33,$G$6:$BS$6)-1)),0))<br />
+</p>
+<p>Where the G6:BS6 is the range and the A33 is pulling for the values of the V,S,R,O depending on the box it is in (each box will have a different value; ie A34, A35, A36, etc. depending on the letter that coordinates with type of vacation time)</p>
+<p>
+</p><p>So my question is, what if they use two types of vacation time in one day. So, in one cell I would need to put like a 2V for 2 hours of vacation and 3R for 3 hours of roving. I am open to separating them any way necessary(so comas, spaces, semi colons, whatever)
+ but I need an equation that could still calculate and use both sets of data from one cell. Right now my equation will only pull the first data set. Any advice assistance would be greatly appreciated!!!!!!!!</p>
+<p>
+</p><p>Thank you!!!!<br />
+</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Great! I am glad that worked! If you don't have any more questions, feel free to choose a rating and have a great day!       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I can,t install Microsoft office to my hp laptop help i need it for - Microsoft Community</title>
+<h3> diegohernandez_ d  say:</h3>
+<h2>            I can,t install Microsoft office to my hp laptop help i need it for college</h2>
+                    something went wrong Every time i try to install Microsoft 360 it starts but then a message pops up " some thing went wrong" go to community help page. but it does not show no error message or what error occurred please help.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> edytaromanek  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Either
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> arcturus.iuventus  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Office 365 University install was buggered. I get a response that my Microsoft Office account is not yet active, come back later douchebag customer! Well, maybe not that harsh but they way they give me the run around, it might as well be that way.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raju S Das" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> raju s das  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hi Diego,</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>&nbsp;</font></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">You may follow the troubleshooting steps mentioned in the article below and check if you are able to install Office 365/Office 2013 on the computer.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><a href="http://support.microsoft.com/kb/2827031" target="_blank" rel="noreferrer nofollow"><span><font color="#0563c1">http://support.microsoft.com/kb/2827031</font></span></a></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>&nbsp;</font></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">You may also refer to the general troubleshooting steps mentioned in the article below while installing Office 365/Office 2013 on the computer.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><a href="http://support.microsoft.com/kb/2822317" target="_blank" rel="noreferrer nofollow"><span><font color="#0563c1">http://support.microsoft.com/kb/2822317</font></span></a></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>&nbsp;</font></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">I hope the above information helps. Let us know if you need further assistance.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thank you.</span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you add help information to a VBA function in Excel - Microsoft Community</title>
+<h3> mcm92122  say:</h3>
+<h2>            How do you add help information to a VBA function in Excel</h2>
+                    <p>I have written a number of VBA functions for calculating various parameters in my spreadsheets. Unfortunately, I forget the input parameters.</p>
+<p>&nbsp;</p>
+<p>How do I enable the standard Excel help functions so that hovering over the function name tells me the arguments, or the function uses the dialog entry box when you hit the fx button to the left of the data entry line.</p>
+<p>&nbsp;</p>
+<p>Any way to use any of the help functionality at all?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JLLatham" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JL"); this.style="display: inline-block";'
+<h3> jllatham  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Well, specific Excel help isn't available for custom user defined functions, BUT you can be reminded of the needed parameters.&nbsp; After you've typed in the name of the function, such as</p>
+<p>=AddTwoNumbers(</p>
+<p>Click the Fx icon at the left edge of the formula bar and a dialog will open showing you the parameters it expects and even allow you to enter them there in the dialog.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>cannot get bt sport on streaming, bt say web not working correctly, - Microsoft Community</title>
+<h3> michaellongyx  say:</h3>
+<h2>            cannot get bt sport on streaming, bt say web not working correctly, tried with firefox, still the same &#63;&#63;</h2>
+                    <p>web browser has bt sport typed in, it goes to the sport site, and tries to start streaming, but fails, with error message 6030 and vc 019, but that surgests</p>
+<p>my cache is full, which gets cleared every day, I have Silverlight installed, current edition, cannot understand, I have seen all games up to the last two,</p>
+<p>asked bt to check , as above, anybody got another idea ?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohit Siddegowda" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> rohit siddegowda  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Michaellongyx,</p>
+<p>&nbsp;</p>
+<p>The issue seems to be occurring due to Silverlight. </p>
+<p>&nbsp;</p>
+<p><b>Important</b>: This section, method, or task contains steps that tell you how to modify the registry. However, serious problems might occur if you modify the registry incorrectly. Therefore, make sure that you follow these
+ steps carefully. For added protection, back up the registry before you modify it. Then, you can restore the registry if a problem occurs. You must be logged on as an administrator to perform these steps. If you aren't logged in as an administrator, you can
+ only change settings that apply to your user account:</p>
+<p>a. Press <b>Windows key + R</b> and then type “<b>regedit</b>” without quotes and press
+<b>ENTER</b>.</p>
+<p>If you're prompted for an administrator password or confirmation, type the password or provide confirmation.</p>
+<p>b. Locate and click the key or sub key that you want to back up.</p>
+<p>c. Click the <b>File</b> menu, and then click <b>
+Export</b>.</p>
+<p>d. In the <b>Save</b> <b>in</b> box, select the location where you want to save the backup copy to, and then type a name for the backup file in the File name box.</p>
+<p>e. Click <b>Save</b>.</p>
+<p>&nbsp;</p>
+<p>I would suggest you to uninstall and re-install Silverlight to check if it helps resolve the issue. Refer to the article for details:</p>
+<p><b>How to clean a corrupted Silverlight installation and then reinstall Silverlight</b></p>
+<p><a href="http://support.microsoft.com/kb/2608523/en-us" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/2608523/en-us</a></p>
+<p>&nbsp;</p>
+<p><b>Get Microsoft Silverlight</b></p>
+<p><a href="http://www.microsoft.com/getsilverlight/Get-Started/Install/Default.aspx" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/getsilverlight/Get-Started/Install/Default.aspx</a></p>
+<p>&nbsp;</p>
+<p>Hope this helps. If you have any further issues on the computer, please post your question regarding Windows and we will be happy to help you.</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>missing libraries in Excel for Mac - Microsoft Community</title>
+<h3> tonybouttell  say:</h3>
+<h2>            missing libraries in Excel for Mac</h2>
+                    <p>I have an xlsm file that relied on these three libraries, among others:</p>
+<p>
+</p><ol>
+<li>Microsoft ActiveX Data Objects 2.5</li><li>Microsoft Outlook 14.0 Object Library</li><li>Ref Edit Control</li></ol>
+<p>My version of Excel is 15.39 (171010)</p>
+<p>
+</p><p>Where can I obtain these, or are they not available yet?</p>
+<p>
+</p><p>If they are not available yet, when are they due to be released?</p>
+<p>
+</p><p>Thanks!</p>
+<p>
+</p><p>
+</p><p>Moved from: Office / Excel / Microsoft Office Programming / Office 2016 </p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jim Gordon MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JG"); this.style="display: inline-block";'
+<h3> jim gordon mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>1. Microsoft Active0X Objects 2.5</p>
+<p>This library has never been available for the Mac. Active-X is open source software that was never ported to the Mac. You will never get this library because it does not exist.</p>
+<p>
+</p><p>2. Microsoft Outlook 14.0 Object library.</p>
+<p>This library is included with Office 2011 for Mac, and Office 2016 for Mac up to and including version 15.39. In the Visual Basic Editor choose Tools &gt; References.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/919d4639-5a88-4efb-ac26-88c520cb0d18" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/919d4639-5a88-4efb-ac26-88c520cb0d18" /></a></p>
+<p>
+</p><p>The current Insider Fast build of Office for Mac uses Microsoft Office 16.0 Object Library. This new library will replace the version 14 object Library in future releases of Office for Mac. Your code may have to be modified to take advantage of the newer
+ version.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/c04b712b-f151-447e-970b-713f33e581c8" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/c04b712b-f151-447e-970b-713f33e581c8" /></a></p>
+<p>
+</p><p>The RefEdit control is available in the UserForm toolbox in Office 2011. You can add RefEdit controls programmatically in Excel 2016 for Mac. The Toolbox will return to the Visual Basic Editor in a few weeks and you soon will be able to use it there, too.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/0fc5330b-1715-4bdd-a757-10b16bd6a0cb" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/0fc5330b-1715-4bdd-a757-10b16bd6a0cb" /></a></p>
+<p>
+</p><p>Office 2016 for Mac comes with a built-in ODBC driver for Microsoft SQL Server. Whatever code you have now, you should update it to use the version 16 object library, and you should use standard Excel controls instead of Active-X controls. Doing these things
+ will make your code run cross-platform Mac and PC.</p>
+<p>
+</p><p>It is very possible to use VBA to run SQL queries cross-platform if you do it right.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=mac">mac, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t receive emails from a third party domain in Outlook.com. - Microsoft Community</title>
+<h3> ian jope  say:</h3>
+<h2>            Can&#39;t receive emails from a third party domain in Outlook.com.</h2>
+                    <p>Original Title: PHP E-Mailer won't work unless sender e-mail address is in safe senders list</p>
+<p>&nbsp;</p>
+<p>Sending an e-mail using a PHP script where reply-to:, return-path: and from: addresses of *** Email address is removed for privacy *** or *** Email address is removed for privacy *** seem to not get through to my live webmail both inbox or junk (Now Outlook I think) unless the sender address is in the
+ 'Safe Senders' list in webmail. if I use google webmail logged onto *** Email address is removed for privacy *** and send it to hotmail to *** Email address is removed for privacy *** it gets through without having *** Email address is removed for privacy *** in the safe senders list in live.<br />
+<br />
+Why is there a difference? Why does the e-mail from Google webmail get through when the PHP script doesn't when *** Email address is removed for privacy *** is NOT defined in the safe senders list? Is there something missing in the PHP header statement?<br />
+<br />
+When the return-path:, from: and reply-to: fields are set to *** Email address is removed for privacy *** the e-mail gets through to *** Email address is removed for privacy *** without *** Email address is removed for privacy *** being set in the safe senders list under *** Email address is removed for privacy *** webmail.<br />
+<br />
+This problem makes no sense, yet I can consistently reproduce the problem every time. Why do some sender e-mail addresses work in the PHP script without defining in the safe senders list where other e-mail addresses don't!?<br />
+</p>
+<p>(removed for privacy)</p>
+<p><br />
+Does anyone have any ideas as I am a volunteer Webmaster looking after a website for a local cycling club, and of which most people who use the site are technically illiterate and I don't want to explain to 30 members to put my e-mail address in the 'Safe Senders
+ list' in Hotmail / Live / Outlook Webmail if I can avoid it.<br />
+<br />
+Thanks, Ian Jope<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raymond P." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "RP"); this.style="display: inline-block";'
+<h3> raymond p.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)">Hi,</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>Thank you on bringing up this matter to us. From what I understand on your issue, when you send an email from your third party domain it wasn't reached Outlook.com. Also, you have mentioned that when you use a Gmail account
+ it went through without a problem. </font></span><span style="color: rgba(51, 51, 51, 1)"><font>To resolve this issue, if you are a customer using the 3rd party email service or a Hotmail/Outlook.com customer who is unable to receive emails from a particular 3rd
+ party domain:<br />
+<br />
+Contact your domain administrator and ask them to visit the </font></span><b><span style="color: rgba(0, 0, 0, 1)">Sender Information for Outlook.com Delivery</span></b><b><u><span style="color: rgba(0, 102, 204, 1)">
+</span></u></b><font><span style="color: rgba(51, 51, 51, 1)">and they have to fill out the e-form that can be found on this</span><span style="color: rgba(0, 0, 0, 1)"><font>
+</font><a href="https://support.msn.com/eform.aspx?productKey=edfsmsbl2&amp;ct=eformts&amp;scrx=1" target="_blank" rel="noreferrer nofollow"><b><span style="color: rgba(0, 0, 255, 1)"><font>link</font></span></b></a></span><b><span style="color: rgba(51, 51, 51, 1)">.</span></b><span style="color: rgba(51, 51, 51, 1)">
+</span></font></p>
+<p>&nbsp;</p>
+<p><font><b><span style="color: rgba(51, 51, 51, 1)">If you are the 3rd party Domain Administrator:<br />
+<br />
+</span></b><span style="color: rgba(51, 51, 51, 1)">1. Please review our policies and guidelines at<b>
+</b></span><span style="color: rgba(51, 51, 51, 1)"><a href="http://postmaster.live.com/" target="_blank" rel="noreferrer nofollow"><b><span style="color: rgba(0, 0, 255, 1)">http://postmaster.live.com</span></b></a></span><b><span style="color: rgba(51, 51, 51, 1)">.</span></b></font><span style="color: rgba(51, 51, 51, 1)"><br />
+</span><font><span style="color: rgba(51, 51, 51, 1)">2. If you are in compliance, submit a support request to our Email and Delivery Filtering Services team by clicking on the link to the e-form under the troubleshooting section in the postmaster site mentioned above</span></font></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)"><font>For more information about this issue, you can visit this Solution article:</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)"><a href="http://answers.microsoft.com/en-us/windowslive/forum/mail-email/why-are-the-emails-sent-to-microsoft-account/b64e3e4a-0d93-40c8-8e28-4be849012f9c"><b><span style="color: rgba(0, 0, 255, 1)">Why are the emails sent
+ to Microsoft Account rejected for policy reasons?</span></b></a></span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000">If you need further assistance with this issue or any other Outlook related issues, get back to us and we will be glad to assist you.</font></span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000">Thank you.</font></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ian jope  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What is the hyperlink to "Sender Information for Outlook.Com Delivery" my 3rd party webhost needs to read?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ian jope  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Response from 3rd Party Webhost Provider Below. How do I get a good reputation - is there another way other than time? Is it something I have to register for? What is the maximum number of e-mails that can be send in a day until reputation established? At
+ the moment we e-mail on average about 3 times a week to about 190 e-mail addresses registered on our website, of which only 30 members belong to Live / Hotmail / Outlook domain for e-mail.</p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>We have completed reviewing the IP(s) you submitted. The following table contains the results of our investigation.
+</font></font></font></p>
+<p><font color="#000000">Webhost Response:</font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>Conditionally mitigated</font></font></font></p>
+<p><font><font color="#000000"><font>216.185.104.219</font></font></font></p>
+<p><font><font color="#000000"><font>Our investigation has determined that there are no active blocks against these IP(s); however, some messages were filtered. We have confirmed that
+ these IP(s) are eligible for conditional mitigation, but may be subject to low daily email limits until they have established a good reputation. Please note that this mitigation does not guarantee that your mail will be delivered to a user's inbox.</font></font></font></p>
+<p><font><font color="#000000"><font>Mitigation may take 24 - 48 hours to replicate completely throughout our system.</font></font></font></p>
+<p><font><font color="#000000"><font>Please get customer to try again in 24 hours.</font></font></font></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>&nbsp;</p>
+<p>We understand your concern about not being able to receive email and we will assist you.
+<span><font color="#000000">The limits are used as a deterrent to spammers and are part of helping to reduce the amount of spam you received in your Inbox. There&nbsp;are&nbsp;maximum numbers of messages an account may send in 24-hour period depending on the reputation
+ of the account.<br />
+<br />
+We suggest to validate your account using SMS by going to this website:</font></span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000"><a href="http://sms.live.com" target="_blank" rel="noreferrer nofollow"><strong>http://sms.live.com</strong></a></font></span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000">Or use your account regularly to gain reputation on your account.</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">Kindly let us know the results. Your cooperation and understanding is highly appreciated.</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thanks!</span></p>
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how can i increase applications disk space&#63; - Microsoft Community</title>
+<h3> rembrandt---01  say:</h3>
+<h2>            how can i increase applications disk space&#63;</h2>
+                    
+<p>hello i m using the 3gb of 4gb of applications available disc space, how can i increase this space? i m using the 64gb N9. thanks</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aspergerguy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>@rembrandt</p>
+<p>&nbsp;</p>
+<p>Although technically feasible if however you are <strong>not</strong> an experienced Linux user and haven't repartioned live linux ext4 filesystems before, then most likely you will fail upon N9 if this is your first attempt at doing so.</p>
+<p>&nbsp;</p>
+<p>Also be warned that there will be&nbsp;problems with reflashing device in future, if the size of the partition does not match the size of the flash image!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rem451  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>so there is not way to increase this space... but this sounds silly, i&nbsp; m using the 64gb version of N9 and in the future i ll not be able to isntall more applications.... i think that Nokia should do something about it, what do you think?</p>
+<p>thnx</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>We&#39;re still setting up your team &#8211; you can change your - Microsoft Community</title>
+<h3> erick sodhi &#40;vantage it&#41;  say:</h3>
+<h2>            We&#39;re still setting up your team &#8211; you can change your picture when we&#39;ve finished.</h2>
+                    <p class="contentStandard"><span style="color: rgba(0, 96, 7, 1)">I created a new team a number of hours ago and have been unable to change the team picture. The dialog for choosing a new picture displays "</span><span>We're still setting up your team – you can change
+ your picture when we've finished."&nbsp;</span></p>
+<p class="contentStandard">
+</p><p class="contentStandard">
+</p><p class="contentStandard">
+</p><p class="contentStandard">I've created numerous teams in the past and have never come across this issue. How long should I expect to wait?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Carlos Huang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> carlos huang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Erick,</p>
+<p>
+</p><p>Sometime it may take long time to set up it. Based on my expereince, you can use Powershell to change your picture.&nbsp;Please follow the
+<a href="https://blogs.technet.microsoft.com/skypehybridguy/2017/11/07/microsoft-teams-powershell-support/" target="_blank" rel="noreferrer nofollow">
+link </a>to run PowerShell and use the command "Set-Teampicture". Then wait for several hours or one day, check if the team picture is changed properly.</p>
+<p>
+</p><p>If you are not an admin, you can contact your admin to do it.</p>
+<p>
+</p><p>Regards,</p>
+<p>Carlos</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> erick sodhi &#40;vantage it&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry, but I find it hard to believe that this is a valid response. As I stated in my original post, I've set up numerous teams and it has not taken as long as your reply implies. We're now well over 24 hours since the team was created and I'm still getting
+ the error.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Carlos Huang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> carlos huang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Erick,</p>
+<p>
+</p><p>Thanks for your update. Based on your description, you have created many teams and all of them have this issue. If you are in this situation, could you please do following and help us to narrow down the issue?</p>
+<ol>
+<li>Sign into Teams online, check if you are able to change the Teams picture on web side.&nbsp;</li><li>Add an user to a Team as owner. Check if the user can change the picture.</li><li>Please make sure the Teams client is up to date. Click your profile picture, choose
+<strong>check for update</strong>.&nbsp;</li></ol>
+<p>
+</p><p>Please let me know the result. If all above don't work, please provide a screenshot of the error.</p>
+<p>
+</p><p>Regards,</p>
+<p>Carlos</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> erick sodhi &#40;vantage it&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>"<span>you have created many teams and all of them have this issue" - no, it's the opposite. From my original post: "</span><span>I've created numerous teams in the past and have never come across this issue."</span></p>
+<p>
+</p><p>I have the same issue in Teams online, and my client is up to date.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Carlos Huang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> carlos huang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Erick,</p>
+<p>
+</p><p>Thank you for your clarify. In this situation, I think Powershell should work. You can have a try. You can run Powershell as administrator. Here is the commands:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/f2297b95-27d1-41fd-83f3-bca77650334d?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/f2297b95-27d1-41fd-83f3-bca77650334d?upload=true" /></a></p>
+<p>
+</p><p>Regards,</p>
+<p>Carlos</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Carlos Huang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> carlos huang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Erick,</p>
+<p>
+</p><p>If there is any update, please share at your convenience.</p>
+<p>
+</p><p>Regards,</p>
+<p>Carlos</p>
+        </p>
+<a href="/search?q=microsoft_teams">microsoft_teams, </a> <br>
+<a href="/search?q=teams_for_business">teams_for_business, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>System Now Pathetic - Microsoft Community</title>
+<h3> paully2012  say:</h3>
+<h2>            System Now Pathetic</h2>
+                    I dont know what the hell is going on with you guys, but I have had a gutful, every update the system is getting worse, this beta build is pathetic, wiping it today, it is just typical that the second preview is worse than the first, perhaps if the beta
+ wasnt key logging every stroke, it might be a bit faster, this will be a flop like vista if not fixed, but thats what we are here for isnt it to be told to refresh or wipe and start again, such easy answers to state, dont bother replying this beta is a pile
+ of ****, I have been patient and watched while others suffered, I now know why they are whinging&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    8 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tylerbrown7  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Very interesting, my system performance increased after installing the technical preview. I had a noticeable difference and was able to confirm with some benchmarks, especially with 2D and 3D graphics, which is awesome! Are you having trouble with specific
+ programs? Can you give more feedback?&nbsp; <br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mattthegeek  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The collection of all your keystokes (Which they do, Read the privacy policy) is enough for me to wipe my system clean of Windows. I tolerate it right now because i don't want NT10.0 (Windows 10) become Vista 3.0.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><strong>I dont have a problem with</strong> overall stability of the system, but everything "app" related has buggy windowmetrics (get stuck in fullscreen, title bar dissappears, wont maximize, wont minimize)</p>
+<p>
+</p><p><strong>I hate the direction everything else is taking</strong>,&nbsp; search, cortana, start menu, connected accounts, bing, lack of customization, dumbing everything down</p>
+<p>
+</p><p>overall i think they have screwed the pooch with this build</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> r.e.schindler jr.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I Agree!&nbsp;&nbsp; After using Windows 10 Beta for about a week; I'm ready to go back to almost</p>
+<p>any version other than 10.</p>
+<p>I have loaded two systems - - - - - -&nbsp; and each have had various driver issues and numerious problems; I just don't need the aggravation...</p>
+<p>
+</p><p>Keep it up Micro~****; and you will find Mac and Linux knocking on your back door.</p>
+<p>I'm removing my Windows 10 drive and popping the Windows 7 drive back in the system.</p>
+<p>
+</p><p>Seeeeeeeeeeeeeeeeeeeee&nbsp; Yaaaaaaaaaaaaaaaaaaaaaaaaa</p>
+<p>Find some other sucker to troubleshot your "Not Ready For Prime Time"&nbsp; O.S.</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Apple also happens to be beta testing their next OS, OS X 10.10.3 beta 5 was released yesterday for public testing. &nbsp;I wonder if Apple's beta tests go though similar horrors. &nbsp;Somehow I think not - their approach is more evolutionary. &nbsp;Microsoft can be called
+ bold, daring, visionary, but the quality of these Windows betas seem more like desperation and damage control.</p>
+<p>
+</p><p>The first two Windows 10 previews were ok, but the last two have just been so bad that it makes you wonder how they could possibly be promising a summer release - in 2015.</p>
+<p />
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>iPad cannot receive mail - Microsoft Community</title>
+<h3> janice felts  say:</h3>
+<h2>            iPad cannot receive  mail</h2>
+                    <p>hi&nbsp;</p>
+<p>my ipad cannot receive incoming mail. &nbsp;It gives the error message of "cannot get mail the mail server imap-mail.outlook.com is not responding. Verify that you have entered the correct account info in mail settings."&nbsp;</p>
+<p>I have called apple and gone through all their steps to see what is wrong and nothing is wrong with apple on their end. &nbsp;They suggested to contact you for the problem.
+</p>
+<p>Please help!&nbsp;</p>
+<p>Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carriej1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Since yesterday I have had the same issue.....both while trying to access my email account on my iPad and cell phone. &nbsp;I went into MSN account and changed my password and then updated the settings in both my iPad and cell phone with the new password. &nbsp;This
+ worked temporarily.....until I tried to log in about an hour later. &nbsp;Then I got the same message again about the server not responding. &nbsp;I am thinking it is an issue on the MSN side?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> janice felts  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I agree. I think its an msn issue too. I called msn and they told me to come to this site and i would find help. They said this was the only place that could help me with type of issue with an ipad or iphone. Not happy that im not getting help with this.
+ I dont know what else to do.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>Cannot send or receive e-mail and there is no error message. </p>
+<p><a href="https://answers.msn.com/solution.aspx?solutionid=66b7939e-07e0-466f-a900-aacca47c970b&amp;wa=wsignin1.0" target="_blank" rel="noreferrer nofollow">https://answers.msn.com/solution.aspx?solutionid=66b7939e-07e0-466f-a900-aacca47c970b&amp;wa=wsignin1.0</a></p>
+        </p>
+<a href="/search?q=msn">msn, </a> <br>
+<a href="/search?q=accounts,_login,_and_signup">accounts,_login,_and_signup, </a> <br>
+<a href="/search?q=other_microsoft_account_and_profile_items">other_microsoft_account_and_profile_items, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Xpress Music 5800 Factory Reset Code &#47; battery query.... - Microsoft Community</title>
+<h3> crank090865  say:</h3>
+<h2>            Xpress Music 5800 Factory Reset Code &#47; battery query....</h2>
+                    
+<p>Hello,</p>
+<p>&nbsp;</p>
+<p>1/ Could someone confirm as to wheter #7780# is the correct factory reset code for my 5800 Xpress Music ?</p>
+<p>&nbsp;</p>
+<p>2/ Battery usage, the handset is a new insurance replacement as to is the battery (or so I am lead to believe). The battery is Nokia branded and has the official hologram stuck to it etc etc.</p>
+<p>However, battery usage is extreme to say the least, about 48 hours at the most even when the phone is not being used.&nbsp; Does the problem lie with the phone or does the battery need replacing ?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Factory Reset is *#7780# followed by 12345&nbsp;(Default Code).. if you have not changed it...</p>
+<p>You may do it thru' Menu--&gt;Settings--&gt;Phone--&gt;Phone Management--&gt;Factory settings.. also</p>
+<p>&nbsp;</p>
+<p>..and If your Battery is also new.. let it go thru' atleast 5 to 6 charge cycles and then see the life.. With my moderate usage on Nokia 5800xm its about 2-1/2 to 3 days..</p>
+<p>&nbsp;</p>
+<p>--------------------------------------------------​--------------------------------------------------------​--------------------------------------------------​--If you find this helpful, pl. hit the White Star in Green Box...<br />
+.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> boeneo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Correct code is *#7370#</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Deep Zoom Composer - Microsoft Community</title>
+<h3> vinayhm  say:</h3>
+<h2>            Deep Zoom Composer</h2>
+                    <p>Deep Zoom Composer :-</p>
+<p>
+</p><p>I am using&nbsp;DeepZoomTools.dll for the image conversion from TIFF to JPEG format .DeepZoomTools.dll work fine with TIFF format&nbsp; image conversion with is less than 2GB(TIF Image size) But When i try to convert the image which is more than 2GB image size i am
+ getting exception&nbsp;with</p>
+<p>
+</p><p>An unhandled exception of type 'System.OverflowException' occurred in DeepZoomImages.dll<br />
+<br />
+Additional information: The image data generated an overflow during processing.&nbsp;</p>
+<p>
+</p><p>Where can i find the latest version of Deep Zoom Composer with 64 bit version&nbsp;<br />
+</p>
+<p>
+</p><p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Neo Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "NW"); this.style="display: inline-block";'
+<h3> neo wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi&nbsp;Vinay,</p>
+<p>
+</p><p>To download the latest version of&nbsp;Deep Zoom Composer, please check this <a href="https://www.microsoft.com/en-us/download/details.aspx?id=24819" target="_blank" rel="noreferrer nofollow">
+Official Microsoft Download Site</a>.</p>
+<p>
+</p><p>Regards,</p>
+<p>Neo</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_education">microsoft_education, </a> <br>
+<a href="/search?q=microsoft_forms">microsoft_forms, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>MapQuest on Lumia 532 - Microsoft Community</title>
+<h3> umapathy &#40;உமாபதி&#41;  say:</h3>
+<h2>            MapQuest on Lumia 532</h2>
+                    <p>Hello,<br />
+</p>
+<p>I saw listing of MapQuest via <a href="https://www.microsoft.com/en-us/store/apps/mapquest/9wzdncrfhw2p#app-details" target="_blank" rel="noreferrer nofollow">
+https://www.microsoft.com/en-us/store/apps/mapquest/9wzdncrfhw2p#app-details</a> but when I search through my Microsoft Lumia 532 phone store apps but I couldn't find the MapQuest application. Is it a regional application? or available of the whole world?.
+ I am from Sri Lanka. I used to contribute to Openstreetmap and it looks like map quest is based on Openstreetmap here in Sri Lanka.
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot turn off Update Links - Microsoft Community</title>
+<h3> hjc3  say:</h3>
+<h2>            Cannot turn off Update Links</h2>
+                    <p>I have a spreadsheet that pulls data from two other linked spreadsheets.&nbsp; Every time I open the main spreadsheet, all of the data is missing (all values go to #N/A), and I have to open the source files in order to restore the values.</p>
+<p>I would have thought this problem could be avoided by selecting the 'Save external link values' checkbox in the 'When calculating this workbook' section on the 'Advanced' tab&nbsp;under 'Excel Options'.&nbsp; In fact, I believe the only reason it
+<em><strong>doesn't</strong></em> work is because I cannot de-select the 'Update links to other documents' checkbox in the same location.&nbsp; (In other words, I think the saved values are being overwritten during the update process but, because the linked spreadsheets
+ are&nbsp;not open, they are overwritten with #N/A.)</p>
+<p>It <em><strong>looks</strong></em> like I can de-select the 'Update links'&nbsp;box, but if I then save the spreadsheet and re-open it, the box is checked again.&nbsp; This happens even if the spreadsheet I am working in is the only one open.&nbsp; It doesn't matter if
+ I close Excel and re-open it first.&nbsp; I have also tried de-activating all my add-ins to see if one of them was causing the problem, with no success.</p>
+<p>I am using Excel 2007.&nbsp; I never had this problem with Excel 2003.</p>
+<p>Any help with this issue would be much appreciated!</p>
+<p>HJ</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> varun shankar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Go to Office button&gt;Options&gt;Trust Center&gt;Trust Center Settings&gt;External Reference to manage automatic update for workbook links.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="hjc3" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "HJ"); this.style="display: inline-block";'
+<h3> hjc3  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Go to Office button&gt;Options&gt;Trust Center&gt;Trust Center Settings&gt;External Reference to manage automatic update for workbook links.</p>
+</blockquote>
+<p><br />
+I went to the&nbsp;location you suggested and changed the 'Security settings for Workbook Links'&nbsp;to 'Disable automatic update of Workbook Links' but it has not solved the problem.&nbsp; I still cannot turn off the 'Update links to other documents' setting.&nbsp;
+</p>
+<p>This is very strange&nbsp;-- with all the concern about security these days, I would have thought the default setting would be to NOT update links, but it is even stranger that I cannot even select that option manually!</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> skater....  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The default behavior is to prompt whether or not you want to update the links while you open Excel?
+</p>
+<p>Do you get that warning?</p>
+<p>Try starting Excel after disabling all add-ins and see if it helps.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="hjc3" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "HJ"); this.style="display: inline-block";'
+<h3> hjc3  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for that suggestion, but I already tried disabling add-ins without success.</p>
+<p>I think the problem is&nbsp;that I am actually referencing the linked spreadsheets only indirectly, using the CELL, INDIRECT and other functions, so Excel probably doesn't know the formulas contain external links (that shouldn't be updated) until it is too late.</p>
+<p>If I set the calculation mode to manual, I might not get the undefined references as soon as I open the file, but I probably would the first time I force a calculation, which really doesn't help.</p>
+<p>I think I am probably out of luck on this one, but I can work with it.&nbsp; I just have to open the external source files along with the spreadsheet I am working in.&nbsp; It's a bit of a pain, but at least I can function.&nbsp; :)</p>
+<p>Anyway, thanks again for your help!</p>
+<p>HJ</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2010 continues to not recognize authentication certificate - Microsoft Community</title>
+<h3> dudley james  say:</h3>
+<h2>            Outlook 2010 continues to not recognize authentication certificate when sending mail</h2>
+                    I have downloaded the certificate, when sending email, many times and I still constantly get an authentication error. My authentication setting is set to auto, I have increased the server timeout to 10 min as suggested earlier and it still ask me if I
+ want to continue to use this server. I am getting very frustrated with this and am wishing maybe I had not upgraded. The other features are super but if it cannot send email easily, what good are they?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> varun shankar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>From your previous posts I see that your Outgoing smpt server is configured as smpt.live.ca and the certificate
+ is issued to smtp.live.com. Even though they point to the same domain they’re not the same. Fix your certificate or server name so that they match and see if it resolves it.</span></p>
+<p>&nbsp;</p>
+<p><span><span>Provide a screenshot of the error if the issue persists. Refer the link below on the how to post a picture.</span></span></p>
+<p><a href="http://social.technet.microsoft.com/Forums/en-US/w7itproui/thread/4fc10639-02db-4665-993a-08d865088d65" target="_blank" rel="noreferrer nofollow"><span><span>http://social.technet.microsoft.com/Forums/en-US/w7itproui/thread/4fc10639-02db-4665-993a-08d865088d65</span></span></a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

@@ -1,0 +1,2120 @@
+    <title>how to find the most repeated word in multiple cells - Microsoft Community</title>
+<h3> lambert5  say:</h3>
+<h2>            how to find the most repeated word in multiple cells</h2>
+                    I have two columns of data<br />
+<br />
+Example Cell A2: Now is the time for all good men,&nbsp; B2: Men and women play basketball<br />
+<br />
+Id like a formula that would look at the two cells and return the word or words that appear the most of of the two cells?<br />
+<br />
+desired result:&nbsp; men<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I'm not sure it's a good idea to do this in a formula - it is very calculation-intensive. But here is a custom VBA function you could use:</p>
+<p>&nbsp;</p>
+<p>Function MostFrequentWord(rng As Range) As String<br />
+&nbsp;&nbsp;&nbsp; Dim cel As Range<br />
+&nbsp;&nbsp;&nbsp; Dim arr As Variant<br />
+&nbsp;&nbsp;&nbsp; Dim i As Long<br />
+&nbsp;&nbsp;&nbsp; Dim wrd As String<br />
+&nbsp;&nbsp;&nbsp; Dim col As Object<br />
+&nbsp;&nbsp;&nbsp; Dim itm As Variant<br />
+&nbsp;&nbsp;&nbsp; Dim hi As Long<br />
+&nbsp;&nbsp;&nbsp; Set col = CreateObject("Scripting.Dictionary")<br />
+&nbsp;&nbsp;&nbsp; For Each cel In rng<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; arr = Split(cel.Value)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For i = 0 To UBound(arr)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; wrd = arr(i)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If col.Exists(wrd) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; col(wrd) = col(wrd) + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; col.Add Item:=1, Key:=wrd<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next i<br />
+&nbsp;&nbsp;&nbsp; Next cel<br />
+&nbsp;&nbsp;&nbsp; For Each itm In col.Keys<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If col(itm) &gt; hi Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; hi = col(itm)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; wrd = itm<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next itm<br />
+&nbsp;&nbsp;&nbsp; MostFrequentWord = wrd<br />
+End Function</p>
+<p>&nbsp;</p>
+<p>Use like this:</p>
+<p>&nbsp;</p>
+<p>=MostFrequentWord(A2:B2)</p>
+<p>&nbsp;</p>
+<p>If there are multiple most-frequent words, the function will return the first of these that it encounters.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="rich007a" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "RI"); this.style="display: inline-block";'
+<h3> rich007a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>It appears HansV has just beaten me to it, but here's my solution:</p>
+<p>&nbsp;</p>
+<p>Option Explicit</p>
+<p>&nbsp;</p>
+<p>Function <strong>MostFrequentWord</strong>(Rng As Range)<br />
+&nbsp;&nbsp;&nbsp; Dim strInput As String, strOutput As String<br />
+&nbsp;&nbsp;&nbsp; Dim c As Range<br />
+&nbsp;&nbsp;&nbsp; Dim dbMax As Double<br />
+&nbsp;&nbsp;&nbsp; Dim vArr As Variant, vWord As Variant<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; 'Build a single string of all the words in the range:<br />
+&nbsp;&nbsp;&nbsp; For Each c In Rng<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strInput = strInput &amp; " " &amp; c.Value<br />
+&nbsp;&nbsp;&nbsp; Next c<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; 'Remove any punctuation and double spaces:<br />
+&nbsp;&nbsp;&nbsp; strInput = ReplacePunctuationWithSpace(strInput)<br />
+&nbsp;&nbsp;&nbsp; strInput = RemoveDoubleSpaces(strInput)<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; 'Split into an array of words:<br />
+&nbsp;&nbsp;&nbsp; vArr = Split(strInput, " ")<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; 'Create a dictionary of all the words:<br />
+&nbsp;&nbsp;&nbsp; With CreateObject("scripting.dictionary")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .CompareMode = vbTextCompare<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For Each vWord In vArr<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Not .Exists(vWord) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Add vWord, 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Item(vWord) = .Item(vWord) + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next vWord<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Find the max occurance:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbMax = Application.Max(Application.Transpose(.Items))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Build a list of the word(s) which have appeared dbMax times:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For Each vWord In .keys<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If .Item(vWord) = dbMax Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strOutput = strOutput &amp; "'" &amp; vWord &amp; "' &amp; "<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next vWord<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Remove the last " &amp; " from the list string:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strOutput = Left(strOutput, Len(strOutput) - 3)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Output the result:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MostFrequentWord = strOutput &amp; " appeared " &amp; dbMax &amp; " times"<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+End Function</p>
+<p>&nbsp;</p>
+<p>Function <strong>ReplacePunctuationWithSpace</strong>(strInput As String) As String<br />
+&nbsp;&nbsp;&nbsp; Dim regex As Object<br />
+&nbsp;&nbsp;&nbsp; Set regex = CreateObject("VBScript.RegExp")<br />
+&nbsp;&nbsp;&nbsp; regex.Global = True<br />
+&nbsp;&nbsp;&nbsp; regex.Pattern = "[^ 0-9A-Za-z]"<br />
+&nbsp;&nbsp;&nbsp; ReplacePunctuationWithSpace = regex.Replace(strInput, " ")<br />
+End Function<br />
+&nbsp;</p>
+<p>Function <strong>RemoveDoubleSpaces</strong>(strInput As String)<br />
+&nbsp;&nbsp;&nbsp; Dim regex As Object<br />
+&nbsp;&nbsp;&nbsp; Set regex = CreateObject("VBScript.RegExp")<br />
+&nbsp;&nbsp;&nbsp; regex.Global = True<br />
+&nbsp;&nbsp;&nbsp; regex.Pattern = "\s{2,}"<br />
+&nbsp;&nbsp;&nbsp; RemoveDoubleSpaces = regex.Replace(strInput, " ")<br />
+End Function<br />
+</p>
+<p>&nbsp;</p>
+<p>In Excel, you would do something like&nbsp;&nbsp; =MostFrequentWord(A2:B2)</p>
+<p>This UDF will return something like:</p>
+<p>&nbsp;</p>
+&nbsp;&nbsp;&nbsp; 'men' appeared 2 times
+<p>&nbsp;</p>
+<p>and if more than one word appears twice, it would return:</p>
+<p>&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp; 'men' &amp; 'women' appeared 2 times</p>
+<p>&nbsp;</p>
+<p>Note also that this code will remove any punctuation, so "men<strong>,</strong>" will be treated as "men"</p>
+<p>Hope that helps.</p>
+<p>Cheers<br />
+Rich</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>update installation problem - Microsoft Community</title>
+<h3> dilipsharma838  say:</h3>
+<h2>            update installation problem</h2>
+                    0x8018830f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=400-series">400-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Selecting the most recent date in a slicer - Microsoft Community</title>
+<h3> xodiak  say:</h3>
+<h2>            Selecting the most recent date in a slicer</h2>
+                    <p>I have a report that our group uses. &nbsp;Basically the data in the report is exported by an access database to an excel file. &nbsp;I then have the report excel file which is a macro enabled file, in that file it has a data connection to that file access output.
+ &nbsp;Access calls the macro in the Excel report file (macro enabled) runs a refresh and saves.</p>
+<p>
+</p><p>I've just recently added an auto email range macro into the excel file, the issue I'm having however is that the file uses slicers to filter, and must because if there weren't slicers I'd be on the phone all day trying to figure out what the clients did
+ tot he file and why and helping them get the data they want. &nbsp;The issue is in the email I only want to show the most current date of data but can't figure out how to create a macro that selects the most current date in the date slicer.</p>
+<p>
+</p><p>Any suggestions?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ashish Mathur" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "AM"); this.style="display: inline-block";'
+<h3> ashish mathur  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Upload the workbook to OneDrive and share the link of the workbook here.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> xodiak  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Our computers don't allow us to remove, email, copy anything from the network. &nbsp;All work is done purely of the network drives for security reasons due to the nature of the information, so I'm unable to upload a file for help.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Nayana S M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "NS"); this.style="display: inline-block";'
+<h3> nayana s m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello,</span></p>
+<p>
+</p><p><span>As you’re working ‘Slicer’ and unable to upload the file to OneDrive as requested by ‘Ashish’, I request you to post the query in the Excel IT Pro forum link mentioned below for better assistance.
+</span></p>
+<p><a href="http://social.technet.microsoft.com/Forums/en-US/excel/threads" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://social.technet.microsoft.com/Forums/en-US/excel/threads</span></a></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>Thank you.</span></span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to track formatting changes in Word 2016 - Microsoft Community</title>
+<h3> d. english  say:</h3>
+<h2>            Unable to track formatting changes in Word 2016</h2>
+                    <p>I am editing a document in Word 2016 (Version 15.33, running on Mac OS Sierra Version 10.12.4).</p>
+<p>
+</p><p>I need to be able to track formatting changes along with other changes, but have not been able to on this document.</p>
+<p>
+</p><p>On the Review tab, I have Track Changes On. All Markup chosen, and Markup Options I have everything checked, with All Revisions in balloons.</p>
+<p>
+</p><p>All other changes track appropriately.</p>
+<p>
+</p><p>I should note that this is limited to this document. Other documents track the formatting correctly.</p>
+<p>
+</p><p>Any advice or pointers would be greatly appreciated -- never run into this in the past 20 years!</p>
+<p>
+</p><p>Thanks.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>My first thought is that the document has been edited in a Windows version which provides the option (preference) to track formatting changes to be disabled. If so I don't believe it can be reactivated in Mac Word.</p>
+<p>
+</p><p>Other than that it could be a corrupt document, but if all else is tracking that seems rather unlikely.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Ovi problem - Microsoft Community</title>
+<h3> omshankar  say:</h3>
+<h2>            Ovi problem</h2>
+                    I have asha 311. If i open any website through default ovi browser it opens blank white page. How to solve this problem?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> musica31  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Upon which connection are you trying to browse the web? Mobile data or WiFi? Are you able to access internet-based applications?<br />
+<br />
+You may try going to <a href="http://download.browser.ovi.com/" target="_blank" rel="noreferrer nofollow">http://download.browser.ovi.com/</a> to possibly update the browser.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> omshankar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I m using mobile data. And only problem with ovi. Other app is working fine. If I open facebook, google, gmail etc any site then blank page comes.<br />
+<br />
+This error is coming from this url u gave.<br />
+<br />
+Nokia Browser Download<br />
+Sorry, your device is not<br />
+supported.<br />
+Please access this page from<br />
+one of the following Nokia<br />
+devices<br />
+109<br />
+1090<br />
+110<br />
+1100<br />
+111<br />
+1110<br />
+112<br />
+1120<br />
+113<br />
+1130<br />
+114<br />
+1140<br />
+200<br />
+2000<br />
+201<br />
+2010<br />
+202<br />
+2020<br />
+203<br />
+2030<br />
+205<br />
+2050<br />
+2051<br />
+2052<br />
+2053<br />
+2055<br />
+206<br />
+2060<br />
+2700<br />
+2710<br />
+2730<br />
+300<br />
+3000<br />
+302<br />
+3020<br />
+303<br />
+3030<br />
+305<br />
+3050<br />
+306<br />
+3060<br />
+307<br />
+3070<br />
+308<br />
+3080<br />
+308a<br />
+309<br />
+3090<br />
+310<br />
+3100<br />
+311<br />
+3110<br />
+3710<br />
+501<br />
+5010<br />
+501s<br />
+5130<br />
+5330<br />
+6303<br />
+6600<br />
+6700<br />
+7020<br />
+7230<br />
+c1-01<br />
+c1-02<br />
+c2-00<br />
+c2-01<br />
+c2-02<br />
+c2-03<br />
+c2-05<br />
+c2-06<br />
+c2-07<br />
+c2-08<br />
+c3-00<br />
+c3-01<br />
+x2-00<br />
+x2-01<br />
+x2-02<br />
+x2-03<br />
+x2-05<br />
+x3-00<br />
+x3-02<br />
+© 2011 Nokia
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Weird change - Microsoft Community</title>
+<h3> patricia j riddle  say:</h3>
+<h2>            Weird change</h2>
+                    Downloaded Windows 10 with no problems and setup was fine, but when one of my automatic scans went thru, it must have changed something because now my start menu doesn't look the same (looks like s directory tree with no windows at all) and everything
+ is running crazy slow! &nbsp;Does anyone know what happened or what I can do about it?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="C.B. Wilsha" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "CW"); this.style="display: inline-block";'
+<h3> c.b. wilsha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Have you tried a restart?<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> patricia j riddle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes. It didn't help.&nbsp;
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to update Office 365 - Microsoft Community</title>
+<h3> henniebresler  say:</h3>
+<h2>            How to update Office 365</h2>
+                    <p>I have not used my computer for 1 month...been overseas.</p>
+<p>Now get error information that I must update even though my subscription is still valid till February 2018</p>
+<p>I am unable to use outlook to forward mails as the quick access toolbar is no longer active&nbsp;</p>
+<p>How do I update Microsoft Office software package Office 365?</p>
+<p>
+</p><p>
+</p><p>
+</p><ul>
+<li><a href="https://answers.microsoft.com/en-us/msoffice/forum?tab=Threads">Office</a>/<a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook?tab=Threads">Outlook</a>/<a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook-mso_other?tab=Threads">Other/unknown</a>/<a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook-mso_other-mso_365hp?tab=Threads">Office
+ 365 Home</a> </li></ul>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What is the exact error msg?</p>
+<p>365 'calls home' about every 30 days, if it cannot it eventually goes in to edit restricted mode unto you re-activate</p>
+<p>In say Word, File&gt;Account either Update options or Activate, depending on the error msg</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>INDEX formula and &#35;N&#47;A error - Microsoft Community</title>
+<h3> rana tahirjaved  say:</h3>
+<h2>            INDEX formula and &#35;N&#47;A error</h2>
+                    Hi,<br />
+<br />
+<div>I have Index formula Like</div>
+<div>=INDEX(Table7[Batch Ref '#],MATCH(Sheet1!F5,Table7[Life Left],0))</div>
+<div>I want to the cells with no value to return 0 not the error #N/A.&nbsp;</div>
+<div>Any help solutions???</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="V_Agarwal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "V"); this.style="display: inline-block";'
+<h3> v_agarwal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Change your formula to</p>
+<p>=IFERROR(INDEX(Table7[Batch Ref '#],MATCH(Sheet1!F5,Table7[Life Left],0)),0)</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jeeped" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JE"); this.style="display: inline-block";'
+<h3> jeeped  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can use the IFERROR() function, introduced in Excel 2007. This avoids having to repeat the formula once for an error check and again for an actual result. IFERROR() simply wraps around tour existing formula and you supply the desired result in the
+ case that there is no valid result.
+<div><br />
+<div>=IFERROR(INDEX(Table7[Batch Ref '#],MATCH(Sheet1!F5,Table7[Life Left],0)),"")</div>
+<div><br />
+<div>If you need to provide compatibility to Excel 2003, you will have to double up the MATCH() portion of your formula to check for #N/A.</div>
+<div><br />
+<div>=IF(ISERROR(<span>MATCH(Sheet1!F5,Table7[Life Left],0)),"",</span><span>INDEX(Table7[Batch Ref '#],MATCH(Sheet1!F5,Table7[Life Left],0)))</span></div>
+<div><span>... or,</span></div>
+<div>
+<div>=IF(ISNA(<span>MATCH(Sheet1!F5,Table7[Life Left],0)),0,</span><span>INDEX(Table7[Batch Ref '#],MATCH(Sheet1!F5,Table7[Life Left],0)))</span></div>
+<div><br />
+<div>
+<table>
+<tbody>
+<tr>
+<td><a href="http://office.microsoft.com/en-us/HA010342587.aspx" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 0, 1)">IFERROR function</span></a></td>
+</tr>
+<tr>
+<td><a href="http://office.microsoft.com/en-us/HP010342632.aspx" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 0, 1)">ISERROR function</span></a></td>
+</tr>
+<tr>
+<td><a href="http://office.microsoft.com/en-us/HP010342632.aspx" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 0, 1)">ISNA function</span></a></td>
+</tr>
+</tbody>
+</table>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>VBA - Index of Contents Sheet with links back to Index Contents Sheet - Microsoft Community</title>
+<h3> ziasiddique16  say:</h3>
+<h2>            VBA - Index of Contents Sheet with links back to Index Contents Sheet</h2>
+                    <p>Hi</p>
+<p>
+</p><p>I was wondering if someone has a VBA code that will create a worksheet that inserts&nbsp;a table of contents that links to other worksheets within the same workbook.</p>
+<p>
+</p><p>However I also require the VBA code to be able to have links with the other worksheets so you click and return to the table of contents worksheet.</p>
+<p>
+</p><p>I have seen lots of VBA code on the internet just for the table of contents but not where you have links going back as well.</p>
+<p>
+</p><p>As you will appreciate it not good just have a link one way to other worksheets for the user - they require links to go back to the table of contents.</p>
+<p>
+</p><p>Appreciate&nbsp;it if you can assist.</p>
+<p>
+</p><p>Zia&nbsp;&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Try this code in sheet module of the Index sheet.</p>
+<p>Also includes a goto index sheet link on every sheet.</p>
+<p>Index changes as sheets are added or removed from workbook.</p>
+<p>
+</p><p>Private Sub Worksheet_Activate()<br />
+Dim wSheet As Worksheet<br />
+Dim l As Long<br />
+<br />
+l = 1<br />
+<br />
+&nbsp;&nbsp;&nbsp; With Me<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Columns(1).ClearContents<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Cells(1, 1) = "INDEX"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Cells(1, 1).Name = "Index"<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; For Each wSheet In Worksheets<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If wSheet.Name &lt;&gt; Me.Name Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; l = l + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With wSheet<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Range("A1").Name = "Start_" &amp; wSheet.Index<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Hyperlinks.Add Anchor:=.Range("A1"), Address:="", _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SubAddress:="Index", TextToDisplay:="Back to Index"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.Hyperlinks.Add Anchor:=Me.Cells(l, 1), Address:="", _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SubAddress:="Start_" &amp; wSheet.Index, TextToDisplay:=wSheet.Name<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next wSheet<br />
+<br />
+End Sub</p>
+<p>
+</p><p>
+</p><p>Gord</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Pop-up message &#39;Either there is no default mail clinet or the - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Pop-up message &#39;Either there is no default mail clinet or the current......</h2>
+                    <p>I have a machine (windows 7, running 64 bit office 2013 (Office 365 E3). The office was installed around 5-6 days ago and he has been ok, but since yesterday afternoon the user is getting the pop-up, every second as below:<a href="https://filestore.community.support.microsoft.com/api/images/cd5e7a0c-74a3-4ec7-b0db-33a280d85d83" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/cd5e7a0c-74a3-4ec7-b0db-33a280d85d83" /></a></p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andy Chen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AC"); this.style="display: inline-block";'
+<h3> andy chen msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>H<span>i</span> AshokMazumdar<span>，</span></p>
+<p>
+</p><p>This issue may occur if the Outlook registry key is corrupted. To resolve this issue, you must first remove the corrupted Outlook registry key, and then perform a Detect and Repair operation to have Outlook rebuild the key. To do this, follow these steps.</p>
+<ol>
+<li>Click Start, and then click Run.</li><li>In the Open box, type regedit, and then press ENTER.</li><li>In Registry Editor, locate the following subkey in the registry:&nbsp; HKEY_LOCAL_MACHINE\Software\Clients\Mail\Microsoft Outlook</li><li>Select the subkey, and then press DELETE.</li><li>Click Yes.</li><li>Quit Registry Editor.</li><li>Click Start, click Control Panel, click Programs and Features, select Microsoft Office and then click the Change button. Next, click Repair, and then click Continue.</li><li>Follow the instructions on the screen to complete the repair.</li></ol>
+<p>If this can’t work please confirm the following information:</p>
+<ol>
+<li>Are the Outlook up to date? If not, please update them to the latest and check if the issue persists. To update the Outlook client, please open Outlook &gt;&nbsp;<strong>File</strong>&nbsp;&gt;&nbsp;<strong>Office Account</strong>&nbsp;&gt;&nbsp;<strong>Updates</strong><strong>Options</strong>&nbsp;&gt;&nbsp;<strong>Updates
+ Now.</strong></li><li>The detailed version of the affected Outlook client.</li><li>Does other user in your organization have the same issue?</li></ol>
+<p>Thanks,</p>
+<p>Andy </p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andy Chen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AC"); this.style="display: inline-block";'
+<h3> andy chen msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>H<span>i</span> AshokMazumdar<span>，</span></p>
+<p>
+</p><p><span>Do you have any updates?</span></p>
+<p>thanks，</p>
+<p>Andy </p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Work has stopped working. - Microsoft Community</title>
+<h3> team reiser  say:</h3>
+<h2>            Microsoft Work has stopped working.</h2>
+                    I am not technically savvy and I just installed a new printer. At that point, My Home &amp; Student 2013 WORD stopped working. Excel is working fine. It comes up with this message and I tried to reinstall it and it finally installed again but same issue.&nbsp;
+ I saw a couple ideas of how to fix it, but they are not working or more likely, I am not sure how to really do them.&nbsp; Any suggestions?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> team reiser  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Okay - unfortunately now that I tried to reinstall the program - excel is also showing the same message.&nbsp; Ugh!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>See <a href="http://support.microsoft.com/kb/2755838" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/2755838</a></p>
+<p>&nbsp;</p>
+<p>If it was an Epson printer that you installed, then almost certainly it is Abbyy FineReader that is causing the problem.</p>
+<p>&nbsp;</p>
+<p><span><font color="#000000">A lot of problems with Office 2013 are caused by third party (non-Microsoft) applications.<span>&nbsp;
+</span>This is my (expanding) list of things to try when Office 2013\365 won’t start or crashes:<br />
+<br />
+See the Article “Why can’t I start my Office 2013 application at:<br />
+<br />
+</font><a href="http://office.microsoft.com/en-us/support/why-cant-i-start-my-office-2013-application-HA104011864.aspx" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://office.microsoft.com/en-us/support/why-cant-i-start-my-office-2013-application-HA104011864.aspx</font></a><br />
+<font color="#000000"><br />
+Refer to the following website for information on repairing Office 2013\365:</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+<font><br />
+</font></span><span><a href="http://office.microsoft.com/en-us/project-help/repair-or-remove-office-2010-HA010357402.aspx" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://office.microsoft.com/en-us/project-help/repair-or-remove-office-2010-HA010357402.aspx</font></a><br />
+<font color="#000000"><br />
+See Office 2013 install woes - http://office-watch.com/t/n.aspx?a=1834<br />
+</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+</span><span><font color="#000000">See the KnowledgeBase article “Office 2013 applications crash on launch at the splash screen” at:</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+<font><br />
+</font><a href="http://support.microsoft.com/kb/2813143" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 0, 1)"><font>http://support.microsoft.com/kb/2813143</font></span></a><br />
+<font><br />
+</font></span><span><font color="#000000">Or see the KnowledgeBase article Error: “Something went wrong and we can't sign you in right now” when trying to install Office 2013 at:</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+<font><br />
+</font><a href="http://support.microsoft.com/kb/2811180/en-us/" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://support.microsoft.com/kb/2811180/en-us/</font></a><br />
+<font><br />
+</font></span><span><font color="#000000">Also see my response in</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+<font><br />
+</font><a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-2013-has-stopped-working/67b81016-849f-481a-bce5-bf04797ac03b"><font color="#0000ff">http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-2013-has-stopped-working/67b81016-849f-481a-bce5-bf04797ac03b</font></a><br />
+<font><br />
+</font></span><span><font color="#000000">Do you have Abbyy Finereader installed on the PC? A number of people have reported that removing it overcomes problems with 2013.<span>&nbsp;
+</span>See:<br />
+<br />
+Office programs may crash with the FineReader add-in installed at:<br />
+<br />
+http://support.microsoft.com/kb/2755838<br />
+<br />
+Do you have “Fun Tools” add-in? A number of people have reported that removing it overcomes problems with 2013<br />
+<br />
+Do you have Toshiba Book Reader installed on the PC?<span>&nbsp; </span>It has been reported that uninstalling that brings Office back to working status.<br />
+<br />
+Do you have the Acrobat PDFMaker add-in.<span>&nbsp; </span>It has been reported that uninstalling that overcomes an issue with a message appearing that states "The document contains macros. Macro support for this application is disabled. Features requiring
+ VBA are not available. Would you like to open this document as a read only?"<br />
+<br />
+Also see: </font><a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-has-stopped-working-when-i-close/8375b5b6-4f7e-46ed-a02b-90152ecad287#LastReply"><font color="#0000ff">http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-has-stopped-working-when-i-close/8375b5b6-4f7e-46ed-a02b-90152ecad287#LastReply</font></a><font color="#000000">
+ and<br />
+<br />
+http://answers.microsoft.com/en-us/office/forum/office_home-word/word-and-excel-2013-crashing-on-windows-7/5389390c-e989-4c8e-8fe0-62673f1410ce?page=4#LastReply<br />
+<br />
+It appears that there may be some hardware incompatibilities as well.<span>&nbsp;
+</span>If you have the NVIDIA driver </font></span><font color="#000000"><font><span>NVWGF2UM.DLL</span><span>, try renaming it as</span><span>:
+ NVWGF2UM.old</span></font></font><span><font color="#000000"> as was mentioned in:<br />
+</font></span><span style="color: rgba(51, 51, 51, 1)"><br />
+<a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-has-stopped-working-when-i-close/8375b5b6-4f7e-46ed-a02b-90152ecad287#LastReply"><font color="#0000ff">http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/microsoft-word-has-stopped-working-when-i-close/8375b5b6-4f7e-46ed-a02b-90152ecad287#LastReply</font></a><br />
+<font><br />
+</font></span><span style="color: rgba(51, 51, 51, 1)"><font>From the File tab, select Options and then click on Advanced and then in the Display section of the dialog, check the box for
+<strong><span>Disable hardware graphics acceleration</span></strong></font></span></p>
+<p><span><font color="#000000"><font>For the error message "There was a problem sending the command to the program", use Windows Explorer to access the C:\Program Files\Microsoft Office\Office15 folder and right
+ click on WINWORD.EXE then on Properties, go to the Compatibility tab and uncheck all the boxes.<span>&nbsp;
+</span></font></font></span><span style="color: rgba(51, 51, 51, 1)"><font>It has also been reported that the problem can be overcome by editing the registry at HKEY_CLASSES_ROOT\Word.Document.12\shell\Open and deleting the
+ ddeexec key.<br />
+<br />
+The ddeexec can also be deleted from<br />
+<br />
+HKEY_CLASSES_ROOT\Word.DocumentMacroEnabled.12\shell\Open.<br />
+<br />
+That fix is described at ...<br />
+<br />
+</font><a href="http://www.dilloway.co.uk/there-was-a-problem-sending-the-command.html" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://www.dilloway.co.uk/there-was-a-problem-sending-the-command.html</font><span style="color: rgba(0, 114, 198, 1)"><br />
+</span></a></span><span><br />
+<font color="#000000">It has been reported that uninstalling FastPictureView and FastPictureViewer Pro… overcomes the issue of the Minimize, Maximize, Close and Help buttons not being visible in Office 2013.<br />
+<br />
+</font></span><span style="color: rgba(51, 51, 51, 1)"><font>If you have a Canon 8350 printer, try using the Canon MF8000 UFRI LT XPS driver as detail in the post by Riad Amstha on April 14 in the thread at:<br />
+<br />
+http://answers.microsoft.com/en-us/office/forum/office_365hp-word/office-2013-crashes-with-canon-8350-printer/e2bf6530-92e0-47ef-b6ec-e803a91793d0?page=3#LastReply</font></span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>office 365 and zimbra - Microsoft Community</title>
+<h3> jamalbdeir_msft  say:</h3>
+<h2>            office 365 and zimbra</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>One of our customers is asking whether we can have Office 365 Exchange Online and Zimbra working in parallel together using the same domain name?</p>
+<p>
+</p><p>Please advise at the earliest.</p>
+<p>
+</p><p>Regards,</p>
+<p>
+</p><p>Jamal</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Shyamal Debnath - MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "SD"); this.style="display: inline-block";'
+<h3> shyamal debnath - msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Jamal,<br />
+<br />
+Thanks for the update. If the domain (<em>abc.com)</em> own by the customer, then he can use simple domain sharing for SMTP email addresses. For the detailed instructions, you may refer to the article posted above.<br />
+<br />
+Best regards,<br />
+Shyamal
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="VincentChoy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "VI"); this.style="display: inline-block";'
+<h3> vincentchoy  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Actually, you are allowed only one email destination per email domain.</p>
+<p>So mail either goes to Zimbra, or Office365.&nbsp;</p>
+<p>
+</p><p>What the earlier advice tells you to do, is a workaround that effectively makes</p>
+<p>
+</p><p>1. All mail still goes to Zimbra as the primary mail server</p>
+<p>2. Zimbra forward 20 user emails to Office365</p>
+<p>3. The 20 O365 users are given an alternative email address as *** Email address is removed for privacy ***</p>
+<p>4. O365 users can take email each other using alternative email or their primary email (which will route via Zimbra)</p>
+<p>5. You still retain whatever limitations you face on the Zimbra server as mail still gets sent there as the primary server.</p>
+<p>
+</p><p>For me this is ok for trying out Office365 but it is rather messy if deployed on a permanent basis.<br />
+</p>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cant login to word - Microsoft Community</title>
+<h3> sakethgummadavelli  say:</h3>
+<h2>            Cant login to word</h2>
+                    I&nbsp;bought an new laptop, and I registered to the office. in the word I am not able to edit its showing result like the account isn't associated with office product. Now what should I do can you suggest me.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> ma. lau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The issue may occur when you&nbsp;open a Microsoft Office document from a web server or if the Office program needs to be activated.</p>
+<p>
+</p><p>You can try to create and save a new document. Try if you can able to edit it. If the issue persists, we recommend that you send us a screenshot of the window that will pop-up on your screen.</p>
+<p>
+</p><p>Check what Office program is currently installed on your laptop in the Control Panel. Press
+<strong>Windows key+X</strong> and then select <strong>Programs and Features</strong>.</p>
+<p>
+</p><p>You can also login to <strong><a href="https://Office.com/myaccount" target="_blank" rel="noreferrer nofollow">Office.com/myaccount</a></strong> and see if there is a subscription under the Microsoft account that you have used when you first registered your Office
+ application.</p>
+<p>
+</p><p>We are looking forward to your response.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I Import all webmails from yahoo mail into outlook.com or - Microsoft Community</title>
+<h3> twarres  say:</h3>
+<h2>            How do I Import all webmails from yahoo mail into outlook.com or hotmail</h2>
+                    <p>Hello</p>
+<p>I would to copy or transfer all my e-mails form my yahoo web mail to my Hotmail or outlook web mail.&nbsp; How do I do this?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anne ros  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi, </p>
+<p>
+</p><p>Moving emails from one account to another is possible and may take a while if you have lots of emails. To know how to import emails to Outlook, refer to this
+<strong><a href="https://support.office.com/en-us/article/Import-email-contacts-and-calendar-from-an-Outlook-pst-file-431a8e9a-f99f-4d5f-ae48-ded54b3440ac" target="_blank" rel="noreferrer nofollow">article</a></strong> and go to&nbsp;<strong>You want to move email from one
+ email account to another email account</strong> under <strong>When should I export/import a .pst file?</strong> section.
+</p>
+<p>
+</p><p><span><span>If anything comes up, don't hesitate to get back to us anytime.</span></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> twarres  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for the reply.</p>
+<p>
+</p><p>I am trying to avoid using my laptop's&nbsp; hard disk for e-mails. Is it possible to transfer my Yahoo webmail e-mails without having to save to my laptop to my Hotmail account?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anne ros  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for your response. Transferring emails from one account to another needs to be saved on your laptop, as it needs to export the .pst files first before transferring it to the other account. If you still don't want to save it on your laptop, we suggest
+ contacting your email client provider directly to have further assistance regarding email transfers without having to save it on the laptop.
+</p>
+<p>
+</p><p><span><span>Should you need further assistance, feel free to post your query anytime.</span></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brikelites_8  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Add your Yahoo email as connected account (<a href="https://support.office.com/en-us/article/Add-your-other-email-accounts-to-Outlook-com-c5224df4-5885-4e79-91ba-523aa743f0ba" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Add-your-other-email-accounts-to-Outlook-com-c5224df4-5885-4e79-91ba-523aa743f0ba</a>)
+ into your&nbsp; Hotmail.com or outlook.com email account, in that way it will sync your Yahoo emails into the outlook.com (webmail).
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> twarres  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Does syncing only work for future e-mails or will it work for historic ones too?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brikelites_8  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>Does syncing only work for future e-mails or will it work for historic ones too?<br />
+</blockquote>
+Well for initial sync it should download a copy of your current emails in your Yahoo webmail. (it works like a normal Mail application).
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grzegorz wiktorowski  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Use any e-mail client like Thunderbird or eM. Access accounts using IMAP protocol.
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Remove&#47;Delete a Contact from O365 that was originally - Microsoft Community</title>
+<h3> randyokum  say:</h3>
+<h2>            Remove&#47;Delete a Contact from O365 that was originally DirSync&#39;d</h2>
+                    
+<p>Hybrid Config</p>
+<p>&nbsp;</p>
+<p>Had an On-Prem Contact that was DirSync'd.<br />
+Contact was then hired and is now a "User" w/ AD Account and On-Prem Mailbox.<br />
+Mailbox has not yet been migrated to O365.</p>
+<p>However, the "Contact" is still listed under the Contact Tab/section on Exchange/Office Online Portal.<br />
+When this person receives and email from the internet; it goes into a loop - O365 to Hybrid - O365 - Hybrid eventually timing out.</p>
+<p>I'm not sure what happened to the original Contact in AD - but there isn't one now, just a user account.</p>
+<p>I'm wondering if there is a way to remove/delete the O365 Contact?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> vasil l. michev  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Connect to WAAD via PowerShell and use the Remove-MsolContact to delete it. Here's the help article in case you don't know how to connect:
+<a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx?f=255&amp;MSPPError=-2147217396#BKMK_connect" target="_blank" rel="noreferrer nofollow">
+msdn.microsoft.com/.../jj151815.aspx</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=office_365_for_admins">office_365_for_admins, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t unhide sheets in Excel 2013 - Microsoft Community</title>
+<h3> hminney  say:</h3>
+<h2>            Can&#39;t unhide sheets in Excel 2013</h2>
+                    <p>I've managed to hide worksheets easily enough in MS Excel 2013.&nbsp; However, when I try to unhide them, the pop-up to allow me to choose a sheet just isn't there.&nbsp; It has the focus because I can't do anything else in Excel, and I can see it for about 0.1second
+ when I click another MS Office programme and then click back to Excel, but I can't actually click on it and restore the sheet.</p>
+<p>I'm guessing the problem is that I have Excel on a second monitor.</p>
+<p>Please, this is a deal breaker for me.&nbsp; I can't do my work if I have to close down MS Excel every time something goes wrong - this time it's the Unhide Sheet command, the other time it was completely unfathomable where when I tried to Save As, the Background
+ screen was blank with no menu and I couldn't do anything except crash Excel using Task Manager and then restore my backup.</p>
+<p><br />
+</p>
+<p>Hugo</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aravinda balakrishna  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Hugo,</p>
+<p>&nbsp;</p>
+<p>I would like to know more information before we proceed with the troubleshooting:</p>
+<p>Does this issue occur with a particular Work book or all?</p>
+<p>Are you able to work with the file and unhide the cells when the file is on the 1st monitor?</p>
+<p>&nbsp;</p>
+<p>Let us start with opening Excel in its application safe mode. Follow these steps to do so:</p>
+<p>Hit <font>
+</span>(Note that there is a space between <span style="font-weight: bold">excel</span> and
+<p>If the application works fine safe mode, try disabling the add-ins for the application and check the result:</p>
+<ul>
+<li><span>Click the
+</span><span style="font-weight: bold">File</span><span> tab.</span>
+</li><li><span>Go to
+</span><span style="font-weight: bold">Options.</span>
+</li><li><span>click
+</span><span style="font-weight: bold">Add-ins.</span>
+</li><li><span>Select or clear the options that you want.</span>&nbsp;</li></ul>
+<p>You may also follow the suggestions for Excel in the following link and check if it helps:</p>
+<p><a href="http://office.microsoft.com/en-us/support/why-cant-i-start-my-office-2013-application-HA104011864.aspx" target="_blank" rel="noreferrer nofollow"><font>http://office.microsoft.com/en-us/support/why-cant-i-start-my-office-2013-application-HA104011864.aspx</font></a></p>
+<p>&nbsp;</p>
+<p>If that does not help, you may also repair Office 2013 application and check if it helps. To repair Office 2013 follow the steps from the article below:</p>
+<p><a href="http://support.microsoft.com/kb/2822317" target="_blank" rel="noreferrer nofollow"><font>http://support.microsoft.com/kb/2822317</font></a></p>
+<p>&nbsp;</p>
+<p>Let us know the details and hope these links are helpful to you.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=windows_8">windows_8, </a> <br>
+<a href="/search?q=office_2013">office_2013, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to Sync OneNote - Microsoft Community</title>
+<h3> mikec777  say:</h3>
+<h2>            Unable to Sync OneNote</h2>
+                    <p>I am unable to sync OneNote. I get this error message: "We're sorry, something went wrong during sync. You might not have permissions. (Error code: 0xE0190193)"</p>
+<p>
+</p><p>I went through all the steps here:&nbsp;https://support.office.com/en-us/article/Fix-issues-when-you-can-t-sync-OneNote-299495ef-66d1-448f-90c1-b785a6968d45?ver=15&amp;app=onenote.exe&amp;CorrelationId=8f93eb21-a341-4952-a3c8-d7dae1b770e7&amp;ui=en-US&amp;rs=en-US&amp;ad=US.&nbsp;</p>
+<p>
+</p><p>Nothing helped.&nbsp;</p>
+<p>
+</p><p>What should I try next?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raju S Das" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> raju s das  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hello Mike,</span></span></p>
+<p>
+</p><p><span><span>Welcome to Microsoft Community and thank you for posting your query.</span></span></p>
+<p>
+</p><p><span><span>Let me assist you with OneNote issue.</span></span></p>
+<p>
+</p><p><span><span>You may refer to the following link which discusses about the similar issue and check if it helps.</span></span></p>
+<p><span><a href="http://answers.microsoft.com/en-us/office/forum/officeonline-onenote_online/resolve-the-0xe0190193-403-forbidden-error-in/6a9115af-6fc8-44f1-ab0f-23bb961a1d83"><span style="color: rgba(0, 0, 255, 1)">http://answers.microsoft.com/en-us/office/forum/officeonline-onenote_online/resolve-the-0xe0190193-403-forbidden-error-in/6a9115af-6fc8-44f1-ab0f-23bb961a1d83</span></a></span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">I hope the above information helps. Let us know if you need further assistance.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thank you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mikec777  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The person on that link said to "save the file to Onenote locally" but there is no "file...save" or any way to save it locally that I can see. Can anyone help with this?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bernd P." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "BP"); this.style="display: inline-block";'
+<h3> bernd p.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>"save" locally was correct for Onenote 2010, there was a <strong>File, Save</strong> ... &nbsp;feature.</p>
+<p>
+</p><p>Now it's the <strong>File, Export, Notebook, Package Format </strong>feature.</p>
+<p>
+</p><p>Bernd</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mikec777  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            OK I've now exported it to my desktop. Any idea how I delete all the online version of it so that I can sync the current notebook online?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bernd P." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "BP"); this.style="display: inline-block";'
+<h3> bernd p.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Go to <strong>onedrive.live.com</strong>. Login if necessary. Navigate to the notebook. Right click: delete.</p>
+<p>
+</p><p>Bernd</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Sharing an address book - Microsoft Community</title>
+<h3> kpswd  say:</h3>
+<h2>            Sharing an address book</h2>
+                    <p>Having been using Outlook 2016 on MacOS for a couple of years, I am now using Outlook 2016 on Windows 10. &nbsp;I have the same hosted Outlook Exchange 2013 mailbox set up, and connected to our shared address book which is in another users mailbox/Contacts folder.</p>
+<p>
+</p><p>But it seems I cannot use this address book in any sensible way, as I could on the Mac. &nbsp;It cannot be set as an 'Outlook address book', it is not used to look up contacts, autocomplete email addresses etc. Hardly any point having it really. &nbsp;So the Mac Outlook
+ is better than the windows version in this respect.</p>
+<p>
+</p><p>Pending MS adding this functionality to the Windows app, does anyone have any good workaround for sharing an address book amongst a small company with a mix of &nbsp;Mac &amp; PC (all currently using Outlook)?</p>
+<p><br />
+</p>
+<p>
+</p><p>Thanks</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    12 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I need help accessing my account. - Microsoft Community</title>
+<h3> amymacintyre  say:</h3>
+<h2>            I need help accessing my account.</h2>
+                    <blockquote>Split from <a href="http://answers.microsoft.com/en-us/outlook_com/forum/oaccount-omyinfo/i-cant-access-my-livecouk-account-in-outlook/0602d5d3-3b22-444b-a0aa-b2badbde4e7c#LastReply" title="Split from this thread">
+this thread.</a></blockquote>
+<p>
+</p><p>Hello, immtrying to access my live.co.uk account. I'm following the steps you have provided above but every time I get to step 3 it says that my live.co.uk account is not recognised, I really need to get into my account, please help!&nbsp;</p>
+<p>Thanks</p>
+<p>Amy.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JMH3143" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmh3143  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            <p>Hi Amy &amp; welcome,</p>
+<p><span>As&nbsp; your issue will require personal information to be exchanged between you and the Outlook.com Support Team please click&nbsp;
+<a href="http://windows.microsoft.com/en-US/windows-live/id-support" target="_blank" rel="noreferrer nofollow">
+<strong>here</strong></a>&nbsp; to access help.</span></p>
+<p>Select the error you need help with and fill out the requested details on the next page.&nbsp;
+</p>
+You need to be signed in with a Microsoft account to access the form.
+<div><span>If you are unable to access your primary account, you can use an alternate account (if you have one) or create a new one.<br />
+</span></div>
+<p>
+</p><p><span>You can read further information about codes &amp; blocked accounts<span>&nbsp;</span></span><strong><a href="http://windows.microsoft.com/en-us/windows/outlook/account-temporarily-blocked" target="_blank" rel="noreferrer nofollow">here</a></strong></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I get Office 365 installed on another device to recognise - Microsoft Community</title>
+<h3> michelle &#40;live.com&#35;quiggan.family&#41;  say:</h3>
+<h2>            How do I get Office 365 installed on another device to recognise Office 365 online subscription&#63;  Is this a firewall problem&#63;</h2>
+                    I have installed Office 365 using 'share' allowance to my daughter's laptop.&nbsp; I installed this directly by logging into microsoft account via her laptop etc, but although it appears to install correctly it says 'unlicensed product' when opening an application
+ and signing in then creates error message 0x80070057.&nbsp; Have uninstalled and then reinstalled to no avail!&nbsp; HELP PLEASE!!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> roma26  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello, it is a pleasure for me to assist you with your request.
+<br />
+<br />I would recommend you to uninstall using the next link:
+<br />
+<br /><a href="https://support.office.com/en-us/article/uninstall-office-from-a-pc-9dd49b83-264a-477a-8fcc-2fdf5dbf61d8" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/uninst...</a>
+<br />
+<br />then use this procedure to install
+<br />
+<br /><a href="https://support.office.com/en-us/article/share-your-office-365-home-subscription-with-up-to-four-people-b389b9ce-3ae3-4a82-9017-39d79972fcba" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/share-...</a>       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Reynaldo Ugarte" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "RU"); this.style="display: inline-block";'
+<h3> reynaldo ugarte  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello. I'm Rey, a Community Expert willing to help the users 
+<br />
+<br />Please Try the following: 
+<br />
+<br />
+<br />Check the Activation Troubleshooter: 
+<br />
+<br /><a href="https://support.office.com/en-us/article/Unlicensed-Product-and-activation-errors-in-Office-0d23d3c0-c19c-4b2f-9845-5344fedc4380" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Unlice...</a>
+<br />
+<br />
+<br />If the above does not works try the following steps:
+<br />
+<br />Resetting Office activation 
+<br />
+<br />Open Command Prompt and navigate to the following folder 
+<br />
+<br />C:\Program Files (x86)\Microsoft Office\Office15 
+<br />C:\Program Files\Microsoft Office\Office15 
+<br />
+<br />Run cscript ospp.vbs /dstatus 
+<br />
+<br />Observe the results and uninstall each product key 
+<br />
+<br />cscript ospp.vbs /unpkey:&lt;last 5 chars of product key shown in dstatus&gt; 
+<br />
+<br />After the above actions please do the following:
+<br />
+<br />Uninstall:
+<br />
+<br /><a href="https://support.office.com/en-us/article/Uninstall-Office-from-a-PC-9dd49b83-264a-477a-8fcc-2fdf5dbf61d8?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Uninst...</a>
+<br />
+<br />Install:
+<br />
+<br /><a href="https://support.office.com/en-us/article/Download-and-install-or-reinstall-Office-365-or-Office-2016-on-a-PC-or-Mac-4414eaaf-0478-48be-9c42-23adc4716658" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Downlo...</a> 
+<br />
+<br />
+<br />Activate:
+<br />
+<br /><a href="https://support.office.com/en-us/article/Activate-Office-365-Office-2016-or-Office-2013-5bd38f38-db92-448b-a982-ad170b1e187e?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Activa...</a> 
+<br />
+<br />
+<br />Regards       
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Why is the &#39;Cell Link&#39; incorrect when I copy a checkbox in - Microsoft Community</title>
+<h3> allanc446  say:</h3>
+<h2>            Why is the &#39;Cell Link&#39; incorrect when I copy a checkbox in Excel 2010&#63;</h2>
+                    Here is my scenario:<br />
+I have a checkbox in cell A1 and the cell link is A10.<br />
+When I copy and paste cell A1 to A2, the cell link for the pasted checkbox in A2 is still D1.<br />
+It should actually be D2.<br />
+All assistance is appreciate as I will have hundreds of checkboxes in this worksheet.<br />
+<br />
+Thank you.<br />
+Allan C.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Here is my scenario:<br />
+I have a checkbox in cell A1 and the cell link is A10.<br />
+When I copy and paste cell A1 to A2, the cell link for the pasted checkbox in A2 is still D1.<br />
+It should actually be D2.<br />
+All assistance is appreciate as I will have hundreds of checkboxes in this worksheet.<br />
+<br />
+Thank you.<br />
+Allan C.<br />
+</blockquote>
+<p><br />
+I don't use 2010 but in eatlier versions you cannot simply copy a checkbox control and have the cell link change to the new location.&nbsp; You must copy then manually change the link or build an array of CB's with code.</p>
+<p>&nbsp;</p>
+<p>Sample code from Dave Peterson.</p>
+<p>&nbsp;</p>
+<p>Sub CellCheckbox()<br />
+&nbsp;&nbsp;&nbsp; Dim myCell As Range<br />
+&nbsp;&nbsp;&nbsp; Dim myRng As Range<br />
+&nbsp;&nbsp;&nbsp; Dim CBX As CheckBox</p>
+<p><br />
+&nbsp;&nbsp;&nbsp; With ActiveSheet<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .CheckBoxes.Delete 'nice for testing!<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set myRng = .Range("A1:A10")&nbsp; 'change to the range you want<br />
+&nbsp;&nbsp;&nbsp; End With</p>
+<p><br />
+&nbsp;&nbsp;&nbsp; For Each myCell In myRng.Cells<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With myCell<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set CBX = .Parent.CheckBoxes.Add _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Top:=.Top, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Left:=.Left, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Width:=.Width, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Height:=.Height)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBX.Name = "Allan_" &amp; .Address(0, 0)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBX.Caption = "" 'or what you want<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBX.Value = xlOff</p>
+<p><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'I like to use the same cell as the linked cell<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'with a number format of ;;;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'I can't see the true/false in the worksheet, but it<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'still appears in the formula bar<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CBX.LinkedCell = .Address(external:=True)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .NumberFormat = ";;;"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; Next myCell<br />
+End Sub<br />
+</p>
+<p>Gord</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Picture password on Dell Venue Pro 8 - Microsoft Community</title>
+<h3> counterfitninja  say:</h3>
+<h2>            Picture password on Dell Venue Pro 8</h2>
+                    <p>Just added a picture password to the Dell and I get a split screen with my Microsoft account image at the bottom half and the Password picture about an inch square at the top. If I click the screen it pulls down the lock screen.
+</p>
+<p>
+</p><p>I have no way to switch users so cannot get in to disable it. </p>
+<p>
+</p><p>Thoughts?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Welcome to Microsoft Community. We appreciate your interest in Windows 10 Technical Preview.</span></p>
+<p>
+</p><p><span>Let us boot the computer in <strong>safe mode </strong>and try to login to the account and check.</span></p>
+<p>
+</p><p><span>Refer to the article given below and follow the steps under the heading '<strong><span>To get to Windows Startup Settings in the Windows Recovery Environment</span></strong>'.</span></p>
+<p>
+</p><p><strong><span>Windows Startup Settings (including safe mode)</span></strong><span><a href="http://windows.microsoft.com/en-us/windows-8/windows-startup-settings-safe-mode" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 170, 1)"><br />
+</span></a></span></p>
+<p><span><a href="http://windows.microsoft.com/en-us/windows-8/windows-startup-settings-safe-mode" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://windows.microsoft.com/en-us/windows-8/windows-startup-settings-safe-mode</span></a>
+</span></p>
+<p>
+</p><p><span>Do you have a disc or your have done the clean installation with bootable flash drive?</span></p>
+<p>
+</p><p><span>You can download the ISO from the below mentioned link and create an installation media.</span></p>
+<p>
+</p><p><strong><span>Download Windows 10 Technical Preview ISO </span></strong></p>
+<p><span><a href="http://windows.microsoft.com/en-us/windows/preview-iso" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">http://windows.microsoft.com/en-us/windows/preview-iso</span></a>
+</span></p>
+<p>
+</p><p><span>Once the ISO is downloaded , use the steps in the article below to create an installation media.</span></p>
+<p>
+</p><p><strong><span>Create installation media for Windows 8.1</span></strong></p>
+<p><span><a href="http://windows.microsoft.com/en-IN/windows-8/create-reset-refresh-media" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">http://windows.microsoft.com/en-IN/windows-8/create-reset-refresh-media</span></a>
+</span></p>
+<p>
+</p><p><strong><span>Note</span></strong><span>: The troubleshooting steps in the above link are for Windows 8/8.1 , however they hold good for Windows 10 Tech Preview as well</span></p>
+<p>
+</p><p><span>I suggest you to perform Automatic Repair using the Windows&nbsp;10&nbsp;Technical Preview&nbsp;Installation Media and check if it helps.</span></p>
+<p>
+</p><p><span>Follow the steps to perform Automatic Repair using Installation Media:</span></p>
+<p><span>a. Boot the computer using the Windows Installation Media such as DVD or USB.</span></p>
+<p><span>b. On the ‘<strong><span>Windows Setup</span></strong>’ wizard click on ‘<strong><span>Next</span></strong>’ and click on ‘<strong><span>Repair your computer</span></strong>’.</span></p>
+<p><span>c. You will then see a blue screen and an option to choose.</span></p>
+<p><span>d. Click on ‘<strong><span>Troubleshoot</span></strong>’ then click on ‘<strong><span>Advanced Option</span></strong>’ and then click on ‘<strong><span>Automatic Repair</span></strong>’ and follow the prompts.</span></p>
+<p>
+</p><p><span>Hope this helps you in fixing the issue. Please keep us posted.</span></p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> harrymore87  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The same to you, forgot Windows picture password on Dell Venue Pro 8. Finally get the solution from Windows Password Recovery Tool website. Know it from windowspasswordsrecovery dot com
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> counterfitninja  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            he answer is to turn the device into landscape.you then see sign options switch to password and back to picture fixes the size, but only in landcapae
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason brady  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            this works for me!
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for updating the status and sharing the fix. This would help other community members facing similar issue.</p>
+<p>
+</p><p>Feel free to get back to us if you face any issues in future.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=security,_privacy,_and_accounts">security,_privacy,_and_accounts, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to add a gmail mailbox to outlook 2016 - Microsoft Community</title>
+<h3> kevinigoe1  say:</h3>
+<h2>            how to add a gmail mailbox to outlook 2016</h2>
+                    Just moved to my new 2017 surface pro from my overflowing surface pro 2,&nbsp; Had two gmail accouts linked to Outlook on the old machine, but for the life of me I've been unable to duplicate this feat;&nbsp; Arrgghh!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Kevin, please click the link below for a step by step on linking Outlook to your Gmail Accounts
+<br />
+<br /><a href="http://pop2imap.com/gmail_outlook_2016.php" target="_blank" rel="noreferrer nofollow">http://pop2imap.com/gmail_outlook_2016.php</a>
+<br />
+<br />Please let  us know how it goes . . .       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Carlos Pacheco Bruguera" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CP"); this.style="display: inline-block";'
+<h3> carlos pacheco bruguera  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello!
+<br />
+<br />You need add your account ad IMAP account, can go to the next link
+<br />
+<br /><a href="https://support.office.com/en-us/article/Import-Gmail-to-Outlook-20fdb8f2-fed8-4b14-baf0-bf04b9c44bf7?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Import...</a>
+<br />
+<br />Step to step for Add your Gmail account to Outlook       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I think the steps given in below link would help you -
+<br />
+<br /><a href="https://answers.microsoft.com/en-us/office/forum/officeversion_other-outlook/how-to-manage-2-separate-email-accounts-separately/35f844e3-a5d3-4d3f-9b32-f1aad56bb674">https://answers.microsoft.com/en-us/office/foru...</a>       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Custom Data Validation - Microsoft Community</title>
+<h3> mnicolazzo  say:</h3>
+<h2>            Custom Data Validation</h2>
+                    I need to either have a list of parts or allow a price to be entered in a cell according to a cell content. Can I do this?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="SmittyPro1" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "SM"); this.style="display: inline-block";'
+<h3> smittypro1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can do this with a VBA Change event, but you'll need to post some specifics.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="teylyn" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> teylyn  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>it's not quite clear what you want to achieve.&nbsp;</p>
+<p>
+</p><p>Data validation is used to ensure that only certain things can be entered into a cell. In the screenshot cell D3 has data validation that allows only the options in the dropdown to be entered in the cell. Is that what you are after?</p>
+<p>
+</p><p>Cell E3 has a lookup formula that automatically looks up the price of the item entered in&nbsp;D3. The formula for that is&nbsp;</p>
+<p>
+</p><p>=VLOOKUP(D3,$A$2:$B$4,2,FALSE)</p>
+<p>
+</p><p>When a different article is selected in D3, the looked up price will change accordingly.</p>
+<p>
+</p><p>Is that what you need? If not, can you please describe your scenario in a bit more detail?</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/95e0e90c-5ed8-496c-a59c-86e928e45a13" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/95e0e90c-5ed8-496c-a59c-86e928e45a13" /></a></p>
+<p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 2000 installation on Windows 10 - Microsoft Community</title>
+<h3> wilfredhenseler  say:</h3>
+<h2>            Office 2000 installation on Windows 10</h2>
+                    <p>When trying to use Word I get a message that due to a problem it has stopped working, I uninstalled office 2000.</p>
+<p>When I try to reinstall Office 2000, the following message comes up&nbsp; </p>
+<div>Error 1904.Module C:\Program Files\Common Files\System\OLE DB\MSOLAP.DLL failed to register. HRESULT-2147024714. Contact your support personnel.</div>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Mike Hall... always" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "MH"); this.style="display: inline-block";'
+<h3> mike hall... always  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Office 2000 is years old and was written for use on computers and operating systems that are long gone.</p>
+<p>
+</p><p>Use one of the open source, FREE and up to date office suites. My preference is for<a href="https://www.libreoffice.org/" target="_blank" rel="noreferrer nofollow"> Libre Office</a>..
+</p>
+<p>
+</p><p>After installation, open up WRITER, and go to Tools &gt; Options &gt; Load/Save &gt; General and alter the default load/save to Office 2007-2013 XML.. &nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>While I don't recommend such an older version of Microsoft Office, version 2000 does work on Windows 10.&nbsp;</p>
+<p>
+</p><ul>
+<li><a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-win_upgrade/a-look-at-running-older-versions-of-microsoft/6faf72ea-254a-4c8e-9982-2c36cdb1936c" title="Bill Gates once said you could purchase a license for a version of any software from Microsoft and never have to purchase another version. It is the responsibility of the company to make newer releases more enticing by adding further value through improved features and functionality. Microsoft Office has been one of the company's biggest successes. For more than 20 years, the company has released new revisions with unique features that make it an enticing upgrade. At the same time, there are users who fall in love with a revision and never decide to upgrade again, simply because that version is good enough. Since Microsoft announced the launch of Windows 10, a lot of persons are asking, if the license for the version of Microsoft Office they own will work on the new version of Windows. In this article, we'll find out."><span>A
+ look at running older versions of Microsoft Office on Windows 10</span></a></li></ul>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wilfredhenseler  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I ended up re-installing Windows 10 and reinstalled Office 2000,&nbsp;still got the same error message. I clicked on Ignore,</p>
+<p>and everything works the way it should.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

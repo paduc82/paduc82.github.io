@@ -1,0 +1,2138 @@
+    <title>SQL queries to calculate price steps and quantities above a required - Microsoft Community</title>
+<h3> karen-fen  say:</h3>
+<h2>            SQL queries to calculate price steps and quantities above a required quantity for a selected year, product and country in order to create a linear interpolated price</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I have a database in which there are 13 different products sold in 6 different countries.</p>
+<p>
+</p><p>Prices increase once a year.</p>
+<p>
+</p><p>Prices need to be calculated using a linear interpolation method. &nbsp;I have 21 different price and quantity increments for each product for each country for each year.</p>
+<p>
+</p><p>The user needs to be able to calculate much an order would cost for any given number of products for an account holder in a specific country for their required date (as you would expect). &nbsp;I've chosen to target the year value as the prices change on 1 January
+ each year - although they are input in October, as some of the products have regular subscribers and invitations to continue their subscription need to be generated and sent out in the October. &nbsp;&nbsp;</p>
+<p>
+</p><p><strong><span style="text-decoration-line: underline">What the database needs to do (in English!) is to:</span></strong></p>
+<p>
+</p><p><strong>If there is a matching quantity in&nbsp;the&nbsp;TblPrices,</strong></p>
+<p>use the price for the current product, country and year</p>
+<p>
+</p><p><strong>if there isn't a matching quantity but the quantity required is greater than 1000 for one product (GT) and greater than 100 for every other products:</strong></p>
+<p>find the highest quantity for the product, country and year (so, 1000 or 100, depending on the product), and calculate a pro-rated price. &nbsp;eg. &nbsp;If someone wanted 1500 of product GT for the UK for 2015, we'd look at the price for 1000 GT in the UK for 2015
+ and multiply it by 1.5. &nbsp;If 1800 were required, we'd multiply it by 1.8. &nbsp;<em>I haven't been able to get this working yet as I'm looking at it alongside the formula below...</em></p>
+<p>
+</p><p><strong>if there isn't a matching quantity and the quantity required is less than 1000 for the product GT but 100 for the other products...</strong></p>
+<p>Find the quantity and price for the increment directly below the quantity required by the user for the required product, country and year (let's call these quantitybelow and pricebelow)</p>
+<p>
+</p><p>Find the quantity and price for the increment directly above the quantity required by the user for the required product, country and year (let's call these quantityabove and priceabove)</p>
+<p>
+</p><p>Calculate the price for the required number of products for an account holder in a particular country for a given year using this formula.</p>
+<p>
+</p><p><strong>ActualPrice: </strong>PriceBelow + ((PriceAbove - PriceBelow) * (The quantity required in the order detail - QuantityBelow) / (QuantityAbove - QuantityBelow))</p>
+<p>
+</p><p>I have spent hours on this and have sought advice about this before but I am still getting very stuck.</p>
+<p>
+</p><p>The tables I've been working with to try and make this work are as follows:</p>
+<p>
+</p><p><strong>TblAccount </strong>(primary key is AccountID, it also has a Country field which joins to the TblCountry.Code (primary key)</p>
+<p>
+</p><p><strong>TblOrders </strong>(primary key is Order ID) which joins to TblAccount via the AccountID field; TblOrderDetail via the OrderID. &nbsp;This table also holds the OrderDate and Recipient ID which links to a person in TblContact - I don't need that here but
+ will need it later to generate an invoice&nbsp;</p>
+<p>
+</p><p><strong>TblOrderDetail </strong>(primary key is DetailID) which joins to TblOrders via OrderID field; TblProducts via ProductID field, and holds the Quantity required as well as the product</p>
+<p>
+</p><p><strong>TblProducts</strong> (primary key is ProductCode) which as well as joining to TblOrderDetail, also joins to TblPrice via the Product field</p>
+<p>
+</p><p><strong>TblPrices</strong> links to the TblProducts (as you have just read). &nbsp;I've also created an Alias for the TblCountry (CountryAliasForProductCode) so I can link it to the TblPrices to show the country link. I'm not sure if I needed to do this - it
+ doesn't work if I do or I don't do it, so I seek guidance again here.</p>
+<p>
+</p><p>
+</p><p><strong>This is the code I've been trying to use (and failing) to get my price and quantity steps above and I hope to replicate it, making a couple of tweaks to get the steps below:</strong><br />
+</p>
+<p>SELECT MIN(TblPrices.stepquantity) AS QuantityAbove, MIN(TblPrices.StepPrice) AS PriceAbove, TblOrders.OrderID, TblOrders.OldOrderID, TblOrders.AccountID, TblOrders.OrderDate, TblOrders.RecipientID, TblOrders.OrderStatus, TblOrderDetail.DetailID, TblOrderDetail.Product,
+ TblOrderDetail.Quantity<br />
+</p>
+<p>FROM (TblCountry INNER JOIN ((TblAccount INNER JOIN TblOrders ON TblAccount.AccountID = TblOrders.AccountID) INNER JOIN (TblOrderDetail INNER JOIN TblProducts ON TblOrderDetail.Product = TblProducts.ProductCode) ON TblOrders.OrderID = TblOrderDetail.OrderID)
+ ON TblCountry.Code = TblAccount.Country) INNER JOIN (TblCountry AS CountryAliasForProduct INNER JOIN TblPrices ON CountryAliasForProduct.Code = TblPrices.CountryCode) ON TblProducts.ProductCode = TblPrices.Product<br />
+<br />
+WHERE (StepQuantity &gt;= TblOrderDetails.Quantity)<br />
+AND (TblPrices.CountryCode = TblAccount.Country)<br />
+AND (TblOrderDetail.Product = TblPrices.Product)<br />
+AND (DATEPART('yyyy', TblPrices.DateEffective) = DATEPART('yyyy', TblOrders.OrderDate));</p>
+<p>
+</p><p>I'm really not very good at SQL. &nbsp;I've read and worked though several self-study books and I have asked part of this question before; but I really am struggling with it. &nbsp;If anyone has any ideas on how to proceed, or even where I've gone wrong with my code,
+ I'd be delighted!</p>
+<p>
+</p><p>Thank you very much for your help. &nbsp;I really appreciate it.</p>
+<p>
+</p><p>Many thanks</p>
+<p>Karen</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> karen-fen  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Further to my question, I've been playing with this all day now and I don't feel that I am any further on.</p>
+<p>
+</p><p>I'm now going back to basics and trying again to generate the steps below in 1 query, then try the steps above in another and finally, create the final calculation in another query.</p>
+<p>
+</p><p>This is what I have been trying to get my prices and quantities below:</p>
+<p>
+</p><p>SELECT Max(StepQuantity) AS quantity_below, Max(StepPrice) AS price_below, TblOrderDetails.Quantity, TblAccounts.Country<br />
+FROM&nbsp;<br />
+(TblProducts INNER JOIN TblPrices ON TblProducts.ProductCode = TblPrices.Product)<br />
+(TblOrderDetail INNER JOIN TblProducts ON TblOrderDetail.Product = TblProducts.ProductCode)<br />
+(TblOrders INNER JOIN TblOrderDetail ON TblOrders.OrderID = TblOrderDetail.OrderID)<br />
+(TblAccount INNER JOIN TblOrders ON TblAccount.AccountID = TblOrders.AccountID),<br />
+WHERE (((TblPrices.StepQuantity)&lt;=(TblOrderDetail.Quantity)) AND ((TblPrices.CountryCode)=([TblAccounts].[country])) AND ((TblPrices.Product)=([TblOrderDetail].[product])) AND ((DatePart('yyyy',[TblPrices].[DateApplicable]))=(DatePart('yyyy',[TblOrders].[OrderDate]))));</p>
+<p>
+</p><p>You may be able to see glaring errors in this but I'm afraid I can't. &nbsp;I've tried re-jigging it and I'm getting nowhere.</p>
+<p>
+</p><p>I need to be able to tie the information in to the OrderDetail records as the price generated will need to be added to a financial transactions table as a debit amount and will show as an amount owing on statements.</p>
+<p>
+</p><p>Thank you very much for taking the time to read this. &nbsp;I really appreciate it. &nbsp;If you could offer any help or words of encouragement, I'd be very grateful.</p>
+<p>
+</p><p>Kind regards</p>
+<p>Karen</p>
+<p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Gmail sync - Microsoft Community</title>
+<h3> david wright_786  say:</h3>
+<h2>            Gmail sync</h2>
+                    <p>I would happily ditch MS but Outlook manages folders much better than gmail does. In gmail you can add labels but ALL emails stay displayed in the inbox whereas in Outlook read emails can be dragged out of the inbox into whatever email folder one wants leaving
+ one with a thin inbox with no 'noise' in it, good.</p>
+<p>
+</p><p>However, Outlook is slow to open on Android in comparison with gmail. Additionally, if I send say a test email from my gmail account to my gmail address, it appears instantly in gmail but takes ages (c.30 mins) to land in Outlook and various threads suggest
+ there is no solution for this. This leaves me relying on my Android phone and tablet for accurate gmail status and seeing poor gmail synchronisation when I head to my Windows laptop when I want to do some proper work on a decent sized screen in Outlook. Is
+ there a proper folder solution for gmail, instant synchronisation for Outlook or an alternative app that will clear these issues?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I create folders in Gmail all the time.</p>
+<ul>
+<li>Click the box next the item.</li><li>Select Move (little folder icon) and in that drop down menu you'll find Create New. That's how you can create folders, and move items to the folders.</li></ul>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>BBC iPlayer not working with IE11 on Windows 8.1 tablet - Microsoft Community</title>
+<h3> gln&#40;2&#41;  say:</h3>
+<h2>            BBC iPlayer not working with IE11 on Windows 8.1 tablet</h2>
+                    Although the BBC iPlayer web page opens in IE11 on my Windows 8.1 tablet, it will not play any programs/videos. l am able to play BBC iPlayer programs using the Chrome browser on the same machine. How can I get iPlayer to work with IE11 on a Windows 8.1
+ tablet?&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> gln&#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you. It turns out that I had 'activeX filtering' checked, under 'tools' in the desktop view. I cleared this and it now works fine. Not exactly sure why!
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 2016 upgrade showing to all users, requiring administrator - Microsoft Community</title>
+<h3> mikebaker7910  say:</h3>
+<h2>            Office 2016 upgrade showing to all users, requiring administrator password</h2>
+                    
+<p>Hi,</p>
+<p>We have Office 365 E3 subscription, with Office 2013 apps deployed. Users started getting the yellow banner asking them to upgrade to 2016 apps today, but most do not have administrator rights, which it is requiring. This is swamping our help desk.</p>
+<p>Office 365 was installed as a click-to-run, and we understood that it would update when the user runs Office, without requiring an administrator account. This doesn't seem to be correct.</p>
+<p>The FAQ says <strong>"Not every user will see an upgrade notification. For example, only users that are local administrators on their computer see the upgrade notification."
+</strong>This is clearly not true!</p>
+<p>Can anyone help? Can Office 365 be installed so that a user without administrator rights can upgrade? Why are *all* our users getting the upgrade message?</p>
+<p>Thanks, Mike.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sheenali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Mike,<br />
+<br />
+I will first address your concern regarding “Office 365 was installed as a click-to-run, and we understood that it would update when the user runs Office, without requiring an administrator account. This doesn't seem to be correct.”<br />
+<br />
+You are correct in that Office 365 does not need an administrator account to update Office. But for upgrading and installing, it still needs administrator priviliges.<br />
+<br />
+Regarding your questions, I will answer both of them separately.<br />
+<br />
+Q: Can Office 365 be installed so that a user without administrator rights can upgrade?<br />
+<br />
+A: No, there is no settings or configuration that lets Office 365 upgrade without using admin rights. If you wish to upgrade Office without giving users admin privilige, you can use a Group Policy computer startup script or a software distribution product,
+ such as System Center Configuration Manager or Microsoft Intune.<br />
+<br />
+For question number 2, I am currently in the process of creating a test environment based on your description and I will come back to you when I have an update on the issue.<br />
+<br />
+Regards,<br />
+Sheen</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ian linderoth  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>We're having the same issue in our environment. Office 365 FAQ clearly states users will only see this notification to upgrade to 2016 if they are receiving updates via CDN and ARE local administrators on their machine. Our users are not local administrators
+ and are seeing the notification. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sheenali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Mike and Ian,<br />
+<br />
+We would like to clarify some things to further investigate the issue:<br />
+1.&nbsp;&nbsp; &nbsp;The OS you are using which shows the upgrade banner.<br />
+2.&nbsp;&nbsp; &nbsp;A screenshot of the in-app upgrade banner.<br />
+<br />
+Additionally, we would also like to collect your tenant information to further investigate the issue.<br />
+<br />
+To protect your privacy, I have sent both of you a private message to collect the tenant info. You can access your PM
+here.<br />
+<br />
+Regards,<br />
+Sheen</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mikebaker7910  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks. I am getting the info together you asked for.</p>
+<p>I have successfully tested deploying the 2016 upgrade via InTune, so will likely use that to deploy to our users.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sheenali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Mike,</p>
+<p>Thanks for the update. We have received your PM regarding your tenant info. Do you also mind giving the info on the specific OS your users are using? Windows 7, 8, 8.1, or Windows 10? If it's a mix of all of them, please also let us know. We would like to
+ narrow down the OS if possible.</p>
+<p>Regards,</p>
+<p>Sheen</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> richardhenson- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>We had the same issue with users getting the notification (on 9th May 2016 I think). None of our users are administrators, and they're all on office 2013 on windows 7 pro. I updated our group policy to disable the notification but it caused us grief that
+ day.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sheenali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Ricky,<br />
+<br />
+Thank you for taking the time to explain the situation.<br />
+<br />
+If it's possible, we would like to collect your tenant info too for further investigation. I have sent you a private message to collect the info. You can access it
+here.<br />
+<br />
+Thanks,<br />
+Sheen<br />
+<br />
+Hi Mike and Ian,<br />
+<br />
+We're hoping that you would provide the information on the OS you're using to narrow down the issue. Please keep us updated when you have the time.<br />
+<br />
+Regards,<br />
+Sheen</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sheenali_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Ricky,</p>
+<p>I would like to follow up on the issue. Please reply to the private message I sent to collect your tenant information.</p>
+<p>Regards,</p>
+<p>Sheen</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Set up Outlook calendar with Verizon cell phone - Microsoft Community</title>
+<h3> margeimfeld  say:</h3>
+<h2>            Set up Outlook calendar with Verizon cell phone</h2>
+                    Help.&nbsp; I use my Outlook 2007 calendar all the time.&nbsp; I just retired from a RE/MAX office which had set up from its server auto updating to our cell phones with email and calendar.&nbsp; I have been able (of course) to set up my email, but have struggled to
+ figure out how to get my calendar from my desktop to my phone automatically.&nbsp; Please help.&nbsp; I have verizon service on my phone (209-531-7574) and my email is
+*** Email address is removed for privacy ***.&nbsp; I do have an IM account of
+*** Email address is removed for privacy *** which I thought I could figure out your instruction, but has not worked.&nbsp; Greatly appreciate some help here.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> brian tillman &#91;outlook mvp 2007-2019&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ask your phone's vendor how to sync it with Outlook.&nbsp; It's not an Outlook function, it's a phone function or a function of the software that comes with the phone.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>N70 - How to change the sim card &#63; - Microsoft Community</title>
+<h3> n70user01  say:</h3>
+<h2>            N70 - How to change the sim card &#63;</h2>
+                    
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>If there is a topic dealing with this question, could you give me the URL, please ?</p>
+<p>&nbsp;</p>
+<p>Otherwise, could you help to do that ?</p>
+<p>&nbsp;</p>
+<p>I've already read the user guide but i cannot open it to access to sim card.</p>
+<p>&nbsp;</p>
+<p>Thanks for your help</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            you need to remove the back cover push downwards on it it can be very tight then when removed there is a silver sim retainer you unclip this back and the sim pops out
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>PERMANENT SUBSCRIPTIONS NOT SUBSCRIBED TO&#47;FOR - Microsoft Community</title>
+<h3> jk_jk_jk_jk  say:</h3>
+<h2>            PERMANENT SUBSCRIPTIONS NOT SUBSCRIBED TO&#47;FOR</h2>
+                    <p>Hello ~~</p>
+<p>
+</p><p>How can you unsubscribe to subscriptions that say unable to unsubscribe?</p>
+<p>
+</p><p>In Settings &gt; Subscriptions </p>
+<p>
+</p><p>&gt;Click Unsubscribe</p>
+<p>
+</p><p>&gt;Alert 1 : You will be taken to the following website where you will be able to unsubscribe from future emails sent by XYZabc.</p>
+<p>
+</p><p>&gt;Click OK</p>
+<p>
+</p><p>&gt;Alert 2 : "WE COULDN'T REMOVE YOUR SUBSCRIPTION. PLEASE TRY AGAIN LATER."</p>
+<p>
+</p><p>- - - - - - HOW IS THIS POSSIBLE ? ? ? ? ? ?</p>
+<p>
+</p><p>Can Microsoft kindly please update the Outlook E-Mail platform to allow users who give Microsoft jobs, to unsubscribe peacefully, ethically, &amp; correctly &gt;&gt;&gt;&gt;Without further adding to the subscriptions WE DIDN'T SUBSCRIBE TO NIGHTMARE......</p>
+<p>
+</p><p>
+</p><p><em>&lt;Non relevant, all caps, all bold content removed&gt;</em></p>
+<p>
+</p><p>Sincerely + THANK you Kindly,</p>
+<p>
+</p><p>-JK : your loyal outlook team member for decades, even when everyone else was quickly moving over gmail - please fix this issue for the community you pose to be apart of, work for &amp; help.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rocaw  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi JK,</p>
+<p>
+</p><p>I just want to isolate the issue, are you referring to an email subscription from a particular email sender or a domain, or you’re referring to a paid subscription that won’t let you unsubscribe? If you are referring to an email subscription sent by an email
+ sender or an email domain, as work around, you can delete them from your contact list and block them. This way, their emails will go straight to your Junk folder. To block senders and domains you can follow the instructions below:</p>
+<p>
+</p><ol>
+<li>Sign-in to <strong>Outlook.com</strong>.</li><li>Click on <strong>Setting</strong><strong>s</strong> (Gear Icon, on the top right)</li><li>Select <strong>View all Outlook settings</strong>. (Bottom right)</li><li>Choose <strong>Junk email</strong>.</li><li>Under <strong>Blocked senders and Domains</strong>, add the email address or any email domain that you want, so that their emails will go straight to your Junk folder.</li></ol>
+<p>
+</p><p>If it’s a no go, you can get in touch with our Outlook in-app support to help you with this concern. If you want to contact them, I have provided a screenshot below with numbered instructions, you can use it as reference.</p>
+<p>
+</p><p>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/68f32ad8-944c-45b9-bb8f-49db33905dbe?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/68f32ad8-944c-45b9-bb8f-49db33905dbe?upload=true" /></a></p>
+<p>
+</p><p><span>Let us know if you have other concerns.</span></p>
+<p>
+</p><p><span>Bob</span></p>
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Varnau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> don varnau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Read this <a href="https://www.slipstick.com/outlook/outlook-commanage-subscriptions/" target="_blank" rel="noreferrer nofollow">
+https://www.slipstick.com/outlook/outlook-commanage-subscriptions/</a>&nbsp;and stop trying to unsubscribe from lists or sites&nbsp;you aren't actually subscribed to. You're telling the spammers that they've found an active address and you will receive more spam.</p>
+<p>
+</p><p>Don</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lostintrama  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi JK JK JK JK</p>
+<p>Your post of 5-1-19</p>
+<p>The "Subscriptions" is New advance BETA Outlook.com feature.??</p>
+<p>Was Not there before few months ago.</p>
+<p>I have Posted about this.</p>
+<p>Nothing can be done. We are Stuck with It. More Stuff not needed. </p>
+<p>
+</p><p>
+</p><p>The info below "Blocked senders and Domains", does not Work and has not worked since Mid Jan 2019. I have posted about this. You Can Not Add or Subtract names etc.</p>
+<ol>
+<li>Sign-in to <strong>Outlook.com</strong>.</li><li>Click on <strong>Setting</strong><strong>s</strong> (Gear Icon, on the top right)</li><li>Select <strong>View all Outlook settings</strong>. (Bottom right)</li><li>Choose <strong>Junk email</strong>.</li><li>Under <strong>Blocked senders and Domains</strong>, add the email address or any email domain that you want, so that their emails will go straight to your Junk folder.</li></ol>
+<p>Happy May Day</p>
+<p>Lostintrama</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>A footer that directs me back to the previous page &#40;number&#41; on - Microsoft Community</title>
+<h3> shivam bawlia  say:</h3>
+<h2>            A footer that directs me back to the previous page &#40;number&#41; on clicking upon it.</h2>
+                    <p>Could any gracious senior within the community help me with a hyperlinked footer that jumps back to:</p>
+<p>page (number) 3, if clicked on at any of the pages from 10 to 20,</p>
+<p>page (number)&nbsp;4, if clicked on at any of the&nbsp;pages from 21 to 30,</p>
+<p>page (number)&nbsp;5, if clicked on at any of the&nbsp;pages from 31 to 40,</p>
+<p>page (number)&nbsp;6, if clicked on at any of the&nbsp;pages from 41 to 50,</p>
+<p>page (number)&nbsp;7, if clicked on at any of the&nbsp;pages from 51 to 60,</p>
+<p>page (number)&nbsp;8, if clicked on at any of the&nbsp;pages from 61 to 70,</p>
+<p>page (number)&nbsp;9, if clicked on at any of the&nbsp;pages from 71 to 80<br />
+page (number)&nbsp;10, if clicked on at any of the&nbsp;pages from 81 to 90 in my doc.</p>
+<p>Thanks in advance.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The way that first came to mind was to insert a cross reference. But that requires something to "refer to".&nbsp; A heading or a bookmark or something. The problem is that the concept of a "page" in word is very fluid.&nbsp; "Stuff" moves from one page to another
+ as you edit the document. That is the whole point of "word processing". You worry about content, the program takes care of putting it on logical and physical pages.&nbsp;
+</p>
+<p>
+</p><p>There is another simpler option. Just use the "GOTO" function, shortcut &lt;CTL&gt;&lt;G&gt;.&nbsp; When you invoke it, you see the GoTo dialog which includes the "go to what" category. One of those categories is "Page".&nbsp; You can just enter the page number you want to go
+ to and click on "go to" button. There you are. Then you use &lt;ESC&gt; to cancel the dialog box. Actually much easier to use than clicking on objects or links in footers.&nbsp; And more flexible.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>A footer, by implication, applies to several pages and there can be up to three different footers for each section of the document. Having a link in the footer is inappropriate because you would have to open the footer range in order to access the link and
+ in any case footers are not tied to individual pages. Your plan therefore does not work.</p>
+<p>
+</p><p>You would have to put separate links on each page and they would be subject to movement when the document is edited, so good luck with that.</p>
+<p>
+</p><p>It might be appropriate to put a button on the QAT or Ribbon to run a macro to determine where the cursor is and then select the page as appropriate e.g.
+</p>
+<p>
+</p><p>Sub JumpToPage()<br />
+'Graham Mayor - http://www.gmayor.com - Last updated - 03 Jul 2017<br />
+Dim iPage As Integer<br />
+&nbsp;&nbsp;&nbsp; iPage = Selection.Information(wdActiveEndPageNumber)<br />
+&nbsp;&nbsp;&nbsp; Select Case True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 10 And iPage &lt;= 20<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="3"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 21 And iPage &lt;= 30<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="4"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 31 And iPage &lt;= 40<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="5"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 41 And iPage &lt;= 50<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="6"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 51 And iPage &lt;= 60<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="7"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 61 And iPage &lt;= 70<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="8"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 71 And iPage &lt;= 80<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="9"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case iPage &gt;= 81<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Selection.GoTo What:=wdGoToPage, which:=wdGoToNext, Name:="10"<br />
+&nbsp;&nbsp;&nbsp; End Select<br />
+lbl_Exit:<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+End Sub</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to attach PDF file as object in my Words document - Microsoft Community</title>
+<h3> robertrsydney  say:</h3>
+<h2>            Unable to attach PDF file as object in my Words document</h2>
+                    Unable to attach PDF file as object in my Words document (MAC laptop)
+<p>The question has been answered many times for Windows based Office but nothing has been answered for MAC pc. When inserting an object into a Word document I can only choose from excel or doc files. No pdf allowed.&nbsp;</p>
+<p>
+</p><p>
+</p><p>When I go ans find file I am able to see the file and choose it but then it gets inserted as a word file (docx) not pdf and when I open it the system opens it as a word.&nbsp;</p>
+<p>
+</p><p>How do I insert a pdf object/file into a word on MAc PC?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Sorry you didn't come across the information, but the question has been answered numerous times. The only file types embeddable as objects in Mac Office documents are those listed in the
+<strong>Insert&gt; Object</strong> dialog. Objects of those types can be created as new embedded objects.</p>
+<p>
+</p><p>The <strong>From File</strong> option is rather deceptive. Other file types (e.g., PDF) are
+<em>selectable</em> but are inserted as <em>pictures</em> rather than as embedded files of the original file type... some may not be embedded at all.</p>
+<p>
+</p><p>This is one of the <a href="http://answers.microsoft.com/en-us/mac/forum/macoffice2011-macword/insert-pdf-into-word-mac-11-version/04e5665c-1264-43ab-92d0-cebe7e590e90">
+existing answers</a> although it pertains specifically to Office 2011. The difference is that in Office 2016 the ability to select specific pages no longer exists. Only the first page of a multi-page PDF is inserted as a picture - you don't get to pick. Further
+ discussion on the new limitation is included in <a href="http://answers.microsoft.com/en-us/mac/forum/macoffice2016-macword/problem-inserting-multi-page-pdf-in-word/d6981d8a-0e05-48e6-a728-30a2e3389e40">
+Problem inserting multi-page PDF in Word. </a>Since then an additional venue has been added for submitting comments &amp; feature requests:
+<a href="https://word.uservoice.com/forums/304942-word-for-mac" target="_blank" rel="noreferrer nofollow" title="View all ideas in Word for Mac">
+Word for Mac</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>warranty - Microsoft Community</title>
+<h3> akshayp4  say:</h3>
+<h2>            warranty</h2>
+                    hi frnds<br />
+i hav bought a new nokia 3250 from oman(middle east)to my homeplace in india.i m lookin for a firmware update from an authorised nokia dealer.i want to confirm is the warranty i obtained for my phone in oman,is legal here in india also.<br />
+thanks
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bandofbrothers---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You would have to check with Nokia.<br />
+<br />
+My understanding is that Nokia place a warranty on the handset which is normally 2 years. Im not sure if where you like affects this.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> megadodo---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            India and Oman have different support systems and more ,warranty budgets! I doubt that Indian repiar centres would be paid for a warranty frimware upgrade on a phone from Oman!
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Tasks created in Microsoft Teams - Planner disappear from - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Tasks created in Microsoft Teams - Planner disappear from task&#47;bucket list</h2>
+                    <p>My coworkers and I use Planner via the desktop version of Microsoft Teams.&nbsp;We added about 20 tasks to a bucket and after editing the comments, my coworker could only view half of her tasks. The other half disappeared but I could still see all of her tasks.
+ After closing out of Planner and returning a few hours later, I could only see half of her tasks as well. It did this to my tasks as well the other day but I thought it was glitch. We&nbsp;are all having the same issue now. How can we resolve this?</p>
+<p>
+</p><p>Thank you.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Oliver Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "OW"); this.style="display: inline-block";'
+<h3> oliver wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi SKlapperich,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>When you said your co-worker added the comments to his tasks in the planner then half of her tasks disappeared. May I know if she added comments to all her tasks or just added comments to half of her tasks then the half
+ of tasks disappeared?</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Moreover, given you are using Microsoft Teams desktop app, so it is recommended please completely close your Teams Desktop App, and
+<span>&nbsp;</span>go to the Teams Web App ( <a href="https://teams.microsoft.com/" target="_blank" rel="noreferrer nofollow">
+&nbsp;</span>then <span>&nbsp;</span>check if you could see the tasks which disappeared in the Teams Desktop App first. If the tasks can’t be viewed in the web side either. Please do some test with the tasks in the web side
+<span>&nbsp;</span>( to avoid causing other important tasks disappeared, you can create some other
+<strong>test tasks</strong> in the web side and add some comments to the new create test tasks), after that please check if the new created test tasks disappeared.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If the tasks are all Ok in the web side, please try to re-start your computer then open the Teams Desktop App and check if the version of the Teams is the latest. You can click your profile picture which is on the up-right
+ corner of Teams App and then choose “ Check for Updates”. If it can upgrade, you may need to restart the Teams after that.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If the issue persists, please share the version of your Teams desktop app with me for further investigation, thanks.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Regards,</span></p>
+<p><span>Oliver</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_teams">microsoft_teams, </a> <br>
+<a href="/search?q=teams_for_business">teams_for_business, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>NOKIA ASHA 206&#58; I cannot install wechat application &#63; - Microsoft Community</title>
+<h3> ravee74075  say:</h3>
+<h2>            NOKIA ASHA 206&#58; I cannot install wechat application &#63;</h2>
+                    
+<p>Am using nokia asha 206, with all the preinstalled apps i could install HDFC application and many applications before that (deleting and installing), i dont remember the free phone memory then.. i installed uc browser and a few other apps in memory card
+ ..i wanted to install wechat app and i found that there is no space for it so i tried to delete few preinstalled apps and games which was not possible..so i deleted HDFC app in phone memory, there is still no space left for it ..so i thought i would restore
+ to factory settings so that i could find some extra space hoping that the preinstalled will be vanished..obviously nothing changed ..now i deleted few apps in the memory card now..thinking that any unseen software traits might have filled spaces ..but now
+ when i switched my mobile off and on..i cannot install any further apps into my memory card not even the deleted ones..even if i set download to memory card ...in both browser and nokia store but i couldn't download it ex: i downloaded uc browser in my memory
+ card but now i cannot from store it says the memory is full where as the phone memory is 22kb now even if i dont see anything in any files but the memory card is empty..previous i downloaded nimbuzz, ebuddy, personal finance , HDFC before in my phone memory..(deleting
+ one and installing the other)&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>how can i free some space in phone memory (i deleted every thing messages,contacts etc)..how i can download wechat to my memory card ?</strong></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gyakhoe  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            you can delete the wallpaper and some apps... i did the same .. but even after installation .. i m not able to log in or sign up in wechat ... as it shows device not supported...<br />
+suggest.??<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> check123---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Please tell us a way to remove pre-installed system apps and games (bloatwares). I am not able to update the phone due to low system memory. I have a Nokia 206 Dual Sim phone.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> biosmisb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>this really a problem not to be able to update phone software because you don't enough memory..<br />
+please, we want to delete those pre installed games to allow us to update..<br />
+i've already downloaded the software but unable to install it need more 5 mb.<br />
+please notify me on *** Email address is removed for privacy *** when possible with a solution to this problem</p>
+<p>thanks</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><em>Moderator's Note: E-mail address was removed. :Please don't publish your personal contact information on a public forum.</em></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> a206---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Same problem :smileysad: I can't install delete appilcation software.....please help</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> zeeshanaayan07  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I can't resolve it. some one help me</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> a206---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>How To delete pre installed software???</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sabincr7  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            how to delete system apps?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><a href="http://answers.microsoft.com/en-us/profile/51D6E497-2246-4813-8D59-2C55A3DB315D"><span>sabincr7</span></a>, because your issue is about updating the firmware, please, let us continue with your
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jayapalkkp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am use nokia 206<br />
+i register wechat but not getting verifiction code then<br />
+i am enter verification code "verification Code error please try again"<br />
+Please help me Sir...
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carlogimenez  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi&nbsp;<strong><span><a href="http://answers.microsoft.com/en-us/profile/210A2C4A-738C-4063-AA3F-B84ECB3FFC9D">Jayapalkkp</a>,</span></strong></p>
+<p>&nbsp;</p>
+<p>You used your phone number to register to WeChat, am I right? The code will be sent to you via SMS. Just to ask, are you able to receive regular SMS&nbsp;or MMS messages in &nbsp;your phone? Aside from WeChat, have you also tried registering to other similar apps
+ that also use verification codes? If yes, did&nbsp;you receive the code succesfully?&nbsp;</p>
+<p>&nbsp;</p>
+<p>WeChat is an internet based apps. Make sure that your phone's internet connection is stable when trying to register your mobile number. Weak internet connection may cause issues with&nbsp;contacting WeChat's server, thus delaying the arrival of the verification
+ code.</p>
+<p>&nbsp;</p>
+<p>Let us know if this information has helped you.:cathappy:</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to get rid of &#60; BrowswerModifies&#58;Win32&#47;smudplu &#62; - Microsoft Community</title>
+<h3> m. nadeemaslam  say:</h3>
+<h2>            How to get rid of &#60; BrowswerModifies&#58;Win32&#47;smudplu &#62;</h2>
+                    <p>How to get rid of &lt; BrowswerModifies:Win32/smudplu &gt; I have Kaspersky Internet Security installed on my PC and I am using Windows 7 32 bit OS.</p>
+<p>
+</p><p>I am getting warning message via Windows Defender and it cleans it as well. But after a short time I again get this message. Please advise me how to get rid of this permanently.
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="RickCP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "RI"); this.style="display: inline-block";'
+<h3> rickcp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>See: <a href="https://www.microsoft.com/security/portal/threat/encyclopedia/entry.aspx?Name=BrowserModifier:Win32/Smudplu" target="_blank" rel="noreferrer nofollow">
+BrowserModifier:Win32/Smudplu</a></p>
+<p>
+</p><p>What does Kaspersky Support have to say about this?</p>
+<p>
+</p><p>WD (Antispyware only on Win7) might be in conflict with KIS and hence cannot complete remediation. The
+<a href="https://www.microsoft.com/en-us/security/pc-security/malware-removal.aspx" target="_blank" rel="noreferrer nofollow">
+Microsoft Malicious Software Removal Tool</a> may be of help here.</p>
+<p>
+</p><p>Subject threat is a 'browser hijacker' that was, most likely, bundled into the installation process of another 'freeware' you probably installed yourself.</p>
+<p>
+</p><p>Would suggest you download, update its database, and run <a href="https://www.malwarebytes.org/antimalware/" target="_blank" rel="noreferrer nofollow">
+Malwarebytes Anti-Malware</a> (Free Edition ONLY! -&gt; Not the Trial of the Premium version). MBAM may detect this threat as 'PUP.Optional.Goobzo'.</p>
+<p><a href="https://toolslib.net/downloads/viewdownload/1-adwcleaner/" target="_blank" rel="noreferrer nofollow">AdwCleaner</a> anti-adware tool is also a good idea to search for additional adware or PUP's that may have installed there without your knowledge.</p>
+<p>
+</p><p>This removal guide (by malwaretips.com) should help: <a href="https://malwaretips.com/blogs/pup-optional-goobzo-removal/" target="_blank" rel="noreferrer nofollow">
+</a></p>
+<p><a href="https://malwaretips.com/blogs/pup-optional-goobzo-removal/" target="_blank" rel="noreferrer nofollow">Remove PUP.Optional.Goobzo virus (Removal Guide)</a>.</p>
+<p>
+</p><p><em>-<span style="text-decoration-line: underline">Note</span>:</em> Due to the nature of subject threat, most of the times (recommended), resetting your browsers to defaults settings may also be necessary after you're done with the tools suggested above.</p>
+<p>
+</p><p>Please return to this thread to confirm how it went ;)</p>
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Link from html file to a specific page in a Word document. - Microsoft Community</title>
+<h3> chris_scherer  say:</h3>
+<h2>            Link from html file to a specific page in a Word document.</h2>
+                    I want to create a link in an html file to a specific location in a word document.&nbsp; In earlier versions of the software you could created a bookmark and then link to the bookmark.&nbsp; I've tried that method but it is not working.&nbsp; Here is what I did -
+<br />
+1. created the bookmark "plan" and saved the file.<br />
+2. I created a hyperlink to the document G:/planning/annualplan.doc<span style="font-weight: bold">#plan</span>.&nbsp; The link only takes me to the first page of the document.<br />
+<br />
+Is this no longer a supported feature in Word 2010?<br />
+<br />
+Is there another way to do this besides saving the file as a PDF?<br />
+<br />
+Chris Scherer<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Daniel Jackson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DJ"); this.style="display: inline-block";'
+<h3> daniel jackson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>Post your queries in the following forum:<br />
+<a href="http://social.technet.microsoft.com/Forums/en-US/word/threads" target="_blank" rel="noreferrer nofollow">http://social.technet.microsoft.com/Forums/en-US/word/threads</a></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Media Player 10 Mobile locks up. - Microsoft Community</title>
+<h3> robert ornelas  say:</h3>
+<h2>            Windows Media Player 10 Mobile locks up.</h2>
+                    HELP! I have 2514 music files @ 192 kbps on a 16GB Class 6 microSDHC on my HTC Pure.&nbsp; WMP has recently started locking up, but only on 2 of my playlists.&nbsp; One playlist has 905 files, and the other has 1902 files.&nbsp; These same playlists worked previously,
+ but now, only these 2 playlists lock up the media player when I select them.&nbsp; The list of songs never comes up, and an error report is sent.&nbsp; Other playlists are fine, and the 2 "corrupt?" playlists will play using HTC's TouchFLO media Player installed with
+ the phone.&nbsp; &lt;&lt;Correction: The playlist will come up but the music files don't seem to play.&nbsp; It may just be slow instead of freezing.&gt;&gt;&nbsp; I recently installed a few programs, including SPB mobile shell (Which I have quickly come to love so much more than the
+ default HTC interface) I tried to use the music widget, which just opens up Windows Media Player.&nbsp; I have tried uninstalling this, and deleting library database files and re-
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert ornelas  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I recently switched from a Sprint HTC Touch (WM6.1) to an AT&amp;T HTC Pure running WM6.5.&nbsp; My large playlists freeze up WMP.&nbsp; I have two playllists of ~900 songs and ~1800 songs that worked fine on my touch, but the playlists lock up the Pure.&nbsp; If I trim
+ the playlists down to about 400 songs or less, they will work.&nbsp; I have tried reformatting the storage card, and (ugh) a hard reset, and going back to the store and plugging the card into one of their phones, with the same result.&nbsp; The smaller playlists will
+ play, the individual files will play, but when I select a large playlist, the list will not even display to be able to choose a song.&nbsp; It freezes and locks up, and an error message is sent to Microsoft.&nbsp;
+<strong>HTC's media player included with the TouchFLO interface will play the playlists with no problem.</strong>&nbsp; Both my Touch and Pure are running WMP Mobile 10.3 (different build numbers).&nbsp; I have an A-Data 16GB class 6 microSDHC with media stored @ 192kbps.&nbsp;
+ My Touch is using a Sandisk 16GB class 2.&nbsp; Is there some memory problem, or did something change from WM6.1 to 6.5 that would cause this?&nbsp; AT&amp;T and HTC tech support could not find a solution.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert ornelas  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Does anyone else use their Windows Phone to play music?&nbsp; I tried getting help at the AT&amp;T store, and they told me if I want to play music, I should get an iPhone.&nbsp; Really, someone's GOT to have a better solution than that.&nbsp; This problem has caused me to
+ give up on Microsoft completely&nbsp; for music for now...&nbsp; I am now trying to use MediaMonkey to sync my music, and CorePlayer to play the music.&nbsp; This still isn't working! AARGH!&nbsp;MediaMonkey creates the playlist, but it is empty.&nbsp; I have never heard of anyone
+ having too many files.&nbsp; Is it a problem with the HTC Pure?&nbsp; If I hadn't mentioned this before on this forum, I've tried AT&amp;T and HTC, and no one has a solution.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert ornelas  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Here's a suggestion from the MediaMonkey forums - perhaps a file name&nbsp;is too long.&nbsp; Is there a limit?&nbsp; One person posted that a different phone had a limit of 130 characters.&nbsp; Is there a way to limit the number of characters in a filename?&nbsp; MediaMonkey
+ can do it, but I have not been able to get it to work with my phone.<br />
+<br />
+Does anyone have any suggestions?<br />
+<br />
+Hello?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have a large number of songs on my devices as well&nbsp;(not as much as you).&nbsp; I've not heard of or experienced&nbsp;this issue as you described.&nbsp; It would seem to me that somehow the playlist got corrupted.&nbsp; Have you tried creating a new one?&nbsp;<br />
+<br />
+I seperate my Playlist by favorite songs or artists or genre so each is not that long.&nbsp; Frankly, if I had a playlist that included 900 songs I would probably just use the All Music.<br />
+<br />
+<blockquote>&nbsp;I tried getting help at the AT&amp;T store, and they told me if I want to play music, I should get an iPhone.&nbsp;</blockquote>
+I would guess that that person had an iPhone but everyone is entitled to make a mistake (lol).<br />
+<hr />
+Jack Cook <br />
+http://www.experiencemobility.net <br />
+http://www.mobilitysite.com
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert ornelas  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for your reply.&nbsp; I've been getting lonely here.&nbsp; It seems that no one is having this problem on any of the forums I've tried.&nbsp; Please read previous posts to se how many, many times I have deleted and re-created the playlists and database files and
+ music files.&nbsp; Through trial and error, please read above that if I limit the lists to 400 songs, they work, but if I limit the list to 500+ songs, they do not work.&nbsp; Even the 1900 song playlist works on my HTC Touch, but not on my HTC Pure, even just swapping
+ out the memory card.&nbsp; Swapping the memory card with another Pure at the AT&amp;T store yielded&nbsp;the same results - locked up WMP.<br />
+<br />
+I have since tried Kinoma Player, and found that it works very well for everything, including these large playlists, except that you cannot shuffle a synced playlist.&nbsp; You can shuffle "All Music", but I like to have some songs there for my kids, which keeps
+ me from using this option in Kinoma or WMP, for that matter.&nbsp; I have one playlist for my 5-Star rated songs, and another for my 4&amp;5-Star rated songs.&nbsp; That is why they are so large.&nbsp; At this point, I am using Kinoma for the touch friendly interface, but I
+ am forced to listen to my music by Genre if I want to shuffle.<br />
+<br />
+FYI-I have tried using Media Monkey to trim the file names, and now WMP does not freeze up, but rather gives an error message that it cannot play the (music) file.&nbsp; I had to use an m3u-asx converter and modify the paths in the file manually to remove the relative
+ path names, so there may be something else that WMP does not like about the playlist, but this modified palylist does work in every other media player (Kinoma, CorePlayer, HTC).
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Interesting update Robert.&nbsp; Thanks for passing that on.
+<hr />
+Jack Cook <br />
+http://www.experiencemobility.net <br />
+http://www.mobilitysite.com
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jump007  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Robert,</p>
+<p>&nbsp;</p>
+<p>I am not sure whether this thread is still alive. Anyway. I got the same problems (HTC Touch HD2 16GB. Short playlist play, long 500+ got stuck. Some poeple suggest to use shorter playlist. This is not an option (I use MediaMonkey with 35,000 songs). It
+ works excellently with my Ipod (which died last week and I thought WM6.5 and a 1Ghz processor should do the job). I installed different players but non of them does the job not even close to an&nbsp;Ipod (I will have to buy a new one).</p>
+<p>Just a shame that Microsft misses another opportunity to gain market share.</p>
+<p>If someone has got a resonable solution, I am happy to try.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cortana Reminders no longer working - Microsoft Community</title>
+<h3> christopherking1971  say:</h3>
+<h2>            Cortana Reminders no longer working</h2>
+                    <p>I've been using Cortana for quite a while, and really appreciated the Reminder toast notifications I had set up.</p>
+<p>
+</p><p>For the past few months however, they've stopped working. Reminders I created are still there when I check Cortana herself, and they're listed in my Calendar app, but they no longer show up in my Action Centre or provide me with toast pop-ups.&nbsp;</p>
+<p>
+</p><p>Suggestions?&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ramon imp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Christopher,</p>
+<p>
+</p><p>For us to better assist you with your concern, we would like to know the following:</p>
+<p>
+</p><ul>
+<li>What Windows Insider build do you currently have?</li><li>Are you getting any error messages related to the issue?</li><li>What troubleshooting steps have you taken to resolve the problem?</li></ul>
+<p>
+</p><p>We'll be waiting for your reply so we can further assist you.<br />
+</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=cortana_and_search">cortana_and_search, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 13 issue - Microsoft Community</title>
+<h3> gtq  say:</h3>
+<h2>            Word 13 issue</h2>
+                    Downloaded Word document from Gov.uk site but Word 13 won't open it. Error window displays ' Word cannot open the file because file format does not match file extension'. How to resolve?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The error message might be accurate. What is the filename extension for the file? Display filename extensions in Windows (if you haven't already). Working with a copy on the file, you can then&nbsp;change the extension to *.doc, *.docx, and *.rtf and see if one
+ of them can be opened.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gtq  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks Stefan. The filename extension is .docx so I thought it was OK, but it is not. I asked for the document to be sent to me by e-mail, which it was &amp; it opened OK. The download still doesn't open up. Do you think it is related to the Explorer download?
+ Any idea how I can test the theory.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If the same file name from a different delivery method works, it sounds like the file content was corrupted so that it is no longer recognizable as a DOCX.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>OK, since the copy you received via e-mail worked, it's likely that the document on the site was corrupt (and changing the extension wouldn't work). I wouldn't bother with it any more.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>IE 11 not supporting compression of js files from apache using - Microsoft Community</title>
+<h3> al ansari uae  say:</h3>
+<h2>            IE 11 not supporting compression of js files from apache using mod_deflate</h2>
+                    <p>Dear Support,</p>
+<p>
+</p><p>After we upgrade our IE Browser to IE 11 application files(js,css) are not being compressed due to which it is consuming more bandwidth and results in slow performance.</p>
+<p>
+</p><p>Web Server : Apache 2.x</p>
+<p>Compression method : Mod_deflate</p>
+<p>
+</p><p>It is working fine with Mozilla,IE 7,8&amp;9</p>
+<p>
+</p><p>Problem being faced in IE 11.</p>
+<p>
+</p><p>Expecting immediate support to resolve the reported issue.</p>
+<p>
+</p><p>Best regards,</p>
+<p>Syed Jaweed</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Syed,</p>
+<p>
+</p><p>I appreciate this fact that you are trying to compress application files in Internet explorer 11.</p>
+<p>
+</p><p>The issue will be better suited for the developers audience on the MSDN forums.
+</p>
+<p>
+</p><p>I would recommend posting your query in the MSDN forums.</p>
+<p>
+</p><p><strong>MSDN Forum</strong><br />
+<a href="https://social.msdn.microsoft.com/Forums/ie/en-US/home?forum=iewebdevelopment" target="_blank" rel="noreferrer nofollow">https://social.msdn.microsoft.com/Forums/ie/en-US/home?forum=iewebdevelopment</a></p>
+<p>
+</p><p>Thank you</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Getting Word To Open in Correct Format - Microsoft Community</title>
+<h3> chriswchris  say:</h3>
+<h2>            Getting Word To Open in Correct Format</h2>
+                    I use Office XP (esp Word 2002, .doc) on my Win7 machine. I use the Office 2007 Compatability Pack to be compatible with Word 2007/2010's .docx. A little clumsy, but it works...I don't want to change to Open Office, et al.<br />
+<br />
+I set the default font in my Word 2002 as Times New Roman-12pt. Every time Word 2002 opens, I get that. Good.<br />
+<br />
+However, every time I open Word using the "New" context menu, it opens as Word 2007 (.docx) in Courier New-10 pt. How do I:<br />
+<br />
+1--have it open in 2002? [I think it's a reg hack, but I haven't found one that works]<br />
+<br />
+2--lacking that, at least have it open in Times New Roman--12pt? [I use the same procedure with 2007/.docx to set the default font as I did with 2002/.doc, but it doesn't "stick".]<br />
+<br />
+Thnx.......
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Office XP is only marginally compatible with Windows 7 and if you open Word from the Explorer's context sensitive New document command, I don't believe that it sees your default settings.
+<br />
+<br />
+There is no need whatsoever to open Word like this. Drop a link to Word on to your Windows task bar and it should open from that link correctly.<br />
+<br />
+If it does not, open the normal template - normal.dot - in Word and make the changes directly to the template.<br />
+<br />
+I take it that you don't have Word 2007 also on this PC. If you do - see <a href="http://www.gmayor.com/Toolbars_in_word_2007.htm" target="_blank" rel="noreferrer nofollow">
+http://www.gmayor.com/Toolbars_in_word_2007.htm</a> &nbsp;&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chriswchris  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I've suspected it's a compatibility problem because I don't have 2007on this machine.&nbsp; But I was hoping a clever hacker might have a suggestion.&nbsp; Oh, well..........thnx
+<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 and office 2013 - Microsoft Community</title>
+<h3> duncanbell  say:</h3>
+<h2>            Outlook 2016 and office 2013</h2>
+                    <p>Hi all</p>
+<p>
+</p><p>i just bought Outlook 2016 as I don't have an email program and wanted to keep to Microsoft.</p>
+<p>i have office 2013 with Excel, PowerPoint and Word but when I try and install Outlook it says I have to delete Office.&nbsp;</p>
+<p>
+</p><p>Does this his mean that I can't use them at all if I install Outlook?</p>
+<p>i presume I will have to pay to upgrade Office?</p>
+<p>
+</p><p>not particularly happy as I wasn't told about this!</p>
+<p>
+</p><p>is there a work around or not?</p>
+<p>
+</p><p>thanks for any help in advance.&nbsp;</p>
+<p>
+</p><p>Duncan</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Welcome to Microsoft Community.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>I would like to know the exact error message that you get while installing Outlook.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Let us refer to the following article which discusses similar issue and check if it helps.</span></p>
+<p><a href="https://support.office.com/en-us/article/Install-and-use-different-versions-of-Office-on-the-same-PC-6EBB44CE-18A3-43F9-A187-B78C513788BF?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">https://support.office.com/en-us/article/Install-and-use-different-versions-of-Office-on-the-same-PC-6EBB44CE-18A3-43F9-A187-B78C513788BF?ui=en-US&amp;rs=en-US&amp;ad=US</span></a></p>
+<span>&nbsp;&nbsp;</span><span>&nbsp; </span>
+<p><span>&nbsp;</span></p>
+<p><span>Hope this information helps you. Please let us know if you need additional information.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+<span><br />
+</span>
+<p><span>&nbsp;</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> duncanbell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yeah I've just been online with a Microsoft tech guy who said they don't work together.&nbsp;</p>
+<p>You either have to have 1 or the other. Seems a massive con to me but I'll be trying to get a refund in the morning.&nbsp;</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can not remove a picture from a table in a document to replace with - Microsoft Community</title>
+<h3> jd11-11-11  say:</h3>
+<h2>            Can not remove a picture from a table in a document to replace with another picture in word 2007.</h2>
+                    Can not remove a picture from a table in a document to replace with another picture in word 2007. What can should I do in thsi instance?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div><font size="2">Click on the Select drop down in the Editing 
+Section of the Home tab of the Ribbon and then on Select Objects and see if you 
+can then select the picture.</font></div>
+<div><br />-- <br />Hope this helps.</div>
+<div>&nbsp;</div>
+<div>Doug Robbins - Word MVP, <br />Email: dkr[atsymbol]mvps[dot]org <br />Posted 
+via the Community Bridge</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<blockquote style="margin-left: 5px; margin-right: 0">
+  <div>"JD11-11-11" wrote :</div>Can not remove a picture from a table in a 
+  document to replace with another picture in word 2007. What can should I do in 
+  thsi instance? 
+  <hr />
+</blockquote>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2010 - Special character in sender&#39;s name using an - Microsoft Community</title>
+<h3> pnpbrumi  say:</h3>
+<h2>            Outlook 2010 - Special character in sender&#39;s name using an outlook.com account</h2>
+                    <p>Hi all,</p>
+<p>
+</p><p>I've started to use Microsoft Outlook 2010 with my outlook.com e-mail address.</p>
+<p>When I try to send an e-mail using MS Outlook, the sender's name (my name) on the recipient's side appears wrong: the letter 'á' in my name gets replaced with a question mark. As it is an Exchange account, I cannot change the sender's name from the client.</p>
+<p>The sender's name is OK if I send an e-mail using the web version.</p>
+<p>
+</p><p>Is there a workaround to this?</p>
+<p>
+</p><p>Regards,</p>
+<p>pnpBrumi</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi pnpBrumi,</p>
+<p>&nbsp;</p>
+<p>We came across with this post and they were discussing on how to change display name of an Exchange account from Outlook 2010 and they have it resolved. Please see RiverDragonFly’s answer on this
+<em><a href="http://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook-mso_other/change-my-display-name-for-outlook-2010/e5537265-64d7-4eac-b0bf-3002026cd33f">link</a></em>.</p>
+<p>&nbsp;</p>
+<p>Let us know how it goes.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pnpbrumi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Josette,</p>
+<p>
+</p><p>It is not that simple to set the display name on my account as it is an Exchange account.</p>
+<p>Interestingly, the reproduction rate for this is not 100%, I managed to send an email to myself today where my name appeared correcty. But since then, still "?"-s in my name.</p>
+<p>
+</p><p>Regards,</p>
+<p>pnpBrumi</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pnpbrumi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I found the solution to this problem in the meantime.</p>
+<p>
+</p><p>After some testing, I found out that my name appeared wrong only if the message didn't contain any special characters (like 'á', 'é', etc.). If the message contained any of these characters, my name appeared correctly.</p>
+<p>It turned out that Outlook would choose the wrong encoding for these messages. So the solution was to make Outlook send all messages in UTF-8 encoding instead of choosing the encoding automatically.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pnpbrumi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Now I'm in an awkward situation :)</p>
+<p>I've just got the usual "Checking in on your recent question" e-mail from Microsoft, asking me to mark one of the answers as the solution or provide further updates. But I cannot mark my own answer as the solution...</p>
+<p>So it'd be helpful if an admin could mark it as the solution, or simply copy my answer so that I can mark it.</p>
+<p>
+</p><p>Regards,</p>
+<p>pnpBrumi</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote for Mac&#58; how do I create an aggregated to do list&#63; - Microsoft Community</title>
+<h3> fredphilgo  say:</h3>
+<h2>            OneNote for Mac&#58; how do I create an aggregated to do list&#63;</h2>
+                    <p>Is it possible to create an aggregated list of all the to do's in all sections and/or notebooks. OneNote for Windows seems to have this feature but can't find in on the Mac version. Seems like a logical and useful functionality so it would only make sense
+ to include it.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> denisec&#91;msft&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello-</p>
+<p>
+</p><p>Sorry but I didn't have the full information.&nbsp; Customers who have OneNote as part of the Office Suite will see this option but if you got OneNote from the App Store it does not have this option.&nbsp; Again I apologize for the confusion.&nbsp;
+</p>
+<p>
+</p><p>Denise, OneNote Team</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> denisec&#91;msft&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello--</p>
+<p>
+</p><p><span>There is updated search functionality in the latest
+</span><span style="color: rgba(0, 0, 0, 1)">Insider Fast update of OneNote for Mac that many people have been asking for; view this thread
+</span><span><span><a href="https://onenote.uservoice.com/forums/327165-onenote-for-mac/suggestions/30932362-mac-search-for-tags" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">Mac: search for tags</span></a></span></span><span style="color: rgba(0, 0, 0, 1)">.<span>&nbsp;
+</span>To get the update, go to Help &gt; Check for Updates, and opt into the Insiders program and choose the Fast updates. If you have Insiders Fast builds 16.18.0 (18091900), or newer, you should see the feature.</span></p>
+<p>&nbsp;</p>
+<ul>
+<li><span style="color: rgba(0, 0, 0, 1)">Search for a tag
+<span>&nbsp;</span></span></li><li><span style="color: rgba(0, 0, 0, 1)">Search for multiple tags</span></li><li><span style="color: rgba(0, 0, 0, 1)">Tag suggestions in the search dropdown</span></li><li><span>Recent searches
+</span></li><li><span>Page and tag pivot of results</span></li><li><span>Combined tag and text searches</span></li><li><span>Do you get unwanted results?</span></li><li><span>Is your regular page search getting impacted in any way?</span></li></ul>
+<span>&nbsp;&nbsp;</span><span>&nbsp;&nbsp;</span><span>&nbsp;&nbsp;&nbsp;</span><span>&nbsp;&nbsp;&nbsp;</span><span>&nbsp;&nbsp;</span><span>&nbsp;</span><span>&nbsp;
+</span>
+<p><span style="color: rgba(0, 0, 0, 1)">&nbsp;I would like to hear back if the new tag search and results pane helps you create the to do list.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">We would love to receive feedback from you multiple times.<span>&nbsp;
+</span>We would love to hear your initial impressions, <strong>but we would also like to hear from you after you have used it for a week to understand if your initial dislikes/likes stayed the same or switched after you used it for an extended period of time.</strong></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">There are 2 ways to send us feedback.<span>&nbsp;
+</span></span></p>
+<ol>
+<li>
+<p style="color: rgba(0, 0, 0, 1)">
+</span></span></p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+</li></ol>
+<p><span>&nbsp;</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thanks</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Denise, Microsoft OneNote Team</span></p>
+<p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>N95 - Main Menu - Microsoft Community</title>
+<h3> kevineu  say:</h3>
+<h2>            N95 - Main Menu</h2>
+                    I seem to be missing an icon in the main menu... I have 12 but I seem to recall having 13...<br />
+<br />
+How many icons are there in the main menu and what are they?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> scoobyman---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi kevineu<br />
+<br />
+Only got 12 on sim free N95<br />
+Contacts<br />
+Messaging<br />
+Calendar<br />
+Music Player<br />
+Gallery<br />
+Maps<br />
+Search<br />
+Web<br />
+Download<br />
+Tools<br />
+Applications<br />
+Office
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kevineu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks...<br />
+<br />
+Strange though as I am absolutely sure that Office sat by itself in Grid view...
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bixby---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            ou sure you didnt move it to another location ?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kevineu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I may very well have...<br />
+<br />
+Trying to find out what I may have moved now...
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> richcowell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I hate the default layout, one of the first things I do is organise the menu in a way that suits me... including shoving everything I don't like/don't use in a new folder called "Unused" lol
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tweets---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<hr />
+<span>27-Apr-2007</span><span>08:57 AM</span><br />
+richcowell wrote:<br />
+I hate the default layout, one of the first things I do is organise the menu in a way that suits me... including shoving everything I don't like/don't use in a new folder called "Unused" lol<br />
+<hr />
+</blockquote>
+<br />
+<br />
+lol, first we use *0# and save it as a template<br />
+<br />
+now we both have a unused folder, lol, what else do u do that I do? lol
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Need help in a formula - Microsoft Community</title>
+<h3> rohitmassey  say:</h3>
+<h2>            Need help in a formula</h2>
+                    <p>In column 'N' there is "Last" &amp; "Continued" and if it is "last" then column 'U' cell value should come and if its "Continued" and column 'U' is &lt;0 then 0 else column 'U' cell value.&nbsp; I tried this formula but its giving me only 0 no matter if its "Last" in
+ column 'N'.&nbsp;</p>
+<p>
+</p><p>=IF(OR($N11="Last",$U11),IF($N11="Contiued",$U11&lt;&gt;0,0))</p>
+<p>
+</p><p>and if I add U11 after 0 then its giving error</p>
+<p>
+</p><p>IF(OR($N11="Last",$U11),IF($N11="Contiued",$U11&lt;&gt;0,0,$U11))</p>
+<p>
+</p><p>Please help to get this corrected.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sheeloo" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "SH"); this.style="display: inline-block";'
+<h3> sheeloo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Try</p>
+<p>
+</p><p>1.&nbsp;</p>
+<p>=IF(AND($N11="Last",$U810="Continued"),$U11,IF($N11="Contiued",0,"Both Conditions not met"))</p>
+<p>
+</p><p>
+</p><p>
+</p><p>2.&nbsp;</p>
+<p>=IF(AND($N12="Continued",$N13="Last"),($U12+$T13),$T13)</p>
+<p>
+</p><p>Not sure why you are adding $ before the Column Letters.</p>
+<p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

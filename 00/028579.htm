@@ -1,0 +1,2695 @@
+    <title>Find nested tracked changes with VBA - Microsoft Community</title>
+<h3> markt99  say:</h3>
+<h2>            Find nested tracked changes with VBA</h2>
+                    <p>Is there a non-resource-draining way to find 'nested revisions' in a document -- that is,&nbsp;spots where one reviewer has made a tracked insertion and another reviewer has deleted it (also tracked). So far the only method&nbsp;I've come up with is&nbsp;this:</p>
+<p>&nbsp;</p>
+<p>Dim ch As Range<br />
+For Each ch In ActiveDocument.Characters<br />
+&nbsp;&nbsp;&nbsp; If ch.Revisions.Count &gt; 1 Then ch.HighlightColorIndex = wdBrightGreen<br />
+Next<br />
+</p>
+<p>....which works, but as you can imagine, it not quick, and turns up a lot of false positives (flags every table row with multiple revisions in a cell&nbsp;-- even if not overlapping --&nbsp;as nested). Is there a better way? Trying to cycle through revisions collection
+ itself throws an error (object not available).</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            And what is the problem with the Revisions collection?<br />
+<br />
+Andreas.<br />
+<br />
+Sub Test()<br />
+&nbsp; Dim R As Revision<br />
+&nbsp; With ActiveDocument<br />
+&nbsp;&nbsp;&nbsp; '.TrackRevisions = True<br />
+&nbsp;&nbsp;&nbsp; .ShowRevisions = True<br />
+&nbsp;&nbsp;&nbsp; For Each R In .Revisions<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If MsgBox(R.Author &amp; " " &amp; R.Date &amp; " =&gt; " &amp; R.Range.Text, vbOKCancel) &lt;&gt; vbOK Then Exit Sub<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp; End With<br />
+End Sub<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> markt99k  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The problem with the revisions collection is that it seems to like only nice neat small revisions. The code below works with simple revisions in the middle of text but chokes (5825 obj not avail) when it looks at more complex types:
+<div><br />
+<div>
+<div>Dim rv As Revision<br />
+For Each rv In ActiveDocument.Revisions<br />
+&nbsp; &nbsp; If rv.Range.Revisions.Count &gt; 1 Then<br />
+&nbsp; &nbsp; &nbsp; &nbsp; rv.Range.Revisions(2).Range.HighlightColorIndex = wdBrightGreen<br />
+&nbsp; &nbsp; End If<br />
+Next</div>
+<div><br />
+<div>I don't see what your suggested code is trying to do. I don't need the macro to query me on each revision it sees. I want it to highlight where a tracked insertion and a tracked deletion overlap.</div>
+<div><br />
+<div>MT</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Why not test the positions of the range of each revision?</p>
+<p>&nbsp;</p>
+<p>Andreas.</p>
+<p>&nbsp;</p>
+<p>Sub Test()<br />
+&nbsp; Dim R As Revision<br />
+&nbsp; Dim Pos() As Long<br />
+&nbsp; Dim i As Long, j As Long<br />
+&nbsp; With ActiveDocument<br />
+&nbsp;&nbsp;&nbsp; ReDim Pos(1 To .Revisions.Count, 1 To 2)<br />
+&nbsp;&nbsp;&nbsp; For i = 1 To .Revisions.Count<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set R = .Revisions(i)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pos(i, 1) = R.Range.Start<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pos(i, 2) = R.Range.End<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For j = 1 To i - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If (Pos(i, 1) &gt;= Pos(j, 1) And Pos(i, 1) &lt;= Pos(j, 2)) Or _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Pos(i, 2) &gt;= Pos(j, 1) And Pos(i, 2) &lt;= Pos(j, 2)) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Overlaps<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Pos(i, 1) &lt; Pos(j, 1) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Range(Pos(j, 1), Pos(i, 2)).HighlightColorIndex = wdBrightGreen<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Range(Pos(i, 1), Pos(j, 2)).HighlightColorIndex = wdBrightGreen<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp; End With<br />
+End Sub<br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> markt99  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Nice, and very fast. But I notice a new problem: both your macro and mine STOP flagging overlaps when they reach a table!</p>
+<p>It doesn't even seem possible to skip tables altogether. Adding</p>
+<p>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; If Not R.Range.Information(wdWithinTable) </p>
+<p>after the Set statement changes nothing.</p>
+<p>Any ideas?</p>
+<p>Mark</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The problem occurs because we compare 2 ranges, not only one.<br />
+<br />
+Should be solvable, can you send me a sample file?<br />
+<br />
+Andreas.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Found a solution,&nbsp;tested with Word 2010, but did not work with Word 2000!</p>
+<p>It seems that Word 2000 is faultily with VBA and revisions, I hope it works with Word 2003.</p>
+<p>Andreas.</p>
+<p><br />
+</p>
+<p>Edit: <br />
+</p>
+<p><br />
+</p>
+<p>A short test with Word 2002 shows that revisions in VBA is faultily similar as Word 2000. The macro stops flagging overlaps because the revisions collection did return only valid positions until the first table. All positions from the start of the table
+ are wrong or just repeated.</p>
+<p><br />
+</p>
+<p>Read this too:</p>
+<p>http://www.officekb.com/Uwe/Forum.aspx/word-vba/1907/Possible-Revisions-Bug-found-in-Word-2000-XP-and-2003<br />
+</p>
+<p><br />
+</p>
+<p>Andreas.<br />
+</p>
+<p>&nbsp;</p>
+<p>Sub Nested_Revisions()<br />
+&nbsp; Dim R As Revision<br />
+&nbsp; Dim Pos() As Long<br />
+&nbsp; Dim i As Long, j As Long, Start As Long, Ende As Long<br />
+&nbsp; <br />
+&nbsp; With ActiveDocument<br />
+&nbsp;&nbsp;&nbsp; .Content.HighlightColorIndex = wdAuto<br />
+&nbsp;&nbsp;&nbsp; ReDim Pos(1 To .Revisions.Count, 1 To 2)<br />
+&nbsp;&nbsp;&nbsp; For i = 1 To .Revisions.Count<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set R = .Revisions(i)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pos(i, 1) = R.Range.Start<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Pos(i, 2) = R.Range.End<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For j = 1 To i - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If (Pos(i, 1) &gt;= Pos(j, 1) And Pos(i, 1) &lt; Pos(j, 2)) Or _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Pos(i, 2) &gt; Pos(j, 1) And Pos(i, 2) &lt;= Pos(j, 2)) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Overlaps<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Start = Pos(i, 1)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ende = Pos(i, 2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Get the shortest range<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Pos(j, 1) &gt; Start Then Start = Pos(j, 1)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Pos(j, 2) &lt; Ende Then Ende = Pos(j, 2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Range(Start, Ende).HighlightColorIndex = wdBrightGreen<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp; End With<br />
+End Sub</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> markt99  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>It works! Only in 2010 (tested in 2003, 2007, 2010), but it means they finally seem to have resolved the (rather longstanding) bugs with the Revision object.</p>
+<p>&nbsp;</p>
+<p>Thanks for all the follow-through, Andreas.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Refresh of exported SharePoint List fails in Excel 2013 when works - Microsoft Community</title>
+<h3> gh0226  say:</h3>
+<h2>            Refresh of exported SharePoint List fails in Excel 2013 when works with Excel 2010</h2>
+                    The simple case is I've exported a SharePoint&nbsp;list to Excel 2013.&nbsp; The list imports fine into Excel, but when right-clicking, selecting Refresh, I get "A connection to the SharePoint site cannot be established.&nbsp; To synchronize or refresh your table, you
+ must be able to connect to the SharePoint site."&nbsp; This works fine with Excel 2010.&nbsp; I clearly have access to the site, as I'm connecting to it to do the export.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hello,</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>For issues related to Excel WebQuery, your issue would best be addressed in the Excel IT Pro forum. Refer to the following link to post your
+ query:</font></font></font></p>
+<p><a href="http://social.technet.microsoft.com/Forums/office/en-US/home?forum=excel" target="_blank" rel="noreferrer nofollow"><font>http://social.technet.microsoft.com/Forums/office/en-US/home?forum=excel</font></a></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>If you have any other questions related to Office products, you can always reply and I’ll be happy to assist you.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Thank you
+</font></font></font></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> o.moyer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Did you ever figure this out? My queries were working one day in 2013 and stopped the next.&nbsp; They still work in 2010....
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Nayana S M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "NS"); this.style="display: inline-block";'
+<h3> nayana s m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>As suggested in the previous post, for issues related to Excel web query, it is best if you post your query in the Excel IT Pro forum link given below.
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><a href="http://social.technet.microsoft.com/Forums/en-US/excel/threads" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://social.technet.microsoft.com/Forums/en-US/excel/threads</span></a></p>
+<p>
+</p><p><span>Thank you. </span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>USB cable yes infected with virus not&#63; - Microsoft Community</title>
+<h3> thao nguyen998  say:</h3>
+<h2>            USB cable yes infected with virus not&#63;</h2>
+                    <div>My phone is infected with from times&nbsp; virus from copying data from a&nbsp; friend's computer through via the connector port USB cable.&nbsp;
+<br />
+I have scanned the virus and reinstalled the operating system for phone</div>
+<div>I want to ask??</div>
+<div>&nbsp;USB cable&nbsp; (usually go general with the phone charger)&nbsp; yes infected with the virus not?<br />
+If yes I would like to buy a new charger instead to replace</div>
+<a href="https://filestore.community.support.microsoft.com/api/images/b93fee8a-80fa-4b99-aa31-39f7513bc6e1" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/b93fee8a-80fa-4b99-aa31-39f7513bc6e1" /></a>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rob Koch" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "RK"); this.style="display: inline-block";'
+<h3> rob koch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The following article is intended for IT professionals, but it's relatively understandable and describes how smartphones can get viruses when attached to a PC as a USB drive.</p>
+<p>
+</p><p>
+<a href="http://searchmobilecomputing.techtarget.com/answer/Can-smartphones-get-viruses-and-spread-them-to-the-network" target="_blank" rel="noreferrer nofollow">Can smartphones get viruses and spread them to the network?</a>
+</p><p>
+</p><p>Since a smartphone will typically be automatically mounted as a USB drive by the PC when attached via the power cable, you need to avoid making this type of connection the default via the PC Autorun ability and instead only perform this action manually at
+ your request.</p>
+<p>
+</p><p>Since the smartphone doesn't have any protection for Windows type malware, it will simply accept whatever gets transferred from the PC and carry it to any other PC to which it is attached, just like any USB flash device might.</p>
+<p>
+</p><p>So your problem isn't the cable or even your phone, it's your friend's PC that contains the virus.</p>
+<p>
+</p><p>Rob</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rob Koch" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "RK"); this.style="display: inline-block";'
+<h3> rob koch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No.&nbsp; A cable can't store anything so it can't become infected, only something containing memory can.</p>
+<p>
+</p><p>A phone contains memory just like a USB flash drive or other USB device, so they can store files and thus also files that might contain a virus.</p>
+<p>
+</p><p>Rob</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Programming VBA - export fields into a text file - Microsoft Community</title>
+<h3> larana626  say:</h3>
+<h2>            Excel Programming VBA - export fields into a text file</h2>
+                    
+<p>&nbsp;I have the following VBA code which reads from a text file and populates columns in an excel worksheet.</p>
+<p>I would like to enhance this code to read the text file (already does this), store the name of the text file and create a text file (with the same name and output) in a designated location.</p>
+<p>Currently the "output" is stored in the worksheet columns, but I want to create a text file instead (with the same name of the source text file).</p>
+<p>Can we take it a level higher and have the macro read any text file in the folder and create new text files....</p>
+<p>Thanks, as a VBA beginner, I was able to take it this far... from there on...I need help!</p>
+<p>Thanks,</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Sub CommandButton2_Click()<br />
+&nbsp;&nbsp; Dim regex As Object<br />
+&nbsp;&nbsp; Dim file&nbsp; As Variant<br />
+&nbsp;&nbsp; Dim lName As Long<br />
+&nbsp;&nbsp; Dim lSize As Long<br />
+&nbsp;&nbsp; Dim temp_size As Long<br />
+&nbsp;&nbsp; Dim temp_size2 As Long<br />
+&nbsp;&nbsp; Dim line&nbsp; As String<br />
+&nbsp;&nbsp; Dim found As Boolean</p>
+<p>&nbsp;&nbsp; file = Application.GetOpenFilename("text files (*.txt), *.txt")</p>
+<p>&nbsp;&nbsp; If file &lt;&gt; False Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set regex = CreateObject("VBScript.RegExp")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'regex.Pattern = "^\s*(Name|Size):?(.*)$"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; regex.Pattern = "^.*?(Name|Size):(.*)$"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; regex.IgnoreCase = True</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With CreateObject("Scripting.FileSystemObject").OpenTextFile(file, 1, False)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; While Not .AtEndOfStream<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; line = .ReadLine<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If InStr(1, line, "Target", vbTextCompare) &gt; 0 Then found = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If found Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With regex.Execute(line)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If .Count &gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If LCase(.Item(0).Submatches(0)) = "name" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lName = lName + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lName, "h") = UCase(Trim(.Item(0).Submatches(1)))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lName, "e") = "OTHER"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lName, "F") = "50"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lName, "G") = "HEADER:"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lName, "I") = ":"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lSize = lSize + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If lSize = 1 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lSize, "a") = 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; temp_size = 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lSize, "a") = temp_size + temp_size2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; temp_size = temp_size2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cells(lSize, "d") = UCase(Trim(.Item(0).Submatches(1)))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; temp_size2 = UCase(Trim(.Item(0).Submatches(1)))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wend<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Close<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp; End If<br />
+End Sub</p>
+<p>&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> larana626  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Love the interface, will implement that in my code...</p>
+<p>Thanks again.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Peter Schleif" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "PS"); this.style="display: inline-block";'
+<h3> peter schleif  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <br />
+<div>
+<p>Sorry I'm late: &nbsp;<a href="http://home.arcor.de/peter.schleif/ExportFields.xls" target="_blank" rel="noreferrer nofollow">http://home.arcor.de/peter.schleif/ExportFields.xls</a></p>
+<p>Peter<br />
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>sihost.exe stopped working - Microsoft Community</title>
+<h3> niftymitch  say:</h3>
+<h2>            sihost.exe stopped working</h2>
+                    <p>What is sihost and does this matter?</p>
+<p>
+</p><p>Description<br />
+Faulting application name: sihost.exe, version: 10.0.10159.0, time stamp: 0x558e34b1<br />
+Faulting module name: modernexecserver.dll, version: 10.0.10159.0, time stamp: 0x558e3a44<br />
+Exception code: 0xc0000409<br />
+Fault offset: 0x000000000005aca6<br />
+Faulting process id: 0x1b8<br />
+Faulting application start time: 0x01d0b9104ef73d36<br />
+Faulting application path: C:\WINDOWS\system32\sihost.exe<br />
+Faulting module path: C:\Windows\System32\modernexecserver.dll<br />
+Report Id: c7e672b6-bc1e-4b5c-893a-f6a535707c32<br />
+Faulting package full name: <br />
+Faulting package-relative application ID: <br />
+</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p>Thank you for contacting Microsoft Community.</p>
+<p>
+</p><p><span>In order to help you better, could you please confirm a couple of things:</span></p>
+<ol>
+<li><span>When are you getting this error message?</span></li><li><span>Which build are you using?</span></li><li><span>Did you install any build recently?</span></li></ol>
+<p><span>I suggest you to provide us the screen shot of the issue, follow the below link how to take screen shot.</span></p>
+<p><span><a href="http://windows.microsoft.com/en-us/windows/take-screen-capture-print-screen#take-screen-capture-print-screen=windows-8" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/windows/take-screen-capture-print-screen#take-screen-capture-print-screen=windows-8</a>
+</span></p>
+<p>
+</p><p><span>Please do let us know with more information so that we can assist you further with this issue.</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ya_622  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            sihost - what is it? <img src="https://filestore.community.support.microsoft.com/api/images/fa19e40c-2209-4e78-a338-5f881cf2deb7" />
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=performance_and_maintenance">performance_and_maintenance, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Blank &#47; empty emails Outlook 2016 - Microsoft Community</title>
+<h3> donallsop  say:</h3>
+<h2>            Blank &#47; empty emails Outlook 2016</h2>
+                    <p><span style="color: rgba(51, 51, 51, 1)">Many of my users are reporting receiving empty emails in their Outlook 2016 client.&nbsp; Only IMAP users are affected.&nbsp;
+ Our email is hosted by Cox Cable.&nbsp; The message has no subject, no sender, no body, no attachments, and the internet headers also show nothing.&nbsp; However, if the user checks on their phone or on the Cox webmail site, the message looks normal.&nbsp; I checked the
+ folder size of one user and the .ost was about 3.5 GB which seems reasonable.&nbsp; Users have sufficient storage space on the Cox server.&nbsp; I tried disabling the email scan feature of our Avast antivirus.&nbsp; I tried deleting the user's profile and recreating it.&nbsp;
+ I tried uninstalling and reinstalling Outlook.&nbsp; None of these helped.&nbsp; Messages both from within and outside our company are affected.&nbsp; The only thing I can find in common with the messages is they all had attachments.&nbsp;&nbsp;</span><span style="color: rgba(51, 51, 51, 1)">I
+ have confirmed that it isn't our antivirus (Avast) by turning off the email scan feature.&nbsp; The internet headers on the blank email are strange, here's an example:</span></p>
+<p>
+</p><p style="color: rgba(51, 51, 51, 1)">
+Message-ID: &lt;006701d3b0db$30f4c3b0$92de4b10$@Domain&gt;<br />
+MIME-Version: 1.0<br />
+Content-Type: text/plain;<br />
+charset="iso-8859-1"<br />
+Content-Transfer-Encoding: 7bit<br />
+X-Mailer: Microsoft Outlook 16.0<br />
+Thread-Index: AQLG0Nteq3WbHyOD60Eexrg4nlZh9w==</p>
+<p style="color: rgba(51, 51, 51, 1)">
+Very different from a successfully received message: (names edited, zzz.com subbed for our domain name)</p>
+<p style="color: rgba(51, 51, 51, 1)">
+Received: from dukecmimpo01.coxmail.com ([68.99.120.134])<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; by dukecmfep05.coxmail.com<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (InterMail vM.8.01.05.08 201-2260-151-120-20120517) with ESMTP<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; id &lt;*** Email address is removed for privacy ***&gt;<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; for &lt;*** Email address is removed for privacy ***&gt;;<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Wed, 28 Feb 2018 16:26:26 -0500<br />
+Received: from COMP64 ([0.0.0.0])<br />
+by dukecmimpo01.coxmail.com with bizsmtp<br />
+id GMSK1x0064KDHK001MSKBh; Wed, 28 Feb 2018 16:26:25 -0500<br />
+From: "Joe Blow" &lt;*** Email address is removed for privacy ***&gt;<br />
+To: "Joe Blow" &lt;*** Email address is removed for privacy ***&gt;<br />
+Subject: hurr deruurrr<br />
+Date: Wed, 28 Feb 2018 16:26:19 -0500<br />
+Message-ID: &lt;*** Email address is removed for privacy ***&gt;<br />
+MIME-Version: 1.0<br />
+Content-Type: multipart/mixed;<br />
+boundary="----=_NextPart_000_007E_01D3B0B8.78F37AD0"<br />
+X-Mailer: Microsoft Outlook 16.0<br />
+Thread-Index: AQHnzR69SICqtpkGl+wOXA7L835RPA==<br />
+Content-Language: en-us<br />
+Authentication-Results: coxmail.com; auth=pass LOGIN<br />
+&nbsp;*** Email address is removed for privacy ***<br />
+X-Antivirus: avast! (VPS 180227-6, 02/27/2018), Outbound message<br />
+X-Antivirus: avast! (VPS 180227-6, 02/27/2018), Inbound message<br />
+X-Antivirus-Status: Clean<br />
+X-Antivirus-Status: Clean</p>
+<p style="color: rgba(51, 51, 51, 1)">
+These messages were sent from me to myself with the same attachment, about 5 minutes apart.&nbsp;&nbsp;</p>
+<p style="color: rgba(51, 51, 51, 1)">
+Any ideas?&nbsp; Please don't tell me about the AVG registry key.&nbsp; I don't have AVG.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> manuela.a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello,
+<br />
+<br />Can you start Outlook in safe mode, send a test email and check if the issue is present.
+<br />
+<br />Can you collect a header also from the email received in safe mode?
+<br />
+<br />Regards,
+<br />
+<br />Manuela       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What is your outlook version/build #? Are you using the Send to recipient function in windows?  If so, check for updates. See <a href="https://support.office.com/en-us/article/outlook-sends-blank-emails-66cf4cde-c9a0-485c-8970-98592db6199a" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/outloo...</a> for more information.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> donallsop  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Outlook 2016 MSO 16.0.4639.1000 32 bit.&nbsp; Not using the Send to function.&nbsp; Updates are installed to all workstations with WSUS and are current.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ok... those are volume licenses. It looks like you have the Jan 2018 update.  Is just the attachment removed? Or was content in the message body removed too? If only attachments are removed, see <a href="https://support.office.com/en-us/article/attachments-are-removed-when-forwarding-plain-text-emails-2c1d366d-52b3-45f1-97ec-1955f59107ef" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/attach...</a> for the update to fix.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> donallsop  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            On this:
+<br />&gt;&gt; I tried disabling the email scan feature of our Avast antivirus. 
+<br />it would on apply to new messages outlook downloads. (it really sounds like a scanner issue, but i will check on it).       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> donallsop  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Here's a header received in safe mode.&nbsp; This was a successful reception.&nbsp;&nbsp;I've been trying all day and so far not able to reproduce the problem.&nbsp; It's very intermittent and random;&nbsp; that's why it's so hard to understand what is happening.&nbsp; I will keep trying.&nbsp;</p>
+<p>
+Return-Path: &lt;*** Email address is removed for privacy ***&gt;<br />
+Received: from dukecmimpo03.coxmail.com ([68.99.120.137])<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; by dukecmfep05.coxmail.com<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (InterMail vM.8.01.05.08 201-2260-151-120-20120517) with ESMTP<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; id &lt;*** Email address is removed for privacy ***&gt;<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; for &lt;*** Email address is removed for privacy ***&gt;;<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Fri, 23 Mar 2018 14:22:31 -0400<br />
+Received: from COMP64 ([68.15.62.200])<br />
+by dukecmimpo03.coxmail.com with bizsmtp<br />
+id RWNS1x0024KDHK001WNSvX; Fri, 23 Mar 2018 14:22:30 -0400<br />
+Authentication-Results: coxmail.com; auth=pass LOGIN<br />
+&nbsp;*** Email address is removed for privacy ***<br />
+From: "Don Allsop" &lt;*** Email address is removed for privacy ***&gt;<br />
+To: "Don Allsop" &lt;*** Email address is removed for privacy ***&gt;<br />
+Subject: foznoz<br />
+Date: Fri, 23 Mar 2018 14:22:26 -0400<br />
+Message-ID: &lt;*** Email address is removed for privacy ***&gt;<br />
+MIME-Version: 1.0<br />
+Content-Type: multipart/mixed;<br />
+boundary="----=_NextPart_000_000E_01D3C2B2.5E5FF2F0"<br />
+X-Mailer: Microsoft Outlook 16.0<br />
+Thread-Index: AdPC09zaQiykZ1TCTm+KpBKQd0SGNQ==<br />
+Content-Language: en-us<br />
+X-Antivirus: avast! (VPS 180323-2, 03/23/2018), Outbound message<br />
+X-Antivirus-Status: Clean<br />
+X-Antivirus: avast! (VPS 180323-2, 03/23/2018), Inbound message<br />
+X-Antivirus-Status: Clean<br />
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> manuela.a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            So, the header of an empty email is just that?
+<br />Message-ID: &lt;006701d3b0db$30f4c3b0$92de4b10$@Domain&gt;
+<br />MIME-Version: 1.0
+<br />Content-Type: text/plain;
+<br />charset="iso-8859-1"
+<br />Content-Transfer-Encoding: 7bit
+<br />X-Mailer: Microsoft Outlook 16.0
+<br />Thread-Index: AQLG0Nteq3WbHyOD60Eexrg4nlZh9w==
+<br />
+<br />Can you send a full one?       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> donallsop  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes that is the header of an empty email with Outlook not in safe mode.&nbsp; The header of a successful email not in safe mode is in my original post.&nbsp; My post starting with "here's a header..." is a successful reception in safe mode.&nbsp; I don't have a failed
+ reception in safe mode.&nbsp; I have not been able to reproduce the problem either in safe or normal mode today.&nbsp; The problem is very random and intermittent.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> manuela.a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I found the same issue, so as I thought - the cause is the antivirus scanning. I know you mentioned that you've already tested turning it off, but it should be done for at least  a week: <a href="https://community.spiceworks.com/topic/441509-blank-emails-outlook-2010" target="_blank" rel="noreferrer nofollow">https://community.spiceworks.com/topic/441509-b...</a>.
+<br />It is changing the format of the emails to an unreadable one: charset="iso-8859-1"
+<br />Content-Transfer-Encoding: 7bit are the values which are added to the header of the empty emails. Both of them are part of the email formating.
+<br />Can you also check if you are able to see the text if you double click on the empty email, Actions, other actions, encoding, choose UTF-8. 
+<br />As a suggestion from my side - disable the virus scan and contact Avast.       
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Access Database Cause of Corruption - Microsoft Community</title>
+<h3> franklinlan  say:</h3>
+<h2>            Access Database Cause of Corruption</h2>
+                    <p>The Access database in our company is shared on the server. However, there are several version of them (some may used 2010, 2002, etc). Recently, the database crashed, all the forms and reports are gone, and we are lucky that we recover with our backup.
+ In addition, we cannot create Queries, Reports or change setting when other people are using the database. My main questions are:</p>
+<p>1. Would having people use different version of software accessing the same database making the system more vulnerable to crash or corrupted?</p>
+<p>2. Can user generate queries and reports straight from the server without creating a local copy?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gina Whipp" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GW"); this.style="display: inline-block";'
+<h3> gina whipp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>1. Yes</p>
+<p>2. No</p>
+<p>
+</p><p>Sounds like that database is not split and it needs to be or this will be a continuing problem.&nbsp;&nbsp;See…<br />
+<a href="http://www.kallal.ca/Articles/split/index.htm" target="_blank" rel="noreferrer nofollow">http://www.kallal.ca/Articles/split/index.htm</a>
+<br />
+<a href="http://allenbrowne.com/ser-01.html" target="_blank" rel="noreferrer nofollow">http://allenbrowne.com/ser-01.html</a>
+<br />
+<a href="http://www.utteraccess.com/wiki/index.php/Sharing" target="_blank" rel="noreferrer nofollow">http://www.utteraccess.com/wiki/index.php/Sharing</a>&nbsp;<br />
+&nbsp;<br />
+You may also want to take a look at MVP Tom Wickerath's article…<br />
+<a href="http://www.accessmvp.com:80/Twickerath/articles/multiuser.htm" target="_blank" rel="noreferrer nofollow">http://www.accessmvp.com:80/Twickerath/articles/multiuser.htm</a>&nbsp;<br />
+&nbsp;<br />
+To handle the update of multiple front ends see…<br />
+<a href="http://www.autofeupdater.com/" target="_blank" rel="noreferrer nofollow">http://www.autofeupdater.com/</a> <br />
+<a href="http://regina-whipp.com/blog/?p=184" target="_blank" rel="noreferrer nofollow">http://regina-whipp.com/blog/?p=184</a>
+<br />
+<a href="http://www.btabdevelopment.com/freetools" target="_blank" rel="noreferrer nofollow">http://www.btabdevelopment.com/freetools</a><br />
+&nbsp;<br />
+If each user needs Access you can install the Runtime…<br />
+&nbsp;<br />
+Access 2007<br />
+<a href="http://www.microsoft.com/downloads/details.aspx?familyid=d9ae78d9-9dc6-4b38-9fa6-2c745a175aed&amp;displaylang=en" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/downloads/details.aspx?familyid=d9ae78d9-9dc6-4b38-9fa6-2c745a175aed&amp;displaylang=en</a>
+<br />
+&nbsp;<br />
+Access 2010<br />
+<a href="http://www.microsoft.com/downloads/en/details.aspx?FamilyID=57a350cd-5250-4df6-bfd1-6ced700a6715&amp;displaylang=en" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/downloads/en/details.aspx?FamilyID=57a350cd-5250-4df6-bfd1-6ced700a6715&amp;displaylang=en</a>
+<br />
+&nbsp;<br />
+Access 2013<br />
+<a href="http://www.microsoft.com/en-us/download/details.aspx?id=39358" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/en-us/download/details.aspx?id=39358</a>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Daniel  Pineault" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> daniel  pineault  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>In a multi-user environment, each user <strong><span style="text-decoration-line: underline">must</span></strong> have their own local copy of the front-end on their pc.&nbsp; Not share a common copy off of the server.</p>
+<p>&nbsp;</p>
+<p>Typically, the db admin is the only person who should make any design changes to database objects.&nbsp; If you start allowing users to do so, things will quickly become unmanageable.&nbsp; Each user doing their own thing.&nbsp; Then you make an update and they loose all
+ their changes...&nbsp; This is why there is an administrator.&nbsp; Someone to manage things and keep control.</p>
+<p>
+</p><p>Here are a few more links on the subject:</p>
+<p><a href="http://answers.microsoft.com/en-us/office/forum/office_2010-access/access-user-interface/97e08d54-d088-45bf-a57e-fdb4e5e6b059">http://answers.microsoft.com/en-us/office/forum/office_2010-access/access-user-interface/97e08d54-d088-45bf-a57e-fdb4e5e6b059</a>
+</p>
+<p><a href="https://social.msdn.microsoft.com/Forums/en-US/d5cf7b06-dfca-4dc0-aa63-b3a67c6af68f/access-on-a-network?forum=accessdev" target="_blank" rel="noreferrer nofollow">https://social.msdn.microsoft.com/Forums/en-US/d5cf7b06-dfca-4dc0-aa63-b3a67c6af68f/access-on-a-network?forum=accessdev</a>
+</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>If you have multiple people using different versions to access the SAME database file especially if they are making design changes, not only CAN it cause corruption, it is an invention to corruption.&nbsp;</p>
+<p>
+</p><p>As Daniel and Gina advised, any multi-user database needs to be split with the front ends installed for each user. And only the back end (tables) on a shared drive.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> franklinlan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            How does the admin pull the data from the front end and confirm that he has all the entries from different users?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="QA Guy CommElec" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "QG"); this.style="display: inline-block";'
+<h3> qa guy commelec  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The FE should only have queries, forms, and reports -- NO DATA at all!</p>
+<p>
+</p><p>Data belongs in the BE!</p>
+<p>
+</p><p>The Administrator must get a copy of all the data for analysis, determine how it will go together, confirm with those that have separate data, and then halt all operation until it can be put together. tested, and input the latest external data.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>When you split a database, the tables (and the tables only) go in the back end on a shared network drive. Everything else goes in a front end that is stored locally.&nbsp;</p>
+<p>
+</p><p>The tables are then linked to the front end. Once they are linked they can be used just as if they are local tables.</p>
+<p>
+</p><p>While Karl is correct, you may have local temp tables in the front end. But all shared tables belong in the back end.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Daniel  Pineault" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> daniel  pineault  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You break your databases into 2 components:</p>
+<ul>
+<li>the Back-End (BE) which houses your tables</li><li>the Front-End (FE) which houses everything else: Queries, Forms, Reports, Macros, VBA</li></ul>
+<p>You place the BE on a central server to which all your users can access (Read/Write/Delete).</p>
+<p>You Relink the FE to the new location of the BE</p>
+<p>You distribute a copy of the FE to each user that they locate on their PC (Desktop, Documents, ... wherever they would like).&nbsp; Each user need to have their own copy, do not share a common copy between user as this can cause corruption.</p>
+<p>
+</p><p>Whenever a user Inserts/Edits/Deletes records through the FE, they are in fact inserting/editing/deleting the data contained in the BE through the linked tables.&nbsp; Thus, when you interact with the BE as the administrator, you are actually interacting with
+ the live data from your users.</p>
+<p>
+</p><p>Backing up the BE is a crucial aspect of database administration.&nbsp; Depending on your business, and IT, setup this can easily be automated as can Compact and Repair of the BE to ensure optimum performance.</p>
+<p>
+</p><p>Lastly, with a split database (which they all should be) the improve performance you are highly advised to
+<a href="http://www.devhut.net/2012/09/29/ms-access-persistent-connection-in-a-split-database/" target="_blank" rel="noreferrer nofollow">
+setup a persistent connection between the FE and the BE</a>.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> franklinlan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Can the FE user find records that other FE user have enter using their own database or they have to go to BE to find the records?</p>
+<p>If I have some code tables that are just consist of an ID number and Company Name, can they add a new Company to the list using the tables or I have to create another form to add a new company name?</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scott McDaniel" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SM"); this.style="display: inline-block";'
+<h3> scott mcdaniel  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)"><em>Can the FE user find records that other FE user have enter using their own database or they have to go to BE to find the records?</em></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><br />
+Assuming the users all link to the SAME backend file then yes, they can find records added or edited by others.<br />
+</span><br />
+ new company name?</em></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><br />
+They could, but you really shouldn't allow users direct access to your tables. Instead, create a form they can use to manage these sorts of lists.</span></p>
+<p><br />
+</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can I change the default settings in Word 2010 and make them - Microsoft Community</title>
+<h3> larrythrash  say:</h3>
+<h2>            How can I change the default settings in Word 2010 and make them stay&#63;</h2>
+                    I can make all the setting changes (font, spacing headings)I want and they will stay in that document. However, when I open Word again, I right back to the same old settings that Word came with the first time. Any suggestions? I have done all the things
+ suggested by everyone on the net. New a solution that works.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>When you make these changes, are you selecting "Only in this document" or "New documents based on this template"? If the latter, and your settings still aren't saved, then chances are something is preventing your Normal template (where these settings are
+ being stored) from being saved when you quit Word. Ultimately, you need to determine why this is; usually the cause is a poorly written add-in, and you may find that it is one you can dispense with (or at least load only as needed). As a temporary workaround,
+ however, you can open the Normal template for editing and make the changes directly in it. The easiest way to do that is as follows:</p>
+<p><span>In Word, press Alt+F11; the Visual Basic Editor opens. Press Ctrl+G to activate the Immediate window. In that window, type<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp; NormalTemplate.OpenAsDocument<br />
+<br />
+and press Enter. Normal opens, but note that it may not be on top of all windows. You can close the Visual Basic Editor. Make the desired changes to the Normal file, and then save and close it. If the changes you have made have not been recognized as changes
+ (the Undo button is not activated), press Spacebar, then Backspace to "dirty" the file, thus ensuring that the template will actually be saved.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to turn off the Skype underlining of numbers&#63; - Microsoft Community</title>
+<h3> kees verhaar  say:</h3>
+<h2>            How to turn off the Skype underlining of numbers&#63;</h2>
+                    <p>How do i get off the skype underlining off my bank numbers?</p>
+<p>Every banknumber with 10 numbers is underlined by skype.</p>
+<p>Edge / banksite.</p>
+<p>Also the already past numbers.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p><em>Subject/title updated&nbsp; by Moderator for clarity.</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> karen_&#91;01&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi&nbsp;Kees Verhaar,</p>
+<p>
+</p><p>Welcome to Skype Community forum!</p>
+<p>
+</p><p>Please be advised that if you installed Skype's add-ons or extension and open a webpage with series of numbers or contact numbers (Ex. Bank websites, etc.) Skype will detect those so you can call those numbers directly, this is why the numbers are being
+ highlighted. You may try to remove those and then check if the issue persist.</p>
+<p>
+</p><p>To remove add-ons or extensions, you may try these steps:</p>
+<p>
+</p><p>1. Open Microsoft Edge.<br />
+2. Select <strong>More (...)</strong> to open the menu.<br />
+3. Select <strong>Extensions </strong>from the menu.<br />
+4. Right-click the extension you want to remove and select <strong>Remove</strong>, or select the
+<strong>extension </strong>and click the <strong>Remove </strong>button.</p>
+<p>
+</p><p>Then close the browser and restart your computer, open edge again and check if the numbers on the bank website you are accessing are still highlighted.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>We'll look forward to your reply.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kees verhaar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No extension in Edge. So no solving.
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_windows_10">skype_for_windows_10, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>puse mal la contrase&#241;a y ahora no puedo ver ingresar a mi correo - Microsoft Community</title>
+<h3> andrea7799  say:</h3>
+<h2>            puse mal la contrase&#241;a y ahora no puedo ver ingresar a mi correo</h2>
+                    ingrsar al correo, iniciar sesión
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JMH3143" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmh3143  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div><i>Please select your language from the drop down list</i><span>&nbsp;</span><i>at the bottom of the page to post your question in the language of your choice. The forum you posted in is for English only. If you do not find the desired
+ language, support options for additional international locations can be found by following the link below:</i><br />
+<br />
+<br />
+<b>Por favor, seleccione su idioma en la lista desplegable anterior para enviar tu pregunta en el idioma de su elección. El foro que ha publicado es para Inglés solamente. Si usted no encuentra el idioma que desee por encima de, las opciones para apoyar
+ a otros destinos internacionales se puede encontrar siguiendo el siguiente enlace:<br />
+</b><br />
+<br />
+<a href="http://answers.microsoft.com/es-es/windowslive/forum/hotmail-people?tab=unanswered&amp;tm=1349893202025">http://answers.microsoft.com/es-es/windowslive/forum/hotmail-people?tab=unanswered&amp;tm=1349893202025</a><br />
+<br />
+<a href="http://support.microsoft.com/common/international.aspx" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/common/international.aspx</a><br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I disable Microsoft Security Essentials without uninstalling - Microsoft Community</title>
+<h3> steveplancic  say:</h3>
+<h2>            How do I disable Microsoft Security Essentials without uninstalling it&#63;</h2>
+                    <p>How do I
+<u>disable</u> Microsoft Security Essentials without <u>uninstalling</u> it?<span>&nbsp;
+</span>My corporate IS department requires your program to attach to their network.<span>&nbsp;
+</span>My family relies on McAfee Total Protection which we prefer.<span>&nbsp;
+</span>I only need your program to run when I connect to my company server once a month.
+<span>&nbsp;</span>I do not want two virus protection programs running all the time.</p>
+<span>&nbsp;</span>I do not want two virus protection programs running all the time.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ahaap" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "AH"); this.style="display: inline-block";'
+<h3> ahaap  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Open MSE, click Settings, click Real Time Protection., uncheck it.</p>
+<p>Be sure to re-check it when done.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>App password - Microsoft Community</title>
+<h3> slad it support  say:</h3>
+<h2>            App password</h2>
+                    <p>Why I cannot create an app password. We have done this before with this account but i'm getting this error now</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/58bac059-cfd7-4b28-a1ea-36ff9b93b0bb" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/58bac059-cfd7-4b28-a1ea-36ff9b93b0bb" /></a></p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rudy Xu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "RX"); this.style="display: inline-block";'
+<h3> rudy xu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello SLAD,</p>
+<p>
+</p><p>It may be a temporary network issue, please wait a moment to try again. </p>
+<p>
+</p><p>Meanwhile, may I know which client you need create an App Password, Outlook, Skype for Business or others? And have the admin enabled the
+<a href="https://support.office.com/en-us/article/set-up-2step-verification-8f0454b2-f51a-4d9c-bcde-2c48e41621c6" target="_blank" rel="noreferrer nofollow">
+2-steps verification</a> in the Admin center? If so, please follow the article to try again, see:</p>
+<p><a href="https://support.office.com/en-us/article/Create-an-app-password-for-Office-365-3e7c860f-bda4-4441-a618-b53953ee1183" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Create-an-app-password-for-Office-365-3e7c860f-bda4-4441-a618-b53953ee1183</a></p>
+<p>
+</p><p>Also, please try changing the browser to create again.</p>
+<p>
+</p><p><span>If the issue persists, please tell us this Office 365 account is hosted on cloud or on-premises. And, we need collect your account information in details.
+</span><span>For privacy concern, I have sent you a Private Message to collect it. You can open your community profile and then click
+</span><span style="font-weight: bold">View private message</span><span> to access it.</span></p>
+<p>
+</p><p>Regards,</p>
+<p>Rudy</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Cannot start Microsoft Outlook&#34; The command line argument is - Microsoft Community</title>
+<h3> pjn-ran  say:</h3>
+<h2>            &#34;Cannot start Microsoft Outlook&#34; The command line argument is not valid&#34; when opening Outlook through Sharpdesk</h2>
+                    <p>Having some issues getting a program (Sharpdesk) to open Outlook 2016. Previous versions of Outlook worked fine, but since upgrading I'm not able to simply add Outlook as an accessory as I used to do. I can open Outlook fine otherwise, but being able to
+ open it directly from Sharpdesk is a nice time saver.</p>
+<p>
+</p><p>The exact error message I'm getting is "Cannot start Microsoft Outlook. The command line argument is not valid. Verify the switch you are using"</p>
+<p>
+</p><p>I've tried /resetnavpane as many have suggested, but it didn't resolve my issue.</p>
+<p>
+</p><p>Any assistance provided would be appreciated.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The error is with Sharpdesk, the outlook switches you have used will not help.</p>
+<p>I use another doc management software, but I dont access outlook through it </p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Uninvited user can see the meeting details - Microsoft Community</title>
+<h3> horwin zhao  say:</h3>
+<h2>            Uninvited user can see the meeting details</h2>
+                    <p>At the moment all persons in our company can see the complete meeting details of other person's booking room.</p>
+<p>Is that possible to change some settings so that just the invited users can see the detail others can not?</p>
+<p>
+</p><p>We've tried setting the meeting as private, however, it didn't work.<br />
+Please help us to fix this issue.<br />
+</p>
+<p>Thanks &amp; Best Regards,<br />
+Horwin</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Horwin,</p>
+<p>
+</p><p>To better assist you, we'd like to know the following:</p>
+<p>
+</p><ul>
+<li>Are you using Outlook for Business?</li><li>When you set the meeting to private, have you tried to restart your device?</li></ul>
+<p>In the meantime, you can change the permissions on your Calendar folder to not expose the details for any appointment or meeting via Free/Busy status. Kindly follow the steps below:</p>
+<p>
+</p><ol>
+<li>Right-click <strong>Calendar</strong> folder.</li><li>Choose <strong>Properties</strong>.</li><li>Click <strong>Permissions </strong>tab.</li><li>In the <strong>Name list</strong>, select <strong>Default</strong>.</li><li>Change <strong>Permissions Level</strong> to <strong>Free/Busy time</strong>.</li><li>Click <strong>OK </strong>to close the dialog.</li></ol>
+<p>Let us know how it goes.</p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Managing the order of suggested names in autocomplete in Outlook - Microsoft Community</title>
+<h3> rjl_web  say:</h3>
+<h2>            Managing the order of suggested names in autocomplete in Outlook</h2>
+                    <p>Is there a way to control the order in which suggested names appear in autocomplete in TO in Outlook?&nbsp; For example, if there are 2 email address, *** Email address is removed for privacy *** and *** Email address is removed for privacy ***, is there a way to set *** Email address is removed for privacy *** as the default?</p>
+<p>
+</p><p>I'm using Office 2016 with Windows 10 and Office365.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No there isn't. Typically it is the people you email the most, but the criteria isn't released by Exchange team to say specifically how they are determined.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Stay signed in&#63; - Don&#39;t show this again - Microsoft Community</title>
+<h3> mikejacoby  say:</h3>
+<h2>            Stay signed in&#63;  - Don&#39;t show this again</h2>
+                    <p>
+</p><p>My issue is <em>not </em>the ability to stay signed in.&nbsp; My issue is that I don't want to see this again and I constantly see this message re-appear...</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/5ab41f3b-fb96-4b92-9282-ba57b279989b?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/5ab41f3b-fb96-4b92-9282-ba57b279989b?upload=true" /></a></p>
+<p>
+</p><p>This feature is built into Office 365 for business and home; I see this on my work account and my home account.&nbsp;&nbsp;<br />
+<br />
+I imagine everyone clicks Yes to stay signed in.&nbsp; I click No, and I also click "Don't show this again" every single time.&nbsp; I have&nbsp;<em>never</em> clicked Yes to stay signed in.&nbsp; I don't want my credentials stored, and I don't want to be remembered.&nbsp; Many times
+ I login to my personal 365 account from work.&nbsp; </p>
+<p>
+</p><p>I do not believe this issue has regressed.&nbsp; I don't believe it has worked since the day it was implemented (released to production).&nbsp; If you want me to perform QA for you, I will track this issue in a spreadsheet with dates, browser used, operating systems,
+ and whatever other information you feel you need.&nbsp; I don't use IE all that much, but I know this is recurring in Firefox and Chrome on W10 and W7.&nbsp; I don't have time to scour every single discussion in this forum to see if others have complained about this.&nbsp;
+ The few discussion groups I saw were people talking about staying signed in not keeping them signed in.&nbsp; &nbsp;That's not the same as this issue I'm reporting.&nbsp;&nbsp;<br />
+<br />
+What I'll do is logout of my accounts after I post this message, and I imagine when I sign back in, I'll see this message popup again.&nbsp; But I will say it's not 100%, so it's an inconsistent bug from my experience.&nbsp; At some point today though - whether at work
+ or home - I'll see this again, despite the fact that I've already clicked "Don't show this again" hundreds of times over the past year or so.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Oliver Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "OW"); this.style="display: inline-block";'
+<h3> oliver wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi MikeJacoby,</p>
+<p>&nbsp;</p>
+<p>Based on your description, I know you have enabled “ Don’t show this again” and also clicked No in the sign in options, and the stay sign in message appears again when you re-sign in. First, to isolate if this scenario is related to the
+ cache of your browsers ( Chrome or Firefox), please sign out your Office 365 account at first, and then clean
+<strong>all the cache data</strong> of your browser ( Chrome). After that please restart your Chrome and use your Office 365 account to sign into Office 365 portal (
+<a href="https://www.office.com/" target="_blank" rel="noreferrer nofollow">https://www.office.com/</a>) and repeat the steps you mentioned then see if it can make any difference, thanks.</p>
+<p>&nbsp;</p>
+<p>If you got any further updates, please feel free to let me know.</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Oliver</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Camera - Microsoft Community</title>
+<h3> michaelcornell1  say:</h3>
+<h2>            Camera</h2>
+                    <p>when I try to open up my camera to chat with someone, it shows a mirror image or does not become active. &nbsp;How can I correct this problem?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> juan_o789  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/855c30d8-6b83-4391-bb94-dbb45aa47c48" title="MichaelCornell1">
+<p>
+</p><p>I am sorry to hear that, but I just want to know more information about your issue, please do answer the following questions.</p>
+<p>
+</p><p>1. What is the exact Skype version that is currently installed on your Mac device? (please provide the version number).</p>
+<p>2. Were you using an external camera or internal?</p>
+<p>3. How has this been happening?</p>
+<p>
+</p><p>I will look forward to your reply.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_mac">skype_for_mac, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=audio_and_video">audio_and_video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can I change my Outlook.com inbox font color into black&#63; - Microsoft Community</title>
+<h3> randell jay  say:</h3>
+<h2>            How can I change my Outlook.com inbox font color into black&#63;</h2>
+                    <p>Original post: Just had my old Hotmail transformed to the new Outlook. Who are the&nbsp;(removed by Moderator)&nbsp;who decided that light grey type is easier to read than black? Is there any way to change that color on my screen?</p>
+<p>
+</p><p>These 60-year-old eyes find it hard to read the light grey type that y'all apparently think makes you look cool. Utility is more important to to me &nbsp;than "cool". Can I change it to black on my screen?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="&#161;Firedog" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "F"); this.style="display: inline-block";'
+<h3> &#161;firedog  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>... who decided that light grey type is easier to read than black? Is there any way to change that color on my screen?</p>
+</blockquote>
+<p>
+</p><p>This is an old question which was never satisfactorily answered despite the markings on some of the posts. It still attracts attention, possibly because it's been marked as answered, so here's a different response:</p>
+<p>
+</p><p>This sort of problem is best tackled by making style adjustments in the browser, to override the styles dictated by the web page's designers. I only ever use Internet Explorer, and this is how I make the text in Outlook.com's message list both bigger and
+ blacker without affecting anything else much.</p>
+<p>
+</p><p>1.&nbsp;&nbsp; Copy the text in this box and paste it into a new Notepad document:</p>
+<p>
+</p><blockquote>
+<br />
+{font-size: 14px !important; color:#000 !important;} <br />
+.mlUnrd.t_sel div, .mlRd.t_sel div, .mlUnrd.t_sel span, .mlRd.t_sel span, .mlUnrd.t_sel a, .mlUnrd.t_sel .Fm a, .mlRd.t_sel a, .mlUnrd.t_sel .DtB a, .mlRd.t_sel .DtB a
+<br />
+{color: #FFF !important}</p>
+</blockquote>
+<p>
+</p><p>2.&nbsp;&nbsp; Click <em>File &gt; Save As</em>. In the <em>Save as type</em> box,&nbsp;select <em>
+All files (*.*)</em>, then in the <em>File name </em>box type <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong>ol-black.css </strong></p>
+<p>3.&nbsp;&nbsp; Select a suitable place to save the file, e.g. in your Documents folder.&nbsp;&nbsp;</p>
+<p>4.&nbsp;&nbsp; Open Internet Explorer and go to your inbox at http://mail.live.com <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The message list will probably look something like this:</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fsbm6za.dm2301.livefilestore.com%2fy2pyE1Yq-6A8gRFja9uuBMZP94Fs_q0BfmBiMeLQsGupThI5z7pS2dN5lIKm45ndERIVL6KrqNh3OPMT2h7yBZZhS91jOVp-pNA6SVF1JpbTUk%2fOL-message%2520list-before.png%3fpsid%3d1" /></p>
+<p>
+</p><p>5.&nbsp;&nbsp; Click the Internet Explorer settings cog in the top right-hand corner of the window
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (not the identical outlook.com one below it). Select <em>Internet options</em>.</p>
+<p>6.&nbsp;&nbsp; Click the <em>Accessibility </em>button on the <em>General </em>tab.</p>
+<p>7.&nbsp;&nbsp; Select <em>Format documents using my style sheet</em> and click <em>Browse</em>.</p>
+8.&nbsp;&nbsp; Navigate to the file you saved earlier, select it and click Open.
+<p>9.&nbsp;&nbsp; Click OK twice. With any luck, your message list will now look something like this:</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fsbm6za.dm2301.livefilestore.com%2fy2pbhB1HpAjAtJwxLpt27BCWCcs7_f41ZCp7BdNooA1t6H9sRiH9atjJRyRMY01o7urQD2InTSLPclwBn-MkQUthkfVto7DHT8rpKX24xIlxBE%2fOL-message%2520list-after.png%3fpsid%3d1" /></p>
+<p>
+</p><p>The CSS file can be fine-tuned if necessary. Does this help any of you?</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Everyone,</p>
+<p>&nbsp;</p>
+<p>I can see how important it is&nbsp;to all of&nbsp;you to be able to change the font settings in the new interface. Your level of dissatisfaction of not being able to change the font settings of your Outlook.com emails is completely justified. We appreciate your time
+ in sharing your thoughts and opinions while we are working to fine tune your Outlook.com experience.
+</p>
+<p>&nbsp;</p>
+<p>If you want this feature to be available to the product, please send us a feature request on this
+<a href="http://feedback.live.com/" target="_blank" rel="noreferrer nofollow">link.</a></p>
+<p>&nbsp;</p>
+<p>If you need additional assistacnce, please let us know.</p>
+<p>&nbsp;</p>
+<p>Thank you,<br />
+Alix Xedjhidee</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Bing error message - Microsoft Community</title>
+<h3> bryanhargis  say:</h3>
+<h2>            Bing error message</h2>
+                    <p>c4493de8463a47fcad57571e0e875230 Ref B: 89658FEB9CB8860D8015E511CBD04208 Ref C:
+<br />
+Wed Mar 12 06:23:59 2014 PST</p>
+<p>
+</p><p>When I try to use More On Bing this message is coming up and it redirects me to type in a scrawled security question. In other words it does not appear that I am&nbsp; allowed to use More On Bing unless I first type in this so-called security measure that is
+ displayed in scrawled letters that requires me to manually type the message (code?) to confirm that it is acually persons of my household useing the More On Bing as opposed to another entity in a robo fashion.</p>
+<div>
+<div>
+<div><a href="https://www.bing.com/?FORM=HDRHME&amp;pq=" target="_blank" rel="noreferrer nofollow">
+<div>
+
+</div>
+</a>
+<div><a href="https://www.bing.com/?FORM=Z9FD1" target="_blank" rel="noreferrer nofollow"><span>Bing</span></a></div>
+<div>
+<table>
+<tbody>
+<tr>
+<td>
+</td><td>
+<div><span>Sign in</span><span>&nbsp;&nbsp;</span></div>
+<div>
+
+<span>8</span></div>
+<span>8</span></div>
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<span>
+<span>
+<table>
+<tbody>
+<tr>
+<td>
+
+</td>
+<td>
+<div>Microsoft account</div>
+<div><span>Disconnected</span></div>
+</td>
+<td><a href="https://login.live.com/login.srf?wa=wsignin1.0&amp;rpsnv=12&amp;ct=1394633206&amp;rver=6.0.5286.0&amp;wp=MBI&amp;wreply=https:%2F%2Fwww.bing.com%2Fsecure%2FPassport.aspx%3Frequrl%3Dhttps%253a%252f%252fwww.bing.com%252fsearch%253fq%253dlena%252520snl%2526form%253dBWVPST%2526mkt%253den-US&amp;lc=1033&amp;id=264960" target="_blank" rel="noreferrer nofollow">Connect</a></td>
+</tr>
+<tr>
+<td>
+
+</td>
+<td>
+<div>Facebook</div>
+<div><span>Disconnected</span></div>
+</td>
+<td><a href="https://www.bing.com/fd/auth/signin?action=interactive&amp;provider=facebook&amp;sig=38B10B6166AA4F40978A84AB0E1CA37C&amp;return_url=https%3a%2f%2fwww.bing.com%2fsearch%3fq%3dlena%2520snl%26form%3dBWVPST%26mkt%3den-US&amp;src=EXPLICIT&amp;perms=read_stream%2cuser_photos%2cfriends_photos" target="_blank" rel="noreferrer nofollow">Connect</a></td>
+</tr>
+<tr>
+<td colspan="3">
+</td></tr>
+<tr>
+<td colspan="3">
+<div>
+<div><a href="https://www.bing.com/profile/history" target="_blank" rel="noreferrer nofollow">Search history</a>&nbsp; • &nbsp;<a href="http://go.microsoft.com/fwlink/?LinkID=191371" target="_blank" rel="noreferrer nofollow">Learn more</a></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+</span></div>
+<div>
+<div>
+
+Pardon the interruption
+<p>We know you want to get back to searching, and we want to help you do that.</p>
+<p>We ask that you view the characters in the following picture and enter them in the box below.</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fwww.bing.com%2fchallengepic%3fencanswer%3d39274786A2076354D308E015D8894EEEF21952336A9FEC64D503281A2780CA62E024A5E085CF3A826AE6C67643845605" /></p>
+<p>Can't read this? <a href="https://www.bing.com/challenge?reload=1&amp;query=%2fsearch%3fq%3dlena%2520snl%26form%3dBWVPST%26mkt%3den-US" target="_blank" rel="noreferrer nofollow">
+Try another</a></p>
+<p>
+Why do I need to do that?
+</p><p>Typing the characters in the picture above helps us ensure that a person, not a program, is performing a search.</p>
+<p>Why is that important? Some programs perform repeated searches for malicious purposes. Preventing those automated searches ensures that everyone else has faster, more reliable search results. Your computer, or another one in your network, has done so much
+ searching lately that we're concerned an automated program might be at work.</p>
+
+</div>
+</div>
+<div>
+<ul>
+<li><span>© 2014 Microsoft</span> | </li><li><a href="http://go.microsoft.com/fwlink/?LinkId=248686&amp;CLCID=409" target="_blank" rel="noreferrer nofollow">Privacy and Cookies</a> |
+</li><li><a href="http://g.msn.com/1ewbingwin8/settingsTOUen-US" target="_blank" rel="noreferrer nofollow">Legal</a> | </li><li><a href="http://advertise.bingads.microsoft.com/en-us/advertise-on-bing" target="_blank" rel="noreferrer nofollow">Advertise</a> |
+</li><li><a href="http://g.msn.com/AIPRIV/en-us" target="_blank" rel="noreferrer nofollow">About our ads</a> | </li><li>Feedback</li></ul>
+</div>
+</div>
+</div>
+<div>
+<div>n.d?(sj_so(i,0),r(),c=sb_st(sj_wf(a.init,i,0,100,10,sc_fadeCb),o)):(r(),sj_so(i,100),sc_fadeCb()),sj_cook.set(n.cN,n.crN,n.hash,0,"/")}var f=new Image,a=sj_fader(),w=0,p=0,c,y;t("onSearch",function(){n.x=!0,f=null,a.stop(),sb_ct(c)}),l(),f.onload=function(){p=sb_gt()-y,s(r,f,p)},y=sb_gt(),f.src=n.url}var
+ n=g_img,i=_ge(n.id),f=sj_evt,t=f.bind,u=f.unbind,s=f.fire,r="onBgLoad",h="onSbBusy",e="onSbIdle",o=typeof n.del!="undefined"?n.del:500;t("onP1",c,1,o)}sc_fadeCb=function(){},sj_evt.bind("onP1",function(){_w.g_img&amp;&amp;g_img.cN||sj_evt.fire("onBgSet")},1);g_img
+ = {url:'/az/hprichbg/rb/MoerakiBouldersNZ_EN-US815162679-d.jpg',id:'sw_im',d:'1',cN:'_SS',crN:'nhIm',hash:'79-'};sc_bgL();;var Identity=Identity||{};(function(n,t,i,r,u,f,e,o,s,h){s.fbProfile=function(){var e="FBS",f=n(e,"N"),u=n(e,"FN"),r=n(e,"I"),i=n(e,"IB"),o;return
+ f?(f=t(f),u&amp;&amp;(u=t(u)),r&amp;&amp;(r=t(r)),i&amp;&amp;(i=t(i)),o="/fd/s/a/anon.png",r||(r=o),i||(i=o),u||(u=f),{displayName:f,name:u,img:r,imgL:i,idp:"FB"}):null},s.wlProfile=function(){var u="WLS",r=n(u,"N"),i=n(u,"C");return r&amp;&amp;i&amp;&amp;s.wlImgSm&amp;&amp;s.wlImgLg?{displayName:t(r),name:t(r),img:s.wlImgSm.replace(/\{0\}/g,o(i)),imgL:s.wlImgLg.replace(/\{0\}/g,o(i)),idp:"WL"}:null},s.headerLoginMode=0,s.popupAuthenticate=function(n,t,r){var
+ e,h,u,f;return(e=s.popupLoginUrls)&amp;&amp;(h=e[n]+(t?"&amp;perms="+o(t):"")+(r?"&amp;src="+o(r):""))&amp;&amp;(u=s.pop(h))&amp;&amp;(f=setInterval(function(){u.closed&amp;&amp;(i.fire("id:popup:close"),clearInterval(f))},100))},s.pop=function(n){return f.open(n,"idl","location=no,menubar=no,resizable=no,scrollbars=yes,status=no,titlebar=no,toolbar=no,width=1000,height=620")};var
+ y=0,c=e("id_h"),a=e("id_d"),p=e("id_l"),w=e("hp_sw_hdr"),k=e("id_la"),b="click",l="px",v=function(){if(c&amp;&amp;a)if(w)a.style.top=y+w.clientHeight+l;else{var n=_d.body.clientWidth-c.clientWidth;h?c.style.right=n+l:c.style.left=n+l,h?a.style.right=n+5+l:a.style.left=n+5+l,a.style.top=y+85+l}};i.bind("onP1",function(){setTimeout(function(){c&amp;&amp;p&amp;&amp;(u("FdNetIdentityDropdown_c",1,c,"mouseover",p,b,k,"focus"),r(p,b,function(n){s.hdrClk=n})),r(f,"resize",v),r(f,"scroll",v),i.bind("sw_width:top_changed",function(n){y=n[1],v()},1),c.style.display="block",v()},50)})})(sj_cook.get,decodeURIComponent,sj_evt,sj_be,sj_jb,_w,_ge,encodeURIComponent,Identity,_G.RTL);(function(){if(sj_evt&amp;&amp;Identity){var
+ n=function(){var r=_ge("id_n"),n=_ge("id_p"),u=_ge("id_s"),i,t,e,f;r&amp;&amp;u&amp;&amp;((i=Identity.fbProfile())||(i=Identity.wlProfile())||(i=Identity.twProfile()))?(t=i.displayName,e=i.img,n&amp;&amp;(n.title=t,n.src=e,n.style.display="inline"),t.length&gt;10&amp;&amp;(t=t.substring(0,10).replace(/\s+$/,"")+"…"),r.textContent=t,r.innerText=t,r.style.display="inline",u.style.display="none",i.idp=="WL"&amp;&amp;(f="url(/fd/s/a/anon.png)",n&amp;&amp;(n.style.backgroundImage=f))):r&amp;&amp;u&amp;&amp;(r.style.display="none",n&amp;&amp;(n.style.display="none"),u.style.display="inline")};sj_evt.bind("fb:connected",n,1),sj_evt.bind("wl:auth",n,1),sj_evt.bind("fb:auth",n,1)}})();var
+ Identity = Identity || {};(function(i){i.twProfile = function (){return null;};i.wlImgSm = "http\x3a\x2f\x2fcid-\x7b0\x7d.users.storage.live.com\x2fusers\x2f0x\x7b0\x7d\x2fmyprofile\x2fexpressionprofile\x2fprofilephoto\x3aUserTileStatic\x2fp\x3fck\x3d1\x26ex\x3d720\x26fofoff\x3d1\x26sid\x3d38B10B6166AA4F40978A84AB0E1CA37C";i.wlImgLg
+ = "http\x3a\x2f\x2fcid-\x7b0\x7d.users.storage.live.com\x2fusers\x2f0x\x7b0\x7d\x2fmyprofile\x2fexpressionprofile\x2fprofilephoto\x3aUserTileMedium\x2fp\x3fck\x3d1\x26ex\x3d720\x26fofoff\x3d1\x26sid\x3d38B10B6166AA4F40978A84AB0E1CA37C";i.popupLoginUrls ={"WindowsLiveId":"https\x3a\x2f\x2flogin.live.com\x2flogin.srf\x3fwa\x3dwsignin1.0\x26rpsnv\x3d12\x26ct\x3d1394633090\x26rver\x3d6.0.5286.0\x26wp\x3dMBI\x26wreply\x3dhttps\x3a\x252F\x252Fwww.bing.com\x252Fsecure\x252FPassport.aspx\x253Fpopup\x253D1\x2526ssl\x253D1\x26lc\x3d1033\x26id\x3d264960","Facebook":"https\x3a\x2f\x2fwww.bing.com\x2ffd\x2fauth\x2fsignin\x3faction\x3dinteractive\x26provider\x3dfacebook\x26sig\x3d38B10B6166AA4F40978A84AB0E1CA37C\x26return_url\x3d\x26cancel_url\x3d"};})(Identity);;(function(n,t){if(t){var
+ r=!1,i=function(){!r&amp;&amp;(r=!0)&amp;&amp;sj_jb("WindowsLiveConnect_c",1)};n.bind("onP1",function(){var r=setTimeout(i,t);n.bind("fb:connecting",function(){clearTimeout(r),n.bind("fb:connected",i,1)},1)},1)}})(sj_evt,wlc_d);var fbpkgiid = fbpkgiid || {};fbpkgiid.page
+ = 'PJ.34';;(function(n,t,i){var r=_ge("sb_feedback");r!==null&amp;&amp;n(r,"click",function(n){t("Feedback/Core",!0),i(n),function r(){var n={page:!0};if(typeof feedback=="undefined"||typeof jQuery=="undefined"){sb_st(r,50);return}feedback.core.load(n)}()})})(sj_be,sj_jb,sj_sp);sj_evt.fire("onHTML");
+ //]]&gt;&gt;</div>
+</div>
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Click on the Feedback link at the bottom of the page and explain in detail what is happening.</p>
+<p>
+</p><p>Programs performing repeated searches for malicious purposes could potentially be used for targeted advertising purposes or for enabling users to find out more information about insipient communities or generate advertising revenue through attracting reader
+ page views as first exposed in the context of social spam.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=bing">bing, </a> <br>
+<a href="/search?q=web_search">web_search, </a> <br>
+<a href="/search?q=unexpected_search_results">unexpected_search_results, </a> <br>
+<a href="/search?q=bing.com_for_pc&#47;mac_browsers">bing.com_for_pc&#47;mac_browsers, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia X3-02 Wi-Fi Problems - Microsoft Community</title>
+<h3> dddaaasss---01  say:</h3>
+<h2>            Nokia X3-02 Wi-Fi Problems</h2>
+                    
+<p>Hello.<br />
+I have problems with the internet with my phone.</p>
+<p>&nbsp;</p>
+<p>I made the changes like in this video.</p>
+<p><a href="http://www.youtube.com/watch?v=7VdGtjyIcC0" target="_blank" rel="noreferrer nofollow">http://www.youtube.com/watch?v=7VdGtjyIcC0</a><div class="AnswersExternalContent"><div class="video-container"><object aria-label="video player"><param name="movie" value="https://www.youtube.com/v/7VdGtjyIcC0?fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="sameDomain"></param><embed src="https://www.youtube.com/v/7VdGtjyIcC0?fs=1" type="application/x-shockwave-flash" allowscriptaccess="sameDomain" allowfullscreen="true"></embed></object></div></div></p>
+<p>&nbsp;</p>
+<p>When i go to youtube from the Nokia browser and select a video,when it starts to load from the media player the G sign shows on the top right corner.This happens only when i select video from youtube..Im using the wi-fi that i have in home,and still i am
+ being charged from my operator?The G doesn't show up when im browsing other sites.If say,im in a bar and im using their wi-fi will i be charged by my operator for using youtube through Opera Mini/Nokia browser if i disable any GPRS or internet settings from
+ my operator?</p>
+<p>&nbsp;</p>
+<p>How to fix this?Can i completely disable the internet from my operator and the GPRS settings and use ONLY wi-fi wherever it is available?Do i have to call my operator to disable it?</p>
+<p>&nbsp;</p>
+<p>Please help! :(</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> 3abbouddz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Try this, I think it could help : Go to Menu &gt; Settings &gt; Connectivity &gt; Packet data &gt; Pack. data conn. &gt; and check When needed<br />
+Also : Menu &gt; Settings &gt; Connectivity &gt; WLAN &gt; Internet conn. &gt; check Ask first<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 insider Preview 14371 For PC - Microsoft Community</title>
+<h3> roy whitethread  say:</h3>
+<h2>            Windows 10 insider Preview 14371 For PC</h2>
+                    <p>I am on the fast ring and currently have Build 14367 . I went to Update And Security\Windows Update and checked for updates but was not offered Build 14371. Can anyone tell me how to resolve this problem?</p>
+<p>
+</p><p>Thanks and regards,</p>
+<p>Roy</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Don Cuthbert" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "DC"); this.style="display: inline-block";'
+<h3> don cuthbert  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I had the same issue, but eventually saw Build 14372 downloading instead.&nbsp; They must have pulled 14371 earlier today.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Bulk Change Data Source Location for Word Mail Merge - Microsoft Community</title>
+<h3> prejay  say:</h3>
+<h2>            Bulk Change Data Source Location for Word Mail Merge</h2>
+                    <p>Hi Guys, </p>
+<p><br />
+</p>
+<p>The mail merge data sources were all saved in the user's My Documents folder which was redirected to a File Server. &nbsp;</p>
+<p>This server has now been decommissioned and all the data has been moved to a new Server.</p>
+<p><br />
+</p>
+<p>Unfortunately, all the Word documents being used are still looking for the old data source location.
+</p>
+<p>Is there anyway to bulk change this to point to the new location?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div><span>&gt; but was hoping that someone already had some usable code I could utilize...</span></div>
+<div><br />
+<div>Yes, who wouldn't? :-)</div>
+<div><br />
+<div>Unfortunately, dealing with this in a general way is non-trivial, because it's difficult to open a Mail Merge Main Document using VBA when the data source does not exist, without either having to deal with pop-up dialogs that you cannot reliably dismiss,
+ or without losing the data source details in the process.</div>
+<div><br />
+<div>There may be code or services out there that can help, but I can't point you to any. I am sure that many organisations have been through exactly the same process, so someone has probably put the effort in to create tools that can at least ease the transition.</div>
+<div><br />
+<div>In the absence of such code/services, if the number of merge documents that need to be converted is relatively small, it may in fact be easier (although incredibly tedious) to do the conversion by hand.</div>
+<div><br />
+<div>Even that is non-trivial, at least for certain types of data source, because if the user follows the prompts that allow them to connect to a new Excel source,</div>
+<div>&nbsp;a. they will typically be shown the OLE DB datalink dialog box, which is typically less familiar than the usual file dialog</div>
+<div>&nbsp;b. even after they have chosen a new, valid data source, if they save the document, it is not updated with the new data source information. They have to disconnect the data source and start again.</div>
+<div><br />
+<div>If you can recreate a situation where your mail merge main documents can find the existing data sources, it does make the business of updating the locations significantly simpler. At the very least, you would be able to extract the relevant information
+ for every Mail Merge Main Document programmatically.</div>
+<div><br />
+<div>I'm sorry I don't have better news for you. Perhaps someone else will. I would quite like to develop some of the bits and pieces that I do have on this front rather more, but I'm not going to have enough time for that for a while now.</div>
+<div><br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> aravinda balakrishna  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You may have to perform the mail merge manually by opening each saved document.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Inbox does not load on Nokia PC Suite - Microsoft Community</title>
+<h3> seafoodlunch  say:</h3>
+<h2>            Inbox does not load on Nokia PC Suite</h2>
+                    
+<p>Hi, this is my first time here so I'm sorry if I posted this in the wrong section!</p>
+<p>&nbsp;</p>
+<p>Anyway I am using a Nokia 5630 and when i connect my phone to the computer via USB, the PC suite detects my phone. But when I open 'Messages' on the PC Suite, around 2000+ SMSes show initially (there are around 3500+ SMSes in my inbox) and then disppear
+ after a few seconds leaving a supposedly empty inbox on the PC suite. Refreshing the messages still results in the suite displaying 0 messages in the inbox.</p>
+<p>&nbsp;</p>
+<p>Also, if I try to send a message using the PC suite, it says "Failed to send message".</p>
+<p>&nbsp;</p>
+<p>Any help? Maybe I just have too many messages in my inbox now? Cos it used to work last time.</p>
+<p>&nbsp;</p>
+<p>Thanks!</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cricfancy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>If you send SMS by your phone are you able to send those messages?&nbsp; Do take a backup of your messages using Content Copier.&nbsp; I guess you are storing your messages on memory card...Does your phone is having latest firmware??? Nokia Communication centre will
+ not show some Business card, bluetooth message, Service provider configuration SMS, even if its stored on your phone, it wont get displayed in Nokia Communicaiton Centre...(Correct me if i am wrong)</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jimdare  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>Has a solution been found to this?</span><span>&nbsp;</span><span>I'm using an E71 with PC Suite and until today had no problems.</span><span>&nbsp;</span><span>I have approx 140 text messages in the sent folder and inbox combined.&nbsp; I can still view these
+ messages on the phone and I can still send and receive texts, but on PC suite I am only showing 4 texts from mid September when I got the phone!?!? :smileymad:</span><span>&nbsp;</span><span>My phone software is up-to-date (can’t remember version number, but I
+ did check the update and it said I don’t need one) and PC suite&nbsp;is up-to-date (7.1.30.9) , I moved the text messages to the memory card and that's made&nbsp;no difference.</span><span>&nbsp;</span><span>In the settings on PC suite I have noticed that I can no longer&nbsp;get
+ notifications for received text messages, which&nbsp;I have&nbsp;got fine in the past.</span><span>&nbsp;</span><span>I am using Windows Vista 64bit in case the PC&nbsp;OS has anything to do with it (I got some windows updates yesterday!?!).</span><span>&nbsp;</span><span>Please help!</span><span>&nbsp;</span><span>Cheers,</span><span>&nbsp;</span><span>Jim.</span>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jimdare  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Just noticed the messages that are showing in the PC suite are the MMS Picture messages, but I've not got a filter on so where are the text only messages?!?!</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jimdare  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The plot thickens!</p>
+<p>&nbsp;</p>
+<p>It's Nokia Communication Centre (version 2) that's causing the problem.&nbsp;</p>
+<p>&nbsp;</p>
+<p>It can send and receive MM messages but it can't send and receive normal text messages.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> herrig  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>I&nbsp;had the problem before and I solved it.</span><span>&nbsp;</span>
+<p><span>Now I got the problem again and I really wonder what da heck to do.
+</span></p>
+<span>I reinstalled everything just to make sure, but no solution…</span>
+<p>&nbsp;</p>
+<span>Please Nokia tell us why your software is **bleep**ing up</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> herrig  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>My phone solved the problem with a simple turn of , turn on.</p>
+<p>&nbsp;</p>
+<p>Else start using the ovi system.. it havn't made to many error for me yet, even though the sms system isnt as fast as pc-suit</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sygys22  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Same problem here. nokia obviously doesnt care
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> arun_p---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Guys..</p>
+<p>I also have same issue. But some how it fixed. Now I can see all my messages inside PCSuite Messages tab. I was in back of this for half day, Got fixed because of God's help. Will explain the freaky thing I did.</p>
+<p>I am using windows XP and Pc Suite Version 7.1.40.6, Nokia 6630.</p>
+<p>&nbsp;</p>
+<p>I used datacable for connectivity.</p>
+<p>&nbsp;</p>
+<p>Total 600 messages are there in my Inbox MMC, Backup of messages also failure.</p>
+<p>&nbsp;</p>
+<p>I try with old version pc suite no luck, try with 2 or 3 other version's of PC Suites no luck. So dont wast time trying with diff versions of PC Suite, that wont help.</p>
+<p>&nbsp;</p>
+<p>Then I check for 3rd party software which can copy Messages from Memory card to Phone memory. ActiveFile_1.30.86_S60_3, I read in forum that using this software we can copy files back from Memory card to Phone memory. After installation got the icon but
+ not working, rebooted mob 3 or 4 time change version of ActiveFile app no way... Fed up and went for breakfast around 11:00pm. "Am just showing my frustration" :)</p>
+<p>&nbsp;</p>
+<p>Got an Idea, I came back and change my message settings to use phone memory which is blank. Sent a sms from my second mobile and connected to my mob to system, and check the pc suite and found that its showing that single message which is in Phone Memory.</p>
+<p>&nbsp;</p>
+<p>I used Software System Explorer: copied the Mail Folder from c:\System\Mail and copy it to my memory card for backup. Then copied Mail Folder from e:\System\Mail to c:\System\Mail and replaced all the files in c:\System\Mail. Copied all files except INDEX
+ file. Checked my phone memory message, Sick Still the same no messages. THEN I DELETED ALL THE FOLDERS AND FILES INSIDE c:\System\Mail EXCEPT INDEX FILE, and recopied the BACK up Mail folder which I first copied in the MMC.</p>
+<p>&nbsp;</p>
+<p>Then got an idea, I removed PC Suite from PC and from mobile, App Manager removed SMSSYNC and PC SUITE SUPPORT.&nbsp; Reinstalled PC Suite in my PC and installed SMSSYNC and PC SUITE SUPPORT in Mobile when i got the pop up when i connect mob to the pc after the
+ Installation.</p>
+<p>&nbsp;</p>
+<p>Changed the message setting back to Use Memory Card. PC SUITE Load all the 600 Messages.. :) :) :).&nbsp; I checked taking BACK UP using PC Suite also.. IT is also Full success.. :) :). For verification I explore the backup file .nbu using the application NbuExplorer_v1.16.
+ and its listing all the files and folders.</p>
+<p>&nbsp;</p>
+<p>Any Questions mail me:&nbsp;&nbsp;&nbsp; *** Email address is removed for privacy ***</p>
+<p>Happy to Help you.. :) :)</p>
+<p>&nbsp;</p>
+<p>Nokia am using for last 6yrs.. May be their support is not good.. But Product is really good. What I Feel.. Because I used Moto and Sony.. For hard Use Nokia.. I think.. :) :)</p>
+<p>&nbsp;</p>
+<p>Thank You all... :)</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mani300826  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>i think... you may install some messaging softwares like zlango sms creater(icon msgnr)...</p>
+<p>uninstall it... then check it...</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seeppc  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Deleting sent items via pc suite worked for me.&nbsp; There were over 300 sent items in my c1-01 which when I deleted,&nbsp; inbox started loading new incoming messages as before.&nbsp; Try this with your set and see if it works for you. Good luck.</p>
+<p>&nbsp;</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot link my Microsoft account to my LinkedIn account...and other - Microsoft Community</title>
+<h3> garry bridle  say:</h3>
+<h2>            Cannot link my Microsoft account to my LinkedIn account...and other issues</h2>
+                    <p>I've been a long time user of Windows Phone in conjunction with a Microsoft Account but have had an issue I can't seem to solve myself this week.&nbsp;
+</p>
+<p>
+</p><p>The LinkedIn integration stopped working on my phone about a week ago, so I tried all the variations of removing the account from the phone, removing the permissions from Outlook.com and then re-setting up the account.&nbsp; The problem is that although LinkedIn
+ updates appear in the WHAT'S NEW section of the phone, none of the contacts sync up - this has worked flawlessly for years before now.&nbsp; Now, on the Email + Accounts screen, the sentence "Setting up your account" appears underneath the LinkedIn entry and never
+ goes away.</p>
+<p>
+</p><p>So, to try to isolate the issue, I checked if my LinkedIn contacts are syncing up in the People section of the Outlook.com and they are NOT.&nbsp; Which leads me to
+</p>
+<p>believe that my Microsoft account has become gummed up somehow.&nbsp; Also, the Family Safety features on my Outlook.com no longer appear to work properly.</p>
+<p>
+</p><p>As I believe the Microsoft account is where the problem lies, I do not believe that doing a hard reset on my phone would make any difference. (Although I could be wrong...)</p>
+<p>
+</p><p>Anyone else ever had this issue and successfully solved it?</p>
+<p>
+</p><p>Thanks</p>
+<p>
+</p><p>G.</p>
+<p>
+</p><p>PS. All other account integration (Twitter, Skype&nbsp;etc) appears to be working OK.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Garry,</p>
+<p>
+</p><p>We appreciate your time for posting your concern here in the Microsoft Community.</p>
+<p>
+</p><p>I recognize that you're unable to properly configure your LinkedIn account to Outlook.com using your mobile device. I'm glad to assist you on how to remedy this issue. To start with, we need to gather more&nbsp;information from your end so we can investigate
+ deeper on your issue.&nbsp;Kindly answer the following&nbsp;questions below.</p>
+<ul>
+<li>Does the same thing happen when you tried to connect your LinkedIn account on your Outlook.com account using your computer?</li><li>Account in question. Provide this information in the private message area for security reasons.</li></ul>
+<p>For your Family Safety concern, we advise you to submit a separate request on this
+<a href="http://answers.microsoft.com/en-us/windows/forum/windows_other-security-winfs?sort=lastreplydate&amp;dir=desc&amp;tab=Threads&amp;status=&amp;mod=&amp;modAge=&amp;advFil=&amp;postedAfter=&amp;postedBefore=&amp;threadType=All&amp;tm=1403191198691">
+<strong>thread</strong></a>. <span style="color: rgba(68, 68, 68, 1)">Even though this is not my area of expertise, I think I may be able to still assist you by making sure we get you to the right person.&nbsp;</span></p>
+<p>
+</p><p><strong>Note</strong>: You need to click the notification that states <strong>
+You have a private reply to this message. Click here to read it on our secure private message section</strong> or by clicking the
+<strong>Private Messages</strong> tab. </p>
+<p>
+</p><p>We look forward to hearing from you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> garry bridle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have replied to your private message - thanks for your help.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi G.,</p>
+<p>
+</p><p>Thank you for posting back.</p>
+<p>
+</p><p>I have replied to your private message, please check it. <span>
+You may refer to the private message area or you need to click the notification that states “You have a private reply to this message. Click here to read it on our secure private messages section.", be sure that you are signed in to view my message.</span></p>
+<p>
+</p><p>Regards,</p>
+<p>Grace</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Kay_C." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "KA"); this.style="display: inline-block";'
+<h3> kay_c.  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi G.,</p>
+<p>
+</p><p>Thank you for providing the needed information.</p>
+<p>
+</p><p>We want to properly assist you regarding the issue that you are having so we need to isolate what is causing the issue. We recommend that you link your LinkedIn account to other Microsoft account and verify if same issue will persists.</p>
+<p>
+</p><p><span>We are looking forward to your reply. Your cooperation and patience is highly appreciated.</span></p>
+<p>
+</p><p><span>Thanks,<br />
+Kay</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> garry bridle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi - thanks for your reply.</p>
+<p>
+</p><p>I've tried setting up a new Microsoft account and linking that to my LinkedIn account and the same issue still persists - my LinkedIn contacts do not sync.</p>
+<p>
+</p><p>Thank you</p>
+<p>
+</p><p>G.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Garry,</p>
+<p>
+</p><p>We appreciate your prompt reply. We need more information from your end so we can dig deeper on your issue. Please supply the requested information in the private message area.</p>
+<ul>
+<li>Screen shot of the page showing your LinkedIn contacts via People page on your device.</li><li>Screen shot of the LinkedIn page&nbsp;that is&nbsp;not showing your People contact</li><li>Permission to access your account </li></ul>
+<p><strong>Note</strong>: You need to click the notification that states <strong>
+You have a private reply to this message. Click here to read it on our secure private message section</strong> or by clicking the
+<strong>Private Messages</strong> tab. </p>
+<p>
+</p><p>We will be awaiting for your reply.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michaelkav  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Just like to put my hand up and say I am having very similar problems with LinkedIn connecting to People.
+</p>
+<p>I have two accounts linked to LinkedIn - home (A), and work (B).</p>
+<p>I noticed at one point both had stopped updating the contact list, so I removed the connection t LinkedIn on A and re-linked it, assuming it would then grab the full contacts list. Instead, while it says it's connected, it's now grabbing none at all.
+</p>
+<p>To make matters worse, B is still not updating the list. </p>
+<p>This may have something to do with my creating an alias email for A, and setting&nbsp;that alias&nbsp;as the primary email contact in LinkedIn. But surely not?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Michael,</p>
+<p>
+</p><p>Thank you for bringing this concern to our attention. I understand that you're having the same issue as the original poster. It would be helpful if you could provide us following information below so we can dig deeper on the possible cause of this issue.</p>
+<ul>
+<li>Screen shot of the page showing your LinkedIn contacts via People page on your device.</li><li>Screen shot of the LinkedIn page&nbsp;that is&nbsp;not showing your People contact.</li><li>Permission to access your account.</li><li>3 sample contacts from LinkedIn.</li><li>Your affected account in question.</li><li>Other <span>
+troubleshooting steps you've performed before posting your concern in this forum. This is to ensure that we will not repeat the actions that you've taken.</span></li></ul>
+<p><strong>Note</strong>: You need to click the notification that states <strong>
+You have a private reply to this message. Click here to read it on our secure private message section</strong> or by clicking the
+<strong>Private Messages</strong> tab. </p>
+<p>
+</p><p>We love to hear from you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michaelkav  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Umm noob question: There's no link in that&nbsp;bold&nbsp;text for me to click on for the private reply. How do I make the reply?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ralph_YS" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RA"); this.style="display: inline-block";'
+<h3> ralph_ys  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi MichaelKav,</p>
+<p>
+</p><p>Thank you for your patience on this issue.</p>
+<p>
+</p><p>I understand the challenge that you're having right now. Regarding posting your reply on the private message, please click on "<strong>You have a private reply to this message. Click here to read it on our secure private message section</strong>"
+<span>link just above your post on June 25,2014&nbsp;to view the private&nbsp;message. </span>
+<span>You also need to be signed in to the Microsoft Community forum to view the link.</span></p>
+<p>
+</p><p><span>Once you're able to access the private message created for you, kindly provide all needed information asked by
+</span><strong>Ken_Rey_C. </strong>for further investigation.</p>
+<p>
+</p><p><span>Hope this information helps. </span><span>We are looking forward to your reply for further assistance.</span></p>
+<p>
+</p><p><span><span>Regards.</span></span></p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=people_and_contacts">people_and_contacts, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Several &#34;ghost&#34; INBOX folders under Unified Inbox - Microsoft Community</title>
+<h3> knurmia  say:</h3>
+<h2>            Several &#34;ghost&#34; INBOX folders under Unified Inbox</h2>
+                    After removing Gmail IMAP account from Outlook 2011 sometime in May, I noticed several "ghost" INBOX folder under Unified Inbox (see the picture below). Under the Unified Drafts I also have three Drafts folders, the Unified Sent Items, Unified Deleted
+ Items and Unified Junk E-mail only have a single extra folder.<br />
+<br />
+<img src="https://filestore.community.support.microsoft.com/api/images/ace85e32-a015-42e6-af40-c3b39f100b1f" /><br />
+<br />
+All the folders show the same last synced time (see below).<br />
+<br />
+<img src="https://filestore.community.support.microsoft.com/api/images/3e70fc62-09ca-4123-b718-21c3719e3455" /><br />
+<br />
+I've tried removing the Gmail mailbox and adding it again, but the folders don't disappear. If I disable Unified view (Tools -&gt; General -&gt; Group similar folders...), there's no account that has the INBOX folders, but changing back to Unified Inbox makes the
+ folder re-appear. Is there any way to remove the "ghost" folders or do I just have to recreate my Outlook profile?<br />
+<br />
+Kristofer<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="dianeoforegon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DI"); this.style="display: inline-block";'
+<h3> dianeoforegon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            When you delete an IMAP account it should delete all folders associated with the account. When you delete a POP account it does not delete any folders. I don't see the "On My Computer" Inbox in your screen shot. It appears you only have IMAP accounts.<br />
+<br />
+It sounds like database corruption. I suggest moving to a new Identity using the steps in the following link, but with a slight modification. Rebuilding will most likely not fix this type of problem and you'll do the same amount of work and get a stable Identity
+ by moving rather than rebuilding.<br />
+<br />
+Instead of trying to delete all accounts and since it appears you don't have any mail stored under "On My Computer" folders, do a File &gt; Export and uncheck Mail but export all other items as .olm file.<br />
+<br />
+<a href="http://www.office.mvps.org/troubleshoot/keychain.html" target="_blank" rel="noreferrer nofollow">How to move your data to a new Identity</a><br />
+<br />
+Under Outlook in the Menu bar select About Outlook to view version info. Please verify that you are using the latest version of Outlook, v 14.3.6<br />
+<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> knurmia  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have chosen to hide the On My Computer folders as I don't have anything stored on my computer. I actually have two Exchange accounts in addition to the IMAP account. I will try what you suggested, but just so you know, the link you provided is broken.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="dianeoforegon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DI"); this.style="display: inline-block";'
+<h3> dianeoforegon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            How to move your data to a new Identity<br />
+<br />
+http://www.officeformachelp.com/2012/05/how-to-move-your-data-to-a-new-identity/<br />
+<br />
+The form inserts the http:// so it got tacked on at the end causing the link to break. You can copy/paste the link above.<br />
+<br />
+It's possible you have local data for contacts and calendars that you would need to export, but if those are stored in Exchange, starting over in a new Identity should be very simple.<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

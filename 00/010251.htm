@@ -1,0 +1,1937 @@
+    <title>parameter query - Microsoft Community</title>
+<h3> jeannecote  say:</h3>
+<h2>            parameter query</h2>
+                    <p>I am using a parameter query that lets the user enter the code from a field entitled MP or enter * to get all the labels which then print.&nbsp; Is there a delimiter that can be used to enter non consecutive entries in the query, I tried comma and semi-colon.&nbsp;
+ For example, I would like to be able to enter 100V102 and 402S100 in order to get both labels printed, I would also need a way of getting the number of copies, however, that is not a major issue as I can change the print button to be a print preview button.</p>
+<p>Thank you for your help</p>
+<p>Jeannie</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you do use one of the methods from the MS site to which Hans referred you, the second, using the GetToken and InParam functions is more reliable as it avoids any possible substring mismatches which the first method can sometimes produce.&nbsp; A better method
+ in my view, however, is not to use a parameter in the report's query at all, but to filter the labels report by selecting one or more values from a multi-select list box on an unbound dialogue form, which also includes a button to print the labels report.<br />
+<br />
+To do this set up the list box's RowSource property like this:<br />
+<br />
+SELECT DISTINCT [MP] FROM [YourTable] ORDER BY [MP];<br />
+<br />
+And set the MultiSelect property to Simple or Extended as preferred.<br />
+<br />
+Add a button to the form to print the report, called rptLabels in this example, with the following in its Click event procedure:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim varItem As Variant<br />
+&nbsp;&nbsp;&nbsp; Dim strMPList As String<br />
+&nbsp;&nbsp;&nbsp; Dim strCriteria As String<br />
+&nbsp;&nbsp;&nbsp; Dim ctrl As Control<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; Set ctrl = Me.lstMPCodes<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; If ctrl.ItemsSelected.Count &gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For Each varItem In ctrl.ItemsSelected<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strMPList = strMPList &amp; ",""" &amp; ctrl.ItemData(varItem) &amp; """"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next varItem<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' remove leading comma<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strMPList = Mid(strMPList , 2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strCriteria = "MP In(" &amp; strMPList &amp; ")"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoCmd.OpenReport "rptLabels", WhereCondition:=strCriteria<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox "No codes selected", vbInformation, "Warning"<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+<br />
+If you wish you can also add a button to select all labels, with this code in its Click event procedure:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim n As Integer<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; For n = 0 To Me.lstMPCodes.ListCount - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.lstMPCodes.Selected(n) = True<br />
+&nbsp;&nbsp;&nbsp; Next n<br />
+<br />
+and one to clear the selections, with:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim n As Integer<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; For n = 0 To Me.lstMPCodes.ListCount - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.lstMPCodes.Selected(n) = False<br />
+&nbsp;&nbsp;&nbsp; Next n<br />
+<br />
+Instead of opening the report you'd now open the dialogue form, select one or more codes and click the button to print the selected labels.&nbsp; You can if you wish set the report up to open the form automatically by including code in the report's Open event procedure:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Const FORMNOTOPEN = 2450<br />
+&nbsp;&nbsp;&nbsp; Dim frm As Form<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; Set frm = Forms!YourFormName <br />
+&nbsp;&nbsp;&nbsp; If Err = FORMNOTOPEN Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoCmd.OpenForm "YourFormName", OpenArgs:=Me.Name<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cancel = True<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Err &lt;&gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' unknown error<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox Err.Description, vbExclamation, "Error"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+<br />
+If you wish you can close the form in the report's Close event procedure with:<br />
+<br />
+&nbsp;&nbsp;&nbsp; DoCmd.Close acForm, "YourFormName"<br />
+<br />
+As the Click event procedure for the button on the form use:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Const REPORTCANCELLED = 2501<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; DoCmd.OpenReport Me.OpenArgs<br />
+&nbsp;&nbsp;&nbsp; Select Case Err.Number<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' no error so do nothing<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case REPORTCANCELLED<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' anticipated error so do nothing<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'unknown error so inform user<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox Err.Description<br />
+&nbsp;&nbsp;&nbsp; End Select<br />
+<br />
+Because the report passes its name to the form as the OpenArgs property this form can be used with more than one report which takes the same parameters.&nbsp; Note that the form's code handles the error which would occur if the opening of the report is cancelled.&nbsp;
+ This is to cater for reports whose opening is cancelled in their NoData event procedure if there is nothing to report.&nbsp; If you open the report directly in code from elsewhere in your application you'd also need to handle this error as the code in the report's
+ Open event procedure cancels the opening of the report if the dialogue form is not open, so say you want to open the report from a button on a form which provides a choice of available reports you'd use code the same as the above but instead of Me.OpenArgs
+ you'd put the name of the report, in quotes, or more likely a reference to a control on the form in which you select the report.<br />
+<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Two Finger Scroll Not Working in Excel - Microsoft Community</title>
+<h3> big_dude_jb  say:</h3>
+<h2>            Two Finger Scroll Not Working in Excel</h2>
+                    I have a Samsung 7 Series Chronos. &nbsp;I am running Windows 10 and Microsoft 365. &nbsp;When I use Excel, my two finger scroll will not work. &nbsp;It works just fine in every other application including Microsoft Word. &nbsp;If anyone could offer some help I'd really appreciate
+ it. &nbsp;Thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello,</span></p>
+<p>
+</p><p><span>Few more information before we proceed.</span></p>
+<p><span>Does this issue occurs while using all Excel files or is it specific to particular Excel files?</span></p>
+<p>
+</p><p><span>I suggest you to install all the pending Office update and check if it work as expected. Please refer to the information mentioned in following Microsoft article to update Office application.</span></p>
+<p><a href="https://support.office.com/en-us/article/Update-Office-and-your-computer-with-Microsoft-Update-2ab296f3-7f03-43a2-8e50-46de917611c5" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">https://support.office.com/en-us/article/Update-Office-and-your-computer-with-Microsoft-Update-2ab296f3-7f03-43a2-8e50-46de917611c5</span></a></p>
+<p>
+</p><p><span>Start Excel application in safe mode, try opening and two finger scrolling to check if it works as expected.</span></p>
+<ul>
+<li>
+<p style="color: rgba(0, 0, 0, 1)">
+Press the ‘<strong>Windows + R</strong>’ key on the keyboard.</p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+In the ‘<strong>Run</strong>’ window type <strong>Excel /safe </strong>and press ‘enter’.</p>
+<p style="color: rgba(0, 0, 0, 1)">
+<strong>Note:</strong> there is a space between the word Excel and the /</p>
+</li></ul>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>&nbsp;</span></span></p>
+<p><span>If Excel works as expected in application safe, then disable the add-in(s) by following the steps below and verify the status.</span></p>
+<p><a href="https://support.office.com/en-us/article/Work-with-Office-safe-modes-dedf944a-5f4b-4afb-a453-528af4f7ac72" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">https://support.office.com/en-us/article/Work-with-Office-safe-modes-dedf944a-5f4b-4afb-a453-528af4f7ac72</span></a></p>
+<p>
+</p><p><span>Hope this help. Please post back if you need any further assistance.</span></p>
+<p>
+</p><p><span>Thank you.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=office_365_home">office_365_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Stuck flight mode in lumia 520 - Microsoft Community</title>
+<h3> amit chandra  say:</h3>
+<h2>            Stuck flight mode in lumia 520</h2>
+                    <p>Dear reader</p>
+<p>
+</p><p>Before two months i updated my nokia lumia 520 windows 8.0 to 8.1. Now i am facing flight mode problem. It stuck on flight mode. I did hard reset and soft reset but no use. So please guide me what should i do. should i go to nokia care or&nbsp; i have to wait
+ for next release of windows update. Please guide me.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Amit Chandra,</p>
+<p>
+</p><p>Thank you for posting on Microsoft Community.</p>
+<p>
+</p><p>I understand that your Nokia Lumia 520 is stuck on the flight mode since the 8.1 update, and that a soft reset and hard reset didn't solve the issue.</p>
+<p>
+</p><p>In that case, you can try the Nokia Recovery tool (before doing this, please make sure that all your data is saved, as this will wipe your phone's memory):</p>
+<p>
+</p><p><a href="http://www.windowsphone.com/en-gb/how-to/wp8/settings-and-personalization/back-up-my-stuff" target="_blank" rel="noreferrer nofollow">Back up my stuff</a></p>
+<p>
+</p><p><a href="http://download.fds-ncom.nokia.com/supportFiles/phones/files/recovery/NokiaSoftwareRecoveryToolInstaller.exe" target="_blank" rel="noreferrer nofollow">Nokia Recovery tool</a></p>
+<p>
+</p><p>If this doesn't work, then you should send your phone to a Nokia care center for a repair or a replacement.</p>
+<p>
+</p><p>Kind regards,</p>
+<p>
+</p><p>Manon B.</p>
+<p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Starting Page Numbering from a Specified Page Not Working - Microsoft Community</title>
+<h3> bc315  say:</h3>
+<h2>            Starting Page Numbering from a Specified Page Not Working</h2>
+                    I am working on a document on which I need to start the page numbering on page 88. I know how to format the page numbers like I need them, and for other documents I have no problem inserting the page numbers where I need them and starting the page numbers
+ on the page I need them to start on.<br />
+<br />
+However, the document I'm working on now will not cooperate. It will not allow me to begin the document with an even-numbered page for some reason (though I have done this in other places). The second page (which is the first page on which the number shows
+ up), always shows page 90, instead of p. 89, and I cannot seem to change this.<br />
+<br />
+Has anyone encountered this issue before? Is there perhaps a way to circumvent the auto page numbering by using the Insert--&gt;Field command? I have not figured it out yet.<br />
+<br />
+Thanks,<br />
+Brandon<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> bc315  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for your response. Some things there I hadn't seen before.<br />
+<br />
+You suggested:&nbsp; <span style="font-style: italic">if a Word document is setup with odd and even page numbering, the first page will always be an odd numbered page. &nbsp;If you want it otherwise then don't set the headers and footer up with odd and even pages and
+ instead use the Page # button on the Document Elements tab (not the Header and Footer tab) to set the starting number.</span>
+<br />
+<br />
+However, I'm not sure using the Document Elements tab will work for the specific situation I am working on. What I am working on requires different running heads on odd/even pages, so I am using different odd/even page headers. I think I pretty much have those
+ set like I need them.<br />
+<br />
+The strange thing I'm encountering is the way this one document will not let me start the page numbering on the page I specify. It will only allow me to start the page on an odd numbered page. For other documents, I have no problem starting the numbering with
+ anything I specify.<br />
+<br />
+What it looks like to me is Word is trying to link the start of this chapter somehow to an odd numbered page break (which is possible b/c a long time ago I extracted this document from a larger document that may have had breaks in it), which is preventing the
+ chapter from starting with an even numbered page.<br />
+<br />
+In fact, just now as I kept playing around with it, and if I copied and pasted the entire document to a new document, it did allow me to start the page number where I needed to. Perhaps that will fix it. Not sure why, though.<br />
+<br />
+Thanks for your help.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Problems adding Hotmail mailbox to Outlook Mail on Win 10 mobile - Microsoft Community</title>
+<h3> alexeyrubets  say:</h3>
+<h2>            Problems adding Hotmail mailbox to Outlook Mail on Win 10 mobile</h2>
+                    <p>Hi. </p>
+<p>I've upgraded my Lumia 640xl to Win 10. </p>
+<p>After upgrade I've lost all&nbsp;mailboxes, settings and info&nbsp;(gmail, business,work), +&nbsp;together with my main&nbsp;Hotmail mailbox. I fixed all the mailboxes in Outlook Mail program but failed to do so with my Hotmail account which I use for my phone profile.
+</p>
+<p>I use Settings/Manage Account/+Add account/Outlook.com - then I put email and password, push enter, program writes that 'my account was set up successfully', I push button 'Done' and gets back to the page Manage Accounts, where I CANT&nbsp;FIND MY MAILBOX!!!!&nbsp;</p>
+<p>I did it many times. Program always says that Hotmail mailbox was installed successfully, no any singe mistake, but Hotmail mailbox never appeared in Outlook Mail.
+</p>
+<p>Some ideas how to fix it?</p>
+<p>Thanks in advance. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>&nbsp;&nbsp;&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)"><span>Hi Alexey,</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>Thank you for posting the query on Microsoft Community. I am sorry to know that you are facing issues with Outlook.com</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>I suggest you to restart the phone and configure your Outlook.com account. If the issue still persist, then
+</span></span><span style="color: rgba(51, 51, 51, 1)">configure your Outlook.com account, </span>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>Please get back to us with the above information to assist you accordingly.</span></span></p>
+<p>
+</p><p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> alexeyrubets  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>thanks but unfortunately it does not work. </p>
+<p>
+</p><p>by the way - comparing&nbsp;lists of email accounts in Settings and in Outlook Mail:&nbsp;
+</p>
+<p>I have my Hotmail account in Settings with Email Sync&nbsp;option 'ON',&nbsp;however&nbsp;I can't see&nbsp;account at all&nbsp;in Outlook Mail Settings folder.</p>
+<p>
+</p><p>And question in general - why Win 10 upgrade kills all accounts and contacts settled on Win 8.1 including mail Microsoft accounts ? Any practical sense in it ?
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)"><span>Hi Alexey,</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>Thank you for the details and </span></span><span style="color: rgba(51, 51, 51, 1)">I do appreciate your efforts and time.</span></p>
+<p>
+</p><p><span><span>To guide you in the right direction, I need more information from you by answering the following questions:</span></span></p>
+<p>
+</p><ul>
+<li><span>&nbsp; </span><span style="color: rgba(51, 51, 51, 1)"><span>In which app are you trying to&nbsp;configure your&nbsp;Outlook.com/Hotmail account?&nbsp; Is it Outlook App or any other app?<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span></li><li><span style="color: rgba(51, 51, 51, 1)"><span><span>&nbsp;</span></span></span><span>Did you try configuring your
+</span><span style="color: rgba(51, 51, 51, 1)">Outlook.com/Hotmail account in other device and checked?</span></li></ul>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>Your reply is very important for us to ensure a proper resolution.</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>Please get back to us with the above information to assist you accordingly.</span></span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I hide my personal name when I&#39;m sending an e-mail&#63; - Microsoft Community</title>
+<h3> anon2_963  say:</h3>
+<h2>            How do I hide my personal name when I&#39;m sending an e-mail&#63;</h2>
+                    How do I hide my personal name when I'm sending an e-mail?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> langware  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            1. From your outlook inbox, click the "<b>gear</b>" icon in the upper right portion of the window.<br />
+2. In the drop-down menu, cick <b>More mail settings</b><br />
+3. On the Options page under the <i>Managing your account</i> heading, click <b>Account details (password, addresses, timezone)</b><br />
+4. Re-authenticate if asked<br />
+5. In the Microsoft account page, click "<b>Edit name</b>" (the link is just under your name)<br />
+6. Change your name as desired (I don't think you can leave your name blank, but you can replace your name with single letters or single special characters)<br />
+7. Click <b>Save </b>when done<br />
+8. Not sure; you might have to sign out of your outlook account and sign back in before the change takes place<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anon2_963  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I know&nbsp;there's&nbsp;must be another way, because if I keep the name blank it writes me: &nbsp;"please enter your first and last names - don't worry, you choose who gets to see it."
+<div><br />
+<div>What I want to know is how do I choose who gets to see my name.</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Choosing who gets to see your name applies to other connected services.&nbsp; It does not apply to email.
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Table of contents and automatic numbering- help&#33; - Microsoft Community</title>
+<h3> sydneywarc  say:</h3>
+<h2>            Table of contents and automatic numbering- help&#33;</h2>
+                    <p>I have several 50+ page Word documents that all have complex table of contents. I have a problem when I update the table of contents. When I update the field, the second level of numbering (which is done in letters, (a), (b), (c), etc.) resets so that rather
+ than starting with (a) for each new section, the entire second level re-formats to form one continuous list.
+</p>
+<p>
+</p><p>So I'll have:</p>
+<p>
+</p><p>1.&nbsp;</p>
+<p>&nbsp; &nbsp; &nbsp;(a).</p>
+<p>&nbsp; &nbsp; &nbsp;(b).</p>
+<p>2.</p>
+<p>&nbsp; &nbsp; &nbsp;(c).</p>
+<p>&nbsp; &nbsp; &nbsp;(d).</p>
+<p>
+</p><p>Instead of:</p>
+<p>
+</p><p>1.&nbsp;<br />
+&nbsp; &nbsp; &nbsp;(a).<br />
+&nbsp; &nbsp; &nbsp;(b).<br />
+2.<br />
+&nbsp; &nbsp; &nbsp;(a).<br />
+&nbsp; &nbsp; &nbsp;(b).<br />
+</p>
+<p>I know that this can be fixed manually by right-clicking the first second-level letter and selecting "Restart with a." But doing this repeatedly for each update for each document is tedious. Is there a setting that allows you to set a preference once so
+ that I don't have to restart the list at each section each time?&nbsp;</p>
+<p>
+</p><p>Any and all advice or suggestions are appreciated! Thank you!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You have to set up a multilevel list where higher levels restart the lower ones. See
+<a href="http://shaunakelly.com/word/numbering/numbering20072010.html" target="_blank" rel="noreferrer nofollow">http://shaunakelly.com/word/numbering/numbering20072010.html</a>.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="SydneyWARC" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "SY"); this.style="display: inline-block";'
+<h3> sydneywarc  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'll review the link and let you know if I can get it to work! Thanks!&nbsp;
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to record Skype interview in Adobe Audition - Microsoft Community</title>
+<h3> wing yiu  say:</h3>
+<h2>            How to record Skype interview in Adobe Audition</h2>
+                    <p>Sorry for asking this dumb question.</p>
+<p>Does anyone know how to record Skype interview through Adobe Audition?</p>
+<p>We are using a Focusrite Clarett 8pre for 4 mic input but not sure how to capture the Skype interview.</p>
+<p>The machine is iMac on High Sierra.</p>
+<p>Thank you.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=everything_else">everything_else, </a> <br>
+<a href="/search?q=skype_interviews">skype_interviews, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Downloaded an Update. Now PC Won&#39;t Boot - Microsoft Community</title>
+<h3> sanji-himura  say:</h3>
+<h2>            Downloaded an Update.  Now PC Won&#39;t Boot</h2>
+                    I am a Microsoft Insider member, and I installed a new update today by way of the update and shut down command.&nbsp; However, once my PC was shut down, I unplugged it and transported it to another room for some HD gaming, but it now won't go past the main
+ board screen into the OS.&nbsp; Is this a common issue with the update?&nbsp; If so, what steps do I need to take to repair my PC?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Cuthbert" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DC"); this.style="display: inline-block";'
+<h3> don cuthbert  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I see this is 11 days old. &nbsp;Boot with Windows 10 install on a USB and see if choosing
+<em>Repair your computer</em> will fix it.
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Possible phishing email&#63; - Microsoft Community</title>
+<h3> debbiewarman  say:</h3>
+<h2>            Possible phishing email&#63;</h2>
+                    <p>Hi there.</p>
+<p>
+</p><p>Today I received an email from someone claiming to be from the following:</p>
+<p>
+</p><p>Outlook Hotmail Account Team 
+*** Email address is removed for privacy *** with the following&nbsp;email address underneath when I clicked on the above: *** Email address is removed for privacy ***./mx</p>
+<p>
+</p><p>The email said that there was unusual sign in activity detected on my account.</p>
+<p>
+</p><p>I assume that this not legit?</p>
+<p>
+</p><p>Kind Regards</p>
+<p>
+</p><p>DC</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Debbie,
+<br />If the link is to any site but <a href="https://account.microsoft.com/security" target="_blank" rel="noreferrer nofollow">https://account.microsoft.com/security</a>, then it is not legit. 
+<br />
+<br />To check the recent activity, log into your microsoft account at <a href="https://account.microsoft.com/" target="_blank" rel="noreferrer nofollow">https://account.microsoft.com/</a> then click Security and Review Activity.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="LordAlukard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "LO"); this.style="display: inline-block";'
+<h3> lordalukard  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Dear User,<br /><br />I am an independent advisor, and I am trying to help other users in Community with my experience in Microsoft products.<br /><br />This is a scam 100%. Please report this email and do not click on any links.<br /><br />I understand that this is frustrating to receive lots of spam and unwanted emails. It is even more frustrating to receive scams, spoofing and phishing emails. Scammers nowadays are using multiple methods to intimidate users.<br /><br />There are couple of ways to deal with scammers and unwanted emails (I am sure that you are aware of some and you are using them, but maybe additional information in support articles will help you):<br /><br />1. First of all check your spam filters and see suggestions on how to keep spam out of your inbox <a href="https://support.office.com/en-us/article/help-keep-spam-and-junk-email-out-of-your-inbox-in-outlook-com-a3ece97b-82f8-4a5e-9ac3-e92fa6427ae4" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/ar
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> debbiewarman  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for the reply, I will check this out.</p>
+<p>
+</p><p>Kind Regards</p>
+<p>
+</p><p>DC</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> debbiewarman  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for your reply, I will check my spam filters definitely as I seem to be getting a lot of things like this recently.</p>
+<p>
+</p><p>Kind Regards</p>
+<p>
+</p><p>DC</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You're welcome!  
+<br />
+<br />Let us know if there's anything else.  If you don't have any more questions, feel free to choose a rating. Thanks!       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="LordAlukard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "LO"); this.style="display: inline-block";'
+<h3> lordalukard  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Dear Debbie, <br /><br />Please do and please do not forget to report that email.<br /><br /> Let us know if there's anything else. If you don't have any more questions, feel free to choose a rating. Thanks!       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>windows defender - Microsoft Community</title>
+<h3> susielutz  say:</h3>
+<h2>            windows defender</h2>
+                    my windows defender says its out of date so i have windows 10 and well i&nbsp; cant seem to make it work what am i to do how can i get my windows defender to open up and start working for me
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> le boule  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Are there any other "security" programs installed?&nbsp;</span></p>
+<p><a href="https://support.microsoft.com/en-us/instantanswers/742778f2-6aad-4a8d-8f5d-db59cebc4f24/how-to-protect-your-windows-10-pc" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-us/instantanswers/742778f2-6aad-4a8d-8f5d-db59cebc4f24/how-to-protect-your-windows-10-pc</a><span style="color: rgba(51, 51, 51, 1)">&nbsp;
+ Note the statement "</span>If you want to use Windows Defender Antivirus, uninstall all of your other antivirus programs and Windows Defender Antivirus will automatically turn on. You may be asked to restart your device."</p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">On Windows 8.1/10 when a third party antimalware program (such as AVG, Avast, McAfee, Norton, etc) is installed the Windows Defender (WD) program is disabled by design to prevent potential software conflicts and performance issues.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">If you wish to use WD on Win 8.1/10 you should ensure that any third party antimalware program that may be on the computer (or was previously on the computer – possibly before it was upgraded to Win 10) has been uninstalled and
+ that no remnants remain. Note – most new computers included a trial version of various antivirus programs (McAfee, Norton, etc) depending on what the vendor/manufacturer wanted to be included on the computer.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">It is recommended that you also run the appropriate software removal tool for McAfee, Norton, Trend, etc and any other third party program(s) that were ever on the computer and then restart the computer.&nbsp;</span><a href="http://answers.microsoft.com/en-us/protect/wiki/mse-protect_start/list-of-anti-malware-product-removal-tools/2bcb53f7-7ab4-4ef9-ab3a-6aebfa322f75" title="This document is intended for assisting those using Microsoft Security Essentials (MSE) on Windows XP, Windows Vista, and Windows 7. It is also used to assist users with Windows Defender (WD) on Windows 8.">List&nbsp;of
+ anti-malware product removal tools</a></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">WD should then be enabled though you might need to restart WD in Security Center.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">For further information see the Answer of&nbsp;<a href="https://answers.microsoft.com/en-us/profile/dbf2eeab-ecb2-40e3-8dfe-25191b0dbb6e" title="quietman7 - MVP"><span style="color: rgba(0, 82, 147, 1)">quietman7 - MVP</span></a>&nbsp;&nbsp;in&nbsp;</span><a href="https://answers.microsoft.com/en-us/protect/forum/protect_defender-protect_updating/windowsdefender-wont-turn-on/c502c63f-2ffe-4cfd-8b6b-bdfd086cfae0">https://answers.microsoft.com/en-us/protect/forum/protect_defender-protect_updating/windowsdefender-wont-turn-on/c502c63f-2ffe-4cfd-8b6b-bdfd086cfae0</a></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">If the issue continues you may want to follow the steps in&nbsp;</span><a href="http://answers.microsoft.com/en-us/protect/wiki/protect_defender-protect_start/problems-starting-windows-defender-in-windows/808253bb-db89-4db9-a4e5-1c91a86489e9" title="Windows Defender in Windows 8/8.1/10 sometimes do not start automatically and may report an error when started manually. This wiki describes some methods that can be used to fix the problem.">Problems
+ starting Windows Defender in Windows 8/8.1/10</a></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">You might also want to review&nbsp;</span><span style="color: rgba(0, 0, 0, 1)"><a href="https://www.winhelp.us/configure-windows-defender-security-center.html" target="_blank" rel="noreferrer nofollow">https://www.winhelp.us/configure-windows-defender-security-center.html</a>&nbsp;</span><span style="color: rgba(112, 172, 237, 1)">&nbsp;&nbsp;</span><span style="color: rgba(51, 51, 51, 1)">&nbsp;Good
+ article but ignore the ads!</span></p>
+<p>
+</p><p><span><span style="color: rgba(51, 51, 51, 1)">Alternatively - - -</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">You may prefer to install a third party antivirus program (which should disable Windows Defender).</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">There are a number of viable free and paid options available – take your pick.</span></p>
+<p>
+</p><p><span style="color: rgba(112, 172, 237, 1)"><a href="http://www.bleepingcomputer.com/forums/t/407147/answers-to-common-security-questions-best-practices/?p=2316629" target="_blank" rel="noreferrer nofollow">Choosing an Anti-Virus Program</a></span><span style="color: rgba(51, 51, 51, 1)"><br />
+&nbsp;</span></p>
+<p><span style="color: rgba(0, 0, 255, 1)"><a href="http://www.howtogeek.com/225385/what%E2%80%99s-the-best-antivirus-for-windows-10-is-windows-defender-good-enough/" target="_blank" rel="noreferrer nofollow">Is Windows Defender The Best For Windows 10?</a></span><span style="color: rgba(51, 51, 51, 1)">&nbsp; Good
+ article but ignore the ads.</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><a href="http://windows.microsoft.com/en-US/windows/antivirus-partners#AVtabs=win10" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(104, 33, 122, 1)">http://windows.microsoft.com/en-US/windows/antivirus-partners#AVtabs=win10</span></a></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">Regards...</span></p>
+<p>
+</p><p><a href="http://blog.emsisoft.com/2015/01/27/top-10-ways-pups-sneak-onto-your-computer-and-how-to-avoid-them/" target="_blank" rel="noreferrer nofollow">http://blog.emsisoft.com/2015/01/27/top-10-ways-pups-sneak-onto-your-computer-and-how-to-avoid-them/</a></p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> susielutz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Split from <a href="https://answers.microsoft.com/en-us/protect/forum/protect_other-protect_start-windows_other/list-of-anti-malware-product-removal-tools/2bcb53f7-7ab4-4ef9-ab3a-6aebfa322f75" title="Split from this thread">
+this thread</a>. </blockquote>
+<p>
+</p><p>thanks ill try what you suggest and dont think I have any other installed but ill look and give it a try and&nbsp;let you know if it worked</p>
+<p />
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_defender_antivirus">microsoft_defender_antivirus, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Login Challenge - Microsoft Community</title>
+<h3> john_masereka  say:</h3>
+<h2>            Login Challenge</h2>
+                    <p>Help! My laptop is a duo boot machine with windows 10 and Ubuntu. It had a challenge of connecting to Ethernet INTERNET. As i was trying to solve, i had to restore the network settings and the machine prompted me to restart. on restarting, the machine restarts,
+ brings the options of selecting the operating system, for windows, it prompts you to put in the password but it will never open, it displays a message " your windows ran into a problem" and it restarts itself again.</p>
+<p>so i don't know what problem my PC could have got and how to fix it ?</p>
+<p>Thank you</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Cuthbert" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DC"); this.style="display: inline-block";'
+<h3> don cuthbert  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Try Windows in Safe Mode. At the login screen, click on the power icon at bottom left. Then hold SHIFT while clicking on Restart, in order to bring up a boot menu. One of the sub-menus will offer Startup options and then restart to offer the Safe Mode option.</p>
+<p>
+</p><p>Occasionally, just starting once in Safe Mode and then restarting normally will resolve an issue.</p>
+<p>
+</p><p>If you have bootable Windows 10 install media, you can boot with that and once it loads, use some of the Repair options to check Windows for corruption or run commands to restore or repair Windows OS files.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=security,_privacy,_and_accounts">security,_privacy,_and_accounts, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>change language of skype - Microsoft Community</title>
+<h3> ortferca  say:</h3>
+<h2>            change language of skype</h2>
+                    My system is windows 7 home premium and when I entered my skype account I have discovered that its language has changed from english to arabic, which I am unable to understand, how can I switch it to english back again?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jomel_g  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi <a href="https://answers.microsoft.com/en-us/profile/af5b7bd5-4422-4b20-b1a5-c4f442d379f6" title="ortferca">
+<p>
+</p><p>What exactly is the version of Skype that you're using?</p>
+<p>
+</p><p>I look forward to your reply.</p>
+<p>
+</p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_account_and_paid_services">&#40;archived&#41;_account_and_paid_services, </a> <br>
+<a href="/search?q=security_and_privacy">security_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>can&#39;t open e-mail - Microsoft Community</title>
+<h3> sherylelb  say:</h3>
+<h2>            can&#39;t open e-mail</h2>
+                    running windows 7, internet explorer.&nbsp; my e-mails won't open.&nbsp; i click on an e-mail and the spinning circle spins, nothing else happens.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> reza ameri  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Do you have the same problem in other websites?</p>
+<p>Turn off your modem for 10 minutes and restart your PC and try connect to internet again.</p>
+<p>Run Windows Update and install all updates.</p>
+<p>Update Java and Flash Player.</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>One Note has hijacked printing - Microsoft Community</title>
+<h3> wawaam  say:</h3>
+<h2>            One Note has hijacked printing</h2>
+                    After a "critical Windows Update early this morning, I tried to print a page of a PDF file and a window popped up stating that I had to fire up One Note before I could print.&nbsp; I have never used One Note but did as asked and fired it up for the first time
+ on my computer.&nbsp; I now find that the only printer is "send to One Note".&nbsp; My normal printer is still listed but I cannot choose it and when I right click on my nromal printer, there is no option to make it the default printer.&nbsp; What is going on?&nbsp; Did the critical
+ update do this or is there some other reason?&nbsp; Please help!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MarkDAlmeida" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "MA"); this.style="display: inline-block";'
+<h3> markdalmeida  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Seems to be an issue with windows. </p>
+<p>You may post your query in the link below for help from the windows team.</p>
+<p><a href="http://answers.microsoft.com/en-us/windows/forum/performance">http://answers.microsoft.com/en-us/windows/forum/performance</a></p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> steve hates microsoft onenote for hijacking  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Have you found an answer,&nbsp; we bought a new laptop windows 8,&nbsp; put microsoft office 10 on it for school,&nbsp; went to install my printer, got message that must (mandatory) activate onenote&nbsp; so I did, now when i try to print goes to onenote.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; I followed
+ advise from the net, seems to be a common problem,&nbsp;&nbsp; Canon is my default printer,&nbsp;&nbsp; that did not fix it,&nbsp;&nbsp; onenote is NOT my default printer,&nbsp;&nbsp;&nbsp; I disabled onenote so it should not start up when you turn the computer on, but guess what,&nbsp;&nbsp; when I go to print&nbsp;
+ it still goes to one note&nbsp;&nbsp;&nbsp; spent 5 hours of my life and still no help.&nbsp;&nbsp; I took canon printer off , and reloaded it, same results.&nbsp;&nbsp; Microsoft know there is a problem, Where is the answer??????&nbsp;&nbsp;&nbsp;&nbsp; Mad in Missouri with a computer I can't use to print.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> floridaking  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I too have had problems with "One Note". &nbsp;One Note edited my HP printer driver SW and rendered my printer unusable. &nbsp;I fixed the One Note problem by re-installing my HP printer SW. &nbsp;That worked for a few months, but now, the One Note problem is back. &nbsp;How
+ can I rid this problem for good? &nbsp;</p>
+<p>
+</p><p>p.s. I tried the obvious, run One Note one time, did not fix the problem, printer is still locked.</p>
+<p>
+</p><p>Norm</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Start&gt;Devices &amp; Printers, ensure your HP printer is designated as the default<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> floridaking  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+ let me print with my HP printer. &nbsp;I did, but I still get the same message.</span>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Hyphenated email addresses - Microsoft Community</title>
+<h3> solwoman  say:</h3>
+<h2>            Hyphenated email addresses</h2>
+                    Hello, I can't receive emails from addresses that are hyphenated, e.g., removed email address for privacy. Can anyone tell me why, and how to prevent this? Thank you.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ben M. Schorr -bschorr" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "BM"); this.style="display: inline-block";'
+<h3> ben m. schorr -bschorr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What happens when you try?&nbsp; Do they go to your Junk mail folder?&nbsp; Do they get bounced back to the sender?</p>
+<p>&nbsp;</p>
+<hr />
+-B- <br />
+<a href="http://www.officeforlawyers.com" target="_blank" rel="noreferrer nofollow">http://www.officeforlawyers.com</a> | <a href="http://www.onenote-tips.com" target="_blank" rel="noreferrer nofollow">
+http://www.onenote-tips.com</a> <br />
+Author: <a href="https://www.amazon.com/dp/1604421436?tag=benseverythpages&amp;camp=0&amp;creative=0&amp;linkCode=as4&amp;creativeASIN=1604421436&amp;adid=0TVVY92VY7390QYFXZ44&amp;" target="_blank" rel="noreferrer nofollow">
+The Lawyer's Guide to Microsoft Outlook</a>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Niyamath U Khan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "NU"); this.style="display: inline-block";'
+<h3> niyamath u khan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p><span>What type of email account is configured in Outlook? E.g. POP/IMAP/Exchange</span></p>
+<p><span>Verify what happens if you send an email to yourself. Which security software is installed on the computer?</span></p>
+<p><span>You may start Outlook in Windows</span><a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow"><span>clean boot</span></a><span> mode
+ and then ask any sender to send the email to check if it helps.</span></p>
+<p><span>Note: Ensure to restart the computer in normal mode once troubleshooting is completed.</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft 10 Windows phone - Microsoft Community</title>
+<h3> momof3tigers  say:</h3>
+<h2>            Microsoft 10 Windows phone</h2>
+                    I switched my son to a Windows phone because of microsoft family and was hoping I'd have reporting of text option. On Android I had a parental control app that reported all texts, but we just updated today from windows 8.1 and it doesn't look like that
+ is an option. Is that something they are going to come out with? The advantage of a Windows phone was that there are less app options, being a good thing for kids, and I thought they might not be able to disable the MS family as they could the Android parental
+ control app since it's not just an app that can be shut off. Please tell me this is an option that will be reported in the future!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Timoteo IV Ofr" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "TI"); this.style="display: inline-block";'
+<h3> timoteo iv ofr  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p><strong>My Family</strong> features is a way to turn on and manage app and game download for your child's Windows Phone. The feature that you're looking for is unavailable. However, you can get emails weekly by enabling the
+<strong>Activity</strong> <strong>Reporting</strong> button and/or manage your child's activity on your Microsoft account.</p>
+<p>
+</p><p>Here's how you can manage their activity:</p>
+<ol>
+<li>
+<p>Go to <strong><a href="https://account.microsoft.com/family/" target="_blank" rel="noreferrer nofollow">account.microsoft.com/family</a></strong> and sign in with your Microsoft account.
+</p>
+</li><li>
+<p>Select the child whose settings you want to manage from the list of children in your Family.
+</p>
+</li><li>
+<p>Choose what to turn on or change for your child's account:</p>
+</li></ol>
+<ul>
+<li>
+<p><strong>Recent activity</strong> allows you to see what websites they've been visiting, what apps and games they've been using, and how much time they've been spending on their devices.
+</p>
+</li><li>
+<p><strong>Web browsing</strong> lets you choose what websites your child can and can't see.
+</p>
+</li><li>
+<p><strong>Apps &amp; games</strong> allows you to limit the apps and games your child can download from the Windows Store. It also lets you unblock any app or game you’ve blocked previously.
+</p>
+</li><li>
+<p><strong>Screen time</strong> allows you to set the maximum amount of time they can spend on their devices.</p>
+</li></ul>
+<p>
+</p><p>You can use the <strong><a href="https://www.microsoft.com/en-us/store/p/feedback-hub/9nblggh4r32n" target="_blank" rel="noreferrer nofollow">Windows Feedback Hub app</a></strong> to request the feature your looking for. To submit a new feedback, you can follow the
+ steps below:</p>
+<ol>
+<li>On a Windows 10 device, search for <em>Feedback Hub</em> in <strong>Cortana</strong>
+<strong>search</strong>, and launch the app.</li><li>Navigate to <strong>Feedback</strong> in the left menu, then press + <strong>
+Add</strong> <strong>new</strong> <strong>feedback</strong>.</li><li>Select the <strong>Problem</strong>, and share the details you think are relevant, then choose appropriate category and subcategory.</li><li>Make sure to click <strong>Submit</strong> once you're done.</li></ol>
+<p>
+</p><p>For more information about My Family for Windows Phone, you can refer to this <a href="https://support.microsoft.com/en-us/help/11692/windows-phone-my-family-faq" target="_blank" rel="noreferrer nofollow">
+<strong>article</strong></a>.</p>
+<p>
+</p><p>Feel free to post back if you have other queries.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=microsoft_account">microsoft_account, </a> <br>
+<a href="/search?q=900-series">900-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel, locale formatting - Microsoft Community</title>
+<h3> amelia griffiths  say:</h3>
+<h2>            Excel, locale formatting</h2>
+                    <p style="color: rgba(36, 39, 41, 1)">
+In my spreadsheet there seems to be an issue - the date keeps changing format.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+Eg. I input a certain date as 03/09/2018 (3rd Sept 2018), and it automatically changes to 09/03/2018. So 9th March 2018, which isn't right.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+The locale on each column keeps reverting to anything other than UK time, which I assume is the problem.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+The spreadsheet is a mixture of writing and numbers, how to do i change the settings for the date so it doesn't keep reverting back.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+It seems to work for a while and then when the program closes it pops back up to the wrong format.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+There's sometimes a little error message that reads 'Reconnect to server'. Is that relevant or just another of the many issues with my computer.</p>
+<p style="color: rgba(36, 39, 41, 1)">
+</p>
+<p style="color: rgba(36, 39, 41, 1)">
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gloria Gong MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "GG"); this.style="display: inline-block";'
+<h3> gloria gong msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Amelia,</p>
+<p>
+</p><p>I need to confirm if you just want to change the cell format of the data in Excel.</p>
+<p>
+</p><p>If so, following are the steps for your reference:</p>
+<p>1. Right click the cell you want to format&gt; Format Cells...</p>
+<p>2. Custom tab in the left.</p>
+<p>3. Paste "dd/mm/yyyy" to the "Type:"&gt; OK.</p>
+<p>(You can see the sample above)</p>
+<p>
+</p><p>If you want to set all the data format to this type, then you only need to select all the worksheet and follow the steps above.</p>
+<p>
+</p><p>If it is not your scenario, please let me know and also share your Office product name and full version number refer to this article:
+<a href="https://support.office.com/en-us/article/about-office-what-version-of-office-am-i-using-932788b8-a3ce-44bf-bb09-e334518b8b19" target="_blank" rel="noreferrer nofollow">
+What version of Office am I using?</a></p>
+<p>
+</p><p>Best Regards,</p>
+<p>Gloria</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook.com is not syncing with Outlook Mobile - Microsoft Community</title>
+<h3> colinb100  say:</h3>
+<h2>            Outlook.com is not syncing with Outlook Mobile</h2>
+                    <p>The calendar entries I make on my Samsung S7 using the MS Outlook Mobile app are NOT syncing with my online calendar. &nbsp;I can see no way to force it to sync or to set sync direction.</p>
+<p>
+</p><p>Please assist as the only way I can see just now is to manually recreate all appts manually. Not ideal.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>[Moved from: &nbsp;Outlook.com / Calendars and tasks / Import, share, or open calendars]</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jennifer bri  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>This issue can really be inconvenient if you will need to manually recreate all appointments from your mobile device to your online calendar. To avoid that to happen, you can try several troubleshooting steps. First thing to try is to reset your account
+ in the Outlook mobile app. In the Outlook app, go to <strong>Settings</strong> &gt; Tap the account that is not syncing &gt; Tap
+<strong>Reset Account</strong>. Check to see if your account is syncing.</p>
+<p>
+</p><p>If the issue is still the same, we can delete and re-add your email account. From&nbsp;<strong>Settings</strong> &gt; Tap the account that is not syncing &gt; Tap
+<strong>Delete Account</strong> &gt; <strong>Delete From This Device. </strong>Then re-add your email account. Check out this
+<a href="https://support.office.com/en-us/article/Set-up-email-in-the-Outlook-for-Android-app-886db551-8dfa-4fd5-b835-f8e532091872?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">
+link</a>.</p>
+<p>
+</p><p>Let us know how it goes so we can assist you further.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> colinb100  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi.</p>
+<p>
+</p><p>I have done the first step. &nbsp;I also created another profile to sync - it did not. I am wary of deleting the account from my mobile device as it is more up to date than the OneDrive version. If I delete it I fear losing the local data.&nbsp;</p>
+<p>I am inside the Microsoft sphere, this sort of desync should be improbable - if one cannot rely on a sync and need to check it manually all the time, what point is there in the automation? &nbsp;No point.</p>
+<p>
+</p><p>Please let me know if I delete the mobile account if it will delete all the locally stored calendar information or not. If it will, can you make another suggestion to get this to sync please?</p>
+<p>
+</p><p>Thanks</p>
+<p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mobile">outlook_for_mobile, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=android">android, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>What&#39;s wrong with copy&#47;paste in scheduling assistant&#63; - Microsoft Community</title>
+<h3> steve zagieboylo  say:</h3>
+<h2>            What&#39;s wrong with copy&#47;paste in scheduling assistant&#63;</h2>
+                    <p>I want to create a meeting with many of the same people who are already in a meeting that someone else created (to which I'm invited).&nbsp; So I copy/paste from the scheduling assistant.&nbsp; I'd really like to be able to multi-select and copy, which doesn't work
+ at all.&nbsp; But at the very least, when I select one and copy, then go to the other meeting and paste, it really should get all of the information from the original.&nbsp; Instead, it only gets the name, not the email address, so in my meeting it persists in saying
+ that it doesn't know who that is.&nbsp; See the image, where I show the meeting I'm copying from above and to the right, and the unrecognized names in the meeting I've copied to below and to the left.</p>
+<p>
+</p><p>Do you guys actually use this product, ever?&nbsp; How do you tolerate such easy things not working correctly?&nbsp; I'd rather copy not even be offered on this table than have it work so badly.&nbsp;&nbsp;</p>
+<p>
+</p><p>Oh yeah, Ctrl-C and Ctrl-V.&nbsp; This really should be universal, but they also don't work here.</p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Oliver Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "OW"); this.style="display: inline-block";'
+<h3> oliver wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Steve,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>I have removed the domains in your pictures for protecting your privacy.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Based on the pictures you provided, there are two email accounts (
+ and paste feature in your outlook client is working. As you said, when you copied all people from another invitation to your own new created meeting, it only copied the user name and the outlook client doesn’t recognize the user name who that is. My understanding
+ is that the people in your pictures are outside your organization, and you don’t add all of them as outlook contacts in your mailbox. Please clarify if I misunderstand your scenario.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If they are outside your organization, and you don’t add them as outlook contacts, when you copy and paste them from one invitation to another invitation in the outlook client, it would be only copy and paste the user (
+ user names ) who have both user names and email addresses in the original invitation. And if you don’t add them as contacts, the outlook would not recognize them. So you can try to add the people in the original invitation as contacts to your mailbox and then
+ copy and paste them again from the original invitation to your new created meeting invitation then check if it can make any difference, thanks.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If you got any updates, welcome to share with me, thanks.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Regards,</span></p>
+<p><span>Oliver</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> steve zagieboylo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>So, you're defining this terrible behavior as "works as defined."&nbsp; Why am I not surprised?&nbsp; Also, why do I bother to give feedback?</p>
+<p>
+</p><p>Have a nice day!</p>
+&nbsp;&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Sylvie Liang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "SL"); this.style="display: inline-block";'
+<h3> sylvie liang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hello Steve,</span></p>
+<p>
+</p><p><span>I am monitoring this thread by now. Have you tried the method which add the people you paste to your contact and check the results?
+<span>&nbsp;</span>If the method doesn’t meet your goal, we would be very grateful if you could submit your idea in
+<a href="https://outlook.uservoice.com/forums/322590-outlook-2016-for-windows" target="_blank" rel="noreferrer nofollow">Outlook UserVoice</a> to help us improve our functions. We truly appreciate your valuable feedback and many features are designed based on the user’s feedback. Your understanding
+ is highly appreciated. Many thanks for your time and efforts.</span></p>
+<p>
+</p><p><span>Best Regards,</span></p>
+<p><span>Sylvie</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I get a refund when my card is being debited and Skype says - Microsoft Community</title>
+<h3> chris1403  say:</h3>
+<h2>            How do I get a refund when my card is being debited and Skype says I&#39;m paying nothing&#63;&#33;</h2>
+                    <p>My Skype account says I'm paying nothing because it is included in office 365 subscription, but my credit card is being debited by skype and Office 365!</p>
+<p>The refund instructions says select the refund option in my payment history, but because it claims there is no payment, it shows no refund option. Meanwhile Skype removes £31 from my credit card!</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjie_c  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/ef9f3658-c89d-44d9-a00f-60244aeca529" title="Chris1403">
+<p>
+</p><p>Thank you for&nbsp;reaching out to the community!</p>
+<p>
+</p><p>Upon checking the Skype account linked to your community profile, we found out that you have an active Skype Number subscription which is the possible reason why you are being charged twice. If you no longer need to use the Skype Number, you may cancel it
+ by following the steps in this FAQ: <a href="https://support.skype.com/en/faq/FA12164/how-do-i-cancel-my-skype-number?q=cancel+skype" target="_blank" rel="noreferrer nofollow">
+How do I cancel my Skype Number?</a></p>
+<p>
+</p><p>I highly recommend for you to use your Skype user name to sign in to the correct account which the subscription is linked to. If you are not sure of the Skype user name you are using before, you may use the steps in this FAQ to recover it using your primary
+ email address: <a href="https://support.skype.com/en/faq/FA109/i-ve-forgotten-my-skype-user-name-or-password?q=forgot" target="_blank" rel="noreferrer nofollow">
+I've forgotten my Skype user name or password</a></p>
+<p>
+</p><p>If you are going to request for a refund, you may follow the steps in this FAQ:
+<a href="https://support.skype.com/en/faq/FA297/can-i-get-a-refund-from-skype?q=refund" target="_blank" rel="noreferrer nofollow">
+Can I get a refund from Skype?</a></p>
+<p>
+</p><p>Let me know if you have further inquiries or clarifications. </p>
+<p>
+</p><p>All the best!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> leopuleio  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>My Skype account says I'm paying nothing because it is included in office 365 subscription, but my credit card is being debited by skype and Office 365!</p>
+<p>The refund instructions says select the refund option in my payment history, but because it claims there is no payment, it shows no refund option. Meanwhile Skype removes £31 from my credit card!</p>
+<p>
+</p></blockquote>
+how do I get out of this. please help me cancel this account. thanks.&nbsp; where in the same boat.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjie_c  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/b4b63dc7-6439-473b-8f65-271a800f2592" title="leopuleio">
+<p>
+</p><p>Thank you for reaching out to the community!</p>
+<p>
+</p><p>Upon checking the Skype account linked to your community profile, we found out that you are subscribed to one of our calling subscriptions. To cancel this, you just have to follow the steps in this FAQ:
+<a href="https://support.skype.com/en/faq/FA1881/how-do-i-cancel-or-change-my-skype-subscription?q=cancel+skype" target="_blank" rel="noreferrer nofollow">
+How do I cancel or change my Skype subscription?</a></p>
+<p>
+</p><p>I would highly suggest use your primary email address in order to see the correct account linked to the subscription.
+</p>
+<p>
+</p><p>Let me know if you have further inquiries or clarifications. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chris1403  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Benie</p>
+<p>Which account are you referring to? I have revisited both my accounts regarding Skype the only thing it that I am subscribed to is "<a href="https://secure.skype.com/wallet/account/orders?month=2019-05" target="_blank" rel="noreferrer nofollow">World 60 mins mobiles
+ and landlines - monthly subscription with Office 3652",</a> the monthly charge shows £0.00 (because it is included in office 365).
+</p>
+<p>
+</p><p>I pay £79.99 per year for Office 365,&nbsp; yet in May 2017, 2018 and 2019 I was charged £30.78 to my credit card from "GO.SKYPE.COM/BILL.
+</p>
+<p>
+</p><p>I can send you all the relevant screen shots to support my case. </p>
+<p>Chris</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjie_c  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/ef9f3658-c89d-44d9-a00f-60244aeca529" title="Chris1403">
+<p>
+</p><p>Thank you for the prompt response. </p>
+<p>
+</p><p>You may try using just the Skype user name instead of using your primary email address where the renewal notification email were received. If you are not use of the Skype user name linked to your primary email address, you may use the steps in this link
+ to recover it.</p>
+<p>
+</p><p><span style="text-decoration-line: underline"><span style="color: rgba(0, 102, 204, 1)">I've forgotten my Skype user name or password</span></span></p>
+<p>
+</p><p>If you do not remember the skype account in which this subscription is linked to. I recommend that you reach out to our live chat support in order for them to cancel the subscription and reverse the charges from your account. I sent you a private message
+ which contains instructions on how you can reach out to our live chat support. You may view the message I sent through your inbox using this link:
+<br />
+<br />
+<a href="https://answers.microsoft.com/en-us/privatemessage/inbox?tm=1562603536166">https://answers.microsoft.com/en-us/privatemessage/inbox?tm=1562603536166</a></p>
+<p>
+</p><p>Let me know if you have further clarifications. </p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=purchases_and_payments">purchases_and_payments, </a> <br>
+<a href="/search?q=subscriptions">subscriptions, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Missing pages in Word 2013 and saving in .doc makes Word bug - Microsoft Community</title>
+<h3> neutralph  say:</h3>
+<h2>            Missing pages in Word 2013 and saving in .doc makes Word bug</h2>
+                    <p>I have the same problem as <a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/missing-pages-in-a-document-opened-in-word-2013/8b0ebd1b-978b-4411-a5d2-f29cf9b5cbbc">
+this one</a>, except than the proposed solution fails, because when I try to save my .docx in .doc, Word just bugs and shuts down.</p>
+<p>
+</p><p>The file is a .docx of 29 pages, I can see the right number of pages in right-click &gt; properties &gt; details &gt; content &gt; pages number, but in Word 2013 it only displays 13 pages, and it says there are 14 of them.</p>
+<p>When trying to save the file to .doc, Words simply stops working.</p>
+<p>Thanks for the help.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Try Open and Repair and see if it makes a difference.</p>
+<p>
+</p><p>Also, check if frame formatting could be the cause of the problem, as Doug mentioned in the thread at
+<a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/missing-pages-in-a-document-opened-in-word-2013/8b0ebd1b-978b-4411-a5d2-f29cf9b5cbbc">
+http://answers.microsoft.com/en-us/office/forum/office_2013_release-word/missing-pages-in-a-document-opened-in-word-2013/8b0ebd1b-978b-4411-a5d2-f29cf9b5cbbc</a>.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Display issues after Windows 10 upgrade - Microsoft Community</title>
+<h3> bev133  say:</h3>
+<h2>            Display issues after Windows 10 upgrade</h2>
+                    <p>Original Title: Bev133</p>
+<p>
+</p><p>I hope this is a simple problem, but it is driving me crazy. After doing a clean install of Windows 10 on a Dell XPS 420 that was previously running Vista OS, everything seemed to be running smoothly. However, the next day when I turned on the computer a
+ couple of inches on the left side of the screen desktop was on the right side of the monitor with about an inch separating them. All other screens I opened had the same problem unless I minimized them, but the desktop in the background was still divided .</p>
+<p>
+</p><p>Any help you can provide would be greatly appreciated.</p>
+<p>
+</p><p>Bev</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Bev,</p>
+<p>&nbsp;</p>
+<p>Thank you for posting on Microsoft Community. We appreciate your interest in Windows 10.</p>
+<p>&nbsp;</p>
+<p>Does the issue occur with the other user profile as well?</p>
+<p>Have you updated your display drivers?</p>
+<p>
+</p><p>Check if the similar issue occur in the other user profile.</p>
+<p>&nbsp;</p>
+<p><strong>Method 1: Uninstall and reinstall drivers,</strong> and check if the issue is resolved<strong>.</strong></p>
+<p><strong>&nbsp;</strong></p>
+<p><strong>Step 1: </strong>Open <strong>Run </strong>command by pressing <strong>
+Windows key + R </strong>and type<strong> appwiz.cpl </strong>in the box.</p>
+<p><strong>Step 2: </strong>Select your graphics driver and <strong>Click </strong>
+on<strong> Uninstall/Change button.</strong></p>
+<p><strong>Step 3: Reinstall</strong> the graphics driver.</p>
+<p>&nbsp;</p>
+<p>If the issue still persist, follow the method below and check if the issue is resolved.</p>
+<p><strong><span>&nbsp;</span></strong></p>
+<p><strong><span>Method 2:</span></strong><span> If the issue is not resolved, update the
+<strong>Display driver</strong> from <strong>Device Manager</strong> manually, and check if the issue still persist.</span></p>
+<p><span>&nbsp;</span></p>
+<p><strong><span>Step 1:</span></strong><span> Press <strong>Windows key + X</strong> and click on
+<strong>Device Manager</strong>.</span></p>
+<p><strong><span>Step 2:</span></strong><span> Expand <strong>Display Adaptor</strong>.</span></p>
+<p><strong><span>Step 3:</span></strong><span> Right click on the video driver and select
+<strong>Update Driver Software</strong>.</span></p>
+<p><span>Step 4: <strong>Restart</strong> the computer.</span></p>
+<p><strong>&nbsp;</strong></p>
+<p>Refer to the following article on <strong>Download and install drivers</strong><br />
+<a href="http://answers.microsoft.com/en-us/insider/wiki/insider_wintp-insider_devices/how-to-install-and-update-drivers-in-windows-10/a97bbbd1-9973-4d66-9a5b-291300006293"><strong>http://answers.microsoft.com/en-us/insider/wiki/insider_wintp-insider_devices/how-to-install-and-update-drivers-in-windows-10/a97bbbd1-9973-4d66-9a5b-291300006293</strong></a></p>
+<p><strong>&nbsp;</strong></p>
+<p><strong>Method 3:</strong> If the issue still persist, download and install the latest display driver from the manufacturer’s website.</p>
+<p>&nbsp;</p>
+<p>Hope this helps!<br />
+&nbsp;<br />
+Get back to us if you have queries regarding Windows, we will be happy to help you.<br />
+&nbsp;<br />
+Thank you,<br />
+Microsoft Community.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Using CELL function to search an array of cells - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Using CELL function to search an array of cells</h2>
+                    <p>Is it possible to use the CELL function to search an array of cells individually for a particular info_type?</p>
+<p>
+</p><p>I have been using the formula below but noticed it is only TRUE when all cells contain the info_type being searched:</p>
+<p>
+</p><p>=IF(CELL("contents",C12:J12)=K2,K2)</p>
+<p>
+</p><p>Is it possible to change this formula to search the cell range C12:J12 individually and report if any one of those cells contain the info_type in question?</p>
+<p>
+</p><p>Urgent help would be appreciated.</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Mike H.." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "MH"); this.style="display: inline-block";'
+<h3> mike h..  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>I would do it like this.</p>
+<p>
+</p><p>=IF(COUNTIF(C12:J12,K2),K2,"")</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Disable the Escape button - Microsoft Community</title>
+<h3> drewcarter&#38;co  say:</h3>
+<h2>            Disable the Escape button</h2>
+                    <p>When working in MS Access 2010, on occasion I press the Escape button as I would in other applications.&nbsp; Unfortunately, in Access that removes all field entries that have not been saved and creates a need to replicate my input.&nbsp; How can I alter Escape button
+ function in Access 2010 to preclude this?</p>
+<p>Drew</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Daniel  Pineault" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> daniel  pineault  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Okay, this question what intriguing me, so I did some testing ... the above suggestion will not work ... even adding a Me.Dirty = False does nothing to help matters ...</p>
+<p>
+</p><p>So here is the proper solution</p>
+<p>
+</p><p>Open your form in design mode and set the Form's Key Preview property to Yes (Event tab).</p>
+<p>Then create the following On Key Down event</p>
+<p>
+</p><p style="margin-left: 30px">Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)<br />
+&nbsp;&nbsp;&nbsp; If KeyCode = 27 Then KeyCode = 0 <br />
+End Sub</p>
+<p>
+</p><p>Save and you are done.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

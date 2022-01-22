@@ -1,0 +1,2689 @@
+    <title>VBA to scroll down a userform textbox &#40;line by line&#41;&#63; - Microsoft Community</title>
+<h3> keratl  say:</h3>
+<h2>            VBA to scroll down a userform textbox &#40;line by line&#41;&#63;</h2>
+                    <p>As noted in <a href="http://answers.microsoft.com/en-us/office/forum/office_2016-customize/userform-textbox-vba-code-doesnt-scroll-textbox/ea84660f-da74-4b09-af5e-c7f621f0870a">
+this </a>previous post, I've been unable to get userform textboxes to auto-scroll to the bottom. As best I can tell, this looks like a bug. That previous post contains sufficient information to replicate the problem. Using .CurLine=-1 also does not solve the
+ problem.</p>
+<p>
+</p><p>I need to move this project forward, so I'm hoping for a workaround but [don't know/can't find] the appropriate object model reference.</p>
+<p>
+</p><p>Instead of (or in addition to) using </p>
+<p>UF1.TextBox4.SelStart = Len(UF1.TextBox4.Text)</p>
+<p>
+</p><p>I'd like to use code to manually scroll down the textbox. I figure I can just do this 2-3 times, and thereby force it to show the last row of text.</p>
+<p>
+</p><p>Does anyone know the appropriate command, something like</p>
+<p>UF1.Textbox4.Scrolldown(1)</p>
+<p>or anything that would mimic clicking on the downarrow on the vertical scrollbar?</p>
+<p>
+</p><p>Thank you!!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="OssieMac" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "OS"); this.style="display: inline-block";'
+<h3> ossiemac  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have done a lot of testing with this today and found the following.</p>
+<p>
+</p><p>SetFocus must be before using SelStart, SelLength and SelText. (Makes sense to me because they refer to "Selected" and the control must have focus to select within the control.)</p>
+<p>
+</p><p>Insert DoEvents immediatlely after SetFocus to ensure that the control has focus before&nbsp;setting SelStart to select the position.</p>
+<p>
+</p><p>I am not able to fault the code below with extensive testing so interested&nbsp;to see if your testing can fault. In actual fact, when clicking the scroll arrow,&nbsp;the text moves down about half a line. (I included 2 options for the Activate Event to position the
+ cursor and visible data.)</p>
+<p>
+</p><p>I have commented out the code in the Initialize event for positioning the cursor because I am satisfied that does not work because the Userform is not displayed during initialize.</p>
+<p>
+</p><p>I have left commented out code for creating the stings with and without linefeeds so suggest testing with&nbsp;the various options.&nbsp;</p>
+<p>
+</p><p>
+</p><p>Private Sub UserForm_Activate()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em><strong>'Option 1 for Activate Event</strong></em><br />
+&nbsp;&nbsp; Dim Item<br />
+&nbsp;&nbsp; For Each Item In Array(Me.TextBox1, Me.TextBox2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Item<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .SetFocus<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoEvents<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .CurLine = .LineCount - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Next Item<br />
+End Sub</p>
+<p>
+</p><p>
+</p><p>Private Sub UserForm_Activate()&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <em><strong>'Option 2 for Activate Event</strong></em><br />
+&nbsp;&nbsp; Dim Item<br />
+&nbsp;&nbsp; For Each Item In Array(Me.TextBox1, Me.TextBox2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Item<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .SetFocus<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoEvents<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .SelStart = Len(.Value)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Next Item<br />
+End Sub</p>
+<p>
+</p><p>
+</p><p>Private Sub UserForm_Initialize()<br />
+&nbsp;&nbsp;&nbsp; Dim Item<br />
+&nbsp;&nbsp;&nbsp; Dim i As Integer<br />
+&nbsp;&nbsp;&nbsp; Dim s As String<br />
+&nbsp;&nbsp;&nbsp; For Each Item In Array(Me.TextBox1, Me.TextBox2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Item<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .MultiLine = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .ScrollBars = fmScrollBarsBoth<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '.ScrollBars = fmScrollBarsVertical<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .WordWrap = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Locked = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .EnterFieldBehavior = fmEnterFieldBehaviorRecallSelection<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For i = 1 To Rnd * 15 + 25<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Only uncomment one of the following at a time for testing with and without linefeeds<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; s = s &amp; String(Rnd * 20 + 1, Chr(64 + i)) &amp; " "<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 's = s &amp; String(Rnd * 20 + 1, Chr(64 + i)) &amp; " " &amp; vbLf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Chr(10) only<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 's = s &amp; String(Rnd * 20 + 1, Chr(64 + i)) &amp; " " &amp; vbCr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Chr(13) only<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 's = s &amp; String(Rnd * 20 + 1, Chr(64 + i)) &amp; " " &amp; vbCrLf&nbsp;&nbsp;&nbsp; 'Chr(10) and Chr(13)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Value = s<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Repeated failures attempting the following code before the Userform is displayed<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '.SetFocus<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '.SelStart = Len(.Value)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Let the textbox scroll<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '.SetFocus<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'DoEvents<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;End Sub</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>outlook.com not working in chrome - Microsoft Community</title>
+<h3> ashley2  say:</h3>
+<h2>            outlook.com not working in chrome</h2>
+                    <div>I am using outlook.com through google chrome and regularly see this message at the top "We can't connect to Outlook at the moment. Please try again later."</div>
+<div>I'm also not able to right click on any of the messages in my box and bring up the sub menu to get different actions for that message like I have previously.</div>
+<div>I have also tried this on different computers and still have the same issue.</div>
+<div>I have tried this through internet explorer and it works ok.</div>
+<div>Please can you advise why this facility has stopped working and how to resolve it.</div>
+<div>Thanks</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>
+<div><b>The first step in any troubleshooting is to clear the browser cache/cookies.</b><b>&nbsp; &nbsp; &nbsp;&nbsp;</b></div>
+<div>
+<div>*For<span>&nbsp;</span><b>Internet Explorer</b><span>&nbsp;</span>browser &amp;<span>&nbsp;</span><b>MSN</b><span>&nbsp;</span>Butterfly: Press CTRL+SHIFT+DEL simultaneously and click Delete<br />
+*For<span>&nbsp;</span><b>Google Chrome</b>: Press CTRL+SHIFT+DEL simultaneously and click Clear Browsing Data<br />
+*For<span>&nbsp;</span><b>Firefox:</b><span>&nbsp;</span>Press CTRL+SHIFT+DEL simultaneously and click Clear Now</div>
+<div>(other browsers are similar)</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ashley2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            doing this worked but please can you tell me why the problem started so it can be prevented in the future
+<div><br />
+<div>thanks</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ashley2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            after sending you the last message the problem came back again.<br />
+it came back as soon as I switched the outlook account I was logged into to. (which I only have to do due to Microsoft changing their security policies and removing the linked accounts facility)
+<div>as soon as I cleared the cache again it started working again.</div>
+<div>Please help me fix this.</div>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nvidia control panel disappear - Microsoft Community</title>
+<h3> wolfboy  say:</h3>
+<h2>            Nvidia control panel disappear</h2>
+                    Why in the last two builds (16237 and 16241) the Nvidia control panel disappear? It no open more... Opencl function stop work also...
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Marvs Barce" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "MB"); this.style="display: inline-block";'
+<h3> marvs barce  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Andre,</p>
+<p>
+</p><p>Based on the information you have provided in your post, we need to do further investigation. To assist you better, we'd like to know the following:
+</p>
+<p>
+</p><ul>
+<li><span>Since when have you been experiencing the issue? </span></li><li><span>Were there any external devices connected to your computer when it happened?
+</span></li><li><span>Are you getting any error messages when trying to perform certain actions? If so, what are these actions and what is the particular error message.</span></li><li><span>Have you recently installed any software? </span></li><li><span>What troubleshooting steps have you done so far? <br />
+</span>&nbsp;</li></ul>
+<p>We'll wait for your response.</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="WolfBoy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "WO"); this.style="display: inline-block";'
+<h3> wolfboy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<ul>
+<li>
+<span>Since
+ when have you been experiencing the issue?&nbsp;</span></li><li>
+<span><strong>only
+ in the last two builds&nbsp; (16237 and 16241)</strong></span></li><li>
+<span>Were
+ there any external devices connected to your computer when it happened? </span></li><li>
+<span><strong>external
+ devices like Xbox controller receiver, printer and headphones?</strong></span></li><li>
+<span>Are
+ you getting any error messages when trying to perform certain actions? If so, what are these actions and what is the particular error message.</span></li><li>
+<span><strong>when
+ I click in icon of Nvidia control panel in Windows Control panel nothing occur or nothing of dialog box are show</strong></span></li><li>
+<span>Have
+ you recently installed any software? </span></li><li>
+<span><strong>yes,
+ new Windows build (16241) and new nvidia driver with WHQL</strong></span></li><li>
+<a href="https://filestore.community.support.microsoft.com/api/images/2482747c-4dca-440d-adbd-baf1bb82c99d" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/2482747c-4dca-440d-adbd-baf1bb82c99d" /></a></li><li>
+<span>What
+ troubleshooting steps have you done so far? </span></li><li>
+<span><strong>troubleshooting
+ solution? the OS don't know that this occurred...</strong></span></li><li>
+</li><li>
+<span>No
+ Opencl function and I can't open Nvidia control panel (right click in DEsktop or in Windows Control Panel)</span></li><li>
+<a href="https://filestore.community.support.microsoft.com/api/images/3a062774-1734-4045-91fb-320fb1109e4e" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/3a062774-1734-4045-91fb-320fb1109e4e" /></a></li></ul>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Marvs Barce" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "MB"); this.style="display: inline-block";'
+<h3> marvs barce  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for getting back to us. Let's try to perform System restore and check if the issue persists.<span><span>We use System restore to make restore points when you install a new app, driver, or Windows update, and when you create a restore point manually.
+ Restoring won’t affect your personal files, but it will remove apps, drivers, and updates installed after the restore point was made. To go back to a restore point, follow these steps:</span></span></p>
+<p>
+</p><div>
+<ol>
+<li><span><span>Select the&nbsp;</span></span><span><span><strong>Start </strong></span></span><span><span>button, then type&nbsp;</span></span><span><span><strong>control panel</strong></span></span><span><span>&nbsp;in the search box next to the Start button on the taskbar
+ and select&nbsp;</span></span><span><span><strong>Control Panel</strong></span></span><span><span>&nbsp;(Desktop app) from the results.</span></span></li><li><span><span>Search Control Panel for&nbsp;</span></span><span><span><strong>Recovery</strong></span></span><span><span>, and select</span></span><span><span><strong>&nbsp;Recovery</strong></span></span><span><span>&nbsp;&gt;&nbsp;</span></span><span><span><strong>Open System
+ Restore&nbsp;</strong></span></span><span><span>&gt;&nbsp;</span></span><span><span><strong>Next</strong></span></span><span><span>.&nbsp;</span></span></li><li><span><span>Choose the restore point related to the problematic app, driver, or update, and then select&nbsp;</span></span><span><span><strong>Next</strong></span></span><span><span>&nbsp;&gt;&nbsp;</span></span><span><span><strong>Finish</strong></span></span><span><span>.</span></span></li></ol>
+<p>
+</p><p><span><span>Once you're done, update us with the result.</span></span></p>
+<p><br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wayne wastier  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>There is a newer driver available.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/cd74b0b4-61cd-4214-ac3f-f8c489b752af" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/cd74b0b4-61cd-4214-ac3f-f8c489b752af" /></a></p>
+<p>
+</p><p>
+</p><p>http://www.nvidia.com/Download/index.aspx</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="WolfBoy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "WO"); this.style="display: inline-block";'
+<h3> wolfboy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Are you joking me? Standard answer? Did you think I am a stupid guy? I am relate a serious problem and you me show where is the "REcovery function", really???!!
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>When opening Office this error comes up&#58; OfficeC2RClient.exe - Bad - Microsoft Community</title>
+<h3> oldmantigermask  say:</h3>
+<h2>            When opening Office this error comes up&#58; OfficeC2RClient.exe - Bad Image -  error status 0xc000012f</h2>
+                    <p><a href="https://filestore.community.support.microsoft.com/api/images/ad927e48-745a-4a94-b628-4ffda316b9ab" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ad927e48-745a-4a94-b628-4ffda316b9ab" /></a></p>
+<p>For about a month now, I've had this annoying error on my windows 10.</p>
+<p>When ever I run any OFFICE program this error comes up.&nbsp;</p>
+<p>
+</p><p>Before you start saying "right click start, click control panel, then click on office and change then repair" this doesn't work :(&nbsp;</p>
+<p>When I click change what happens is it shows the loading thing on the mouse for 1 or 2 seconds then disappears.</p>
+<p>
+</p><p>Please can you help me,</p>
+<p>Thanks Microsoft Community for listening</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> oldmantigermask  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Anyone?
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Need Help with Word on Android - Microsoft Community</title>
+<h3> mystic bob  say:</h3>
+<h2>            Need Help with Word on Android</h2>
+                    <p>I can't seem to find any help about Word for Android at all, anywhere, so I thought I'd ask a couple of questions here:</p>
+<p>
+</p><p>1. &nbsp;Is there any way to disable smart quotes in Word for Android?</p>
+<p>2. &nbsp;Is there any way to set default settings for new documents (first line indents, fonts, line spacing, etc) in Word for Android?</p>
+<p>3. &nbsp;Is there any way to show the ruler in Word for Android?</p>
+<p>4. &nbsp;Is there any way to change the size of the first line indent in Word for Android? &nbsp;I need .25 inches, and the default appears to be .5.</p>
+<p>5. &nbsp;Are there any online FAQs at all, anywhere, regarding Word for Android? &nbsp;Any help files? &nbsp;I can't seem to find anything when I do a search.</p>
+<p>6. &nbsp;Is there any way to disable autocorrect and auto-capitalization? &nbsp;The few hints I've found say to turn them off in the device settings, but that doesn't work in Word. &nbsp;They go off everywhere else in the device, but not Word.&nbsp;</p>
+<p>
+</p><p>Thanks in advance if anybody can help. &nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mystic bob  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Anybody?</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mystic bob  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Anybody at all?
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=android">android, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Build 10565 Activation issues - Microsoft Community</title>
+<h3> geraldparrott  say:</h3>
+<h2>            Build 10565 Activation issues</h2>
+                    <p>So, I am on Version 1511 Build 10565.0, suddenly as you guessed, Activate Windows arrived.</p>
+<p>
+</p><p>I searched and searched and attempted to enter in my Windows 7 Product key (OEM Dell) and it tells me that the product key is invalid, I tried change product key in settings, I tried slmgr -ipk in cmd, I tried the old insider preview key, nothing works.</p>
+<p>
+</p><p>Help!</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hi Gerald,
+</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">&nbsp;</span><span>&nbsp;
+</span></p>
+<p><span>Thank you for posting your query in Microsoft Community.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>I understand the issue that you are currently facing, we will try the best we can to resolve your issue.</span></p>
+<p>
+</p><p>I suggest you to refer the article provided by <a href="http://answers.microsoft.com/en-us/profile/3e4d94c0-0e1a-4eaa-aeb1-31735e1f6eae" title="Uttam Yadav">
+<p><strong>Activation FAQ for Insider Preview Build 10565 </strong></p>
+<p><a href="http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_install/activation-faq-for-insider-preview-build-10565/68e759a2-abcc-4b16-8758-92a720a6efe9">http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_install/activation-faq-for-insider-preview-build-10565/68e759a2-abcc-4b16-8758-92a720a6efe9</a></p>
+<p>
+</p><p>Hope the information helps. Please let us know if the issue persist and we will be happy to assist you further.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>VBA to select a group of data from a large data pool with array - Microsoft Community</title>
+<h3> chuck_999  say:</h3>
+<h2>            VBA to select a group of data from a large data pool with array</h2>
+                    <p>I have a piece of code that will cycle through a large chunk of data for the persons name in D:D and then for each line that has the correct name i want it to copy that line. The problem lol i can't figure out how to select the array range.... (i am not
+ good with arrays, and got help writing this part...but i searched around trying to figure out how to select the range "cor" so i can copy that selection.</p>
+<p>&nbsp;</p>
+<p>2nd question: How do you select all rows and columns in a spreadsheet that contain data...?</p>
+<p>&nbsp;</p>
+<p>Option Base 1</p>
+<p>Private Sub FinalCAP()</p>
+<p>Dim atcap() As Integer 'this is the array container.<br />
+Dim aname As String ' this is the name container breing over from other script</p>
+<p>Dim acount As Integer 'this is to count the number of available records to look through. This is to limit the search time.<br />
+aname = UCase("pull from previous script") 'this is where you will assign the name to look for</p>
+<p>ReDim atcap(1) 'this is to set our first element in the array. Without this the array is blank and modifying a blank array is illegal.</p>
+<p>acount = Application.WorksheetFunction.CountA(Sheets("ATT_Raw").Range("D:D")) + 7 'this is to count our records. _<br />
+&nbsp;&nbsp;&nbsp; the adding is because the first few cells are blank and do not count towards the total.</p>
+<p>Dim i As Integer 'this is just a counter, we use it to go up and down the list.<br />
+For i = 1 To acount 'this is to loop through our records to find our name. i is a row number at this point.<br />
+&nbsp;&nbsp;&nbsp; If UCase(Sheets("att_raw").Range("d" &amp; i).Value) = aname Then 'checks to see if the uppercase value of the range (name) is equal to the name we're looking for.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; atcap(UBound(atcap)) = i 'we found our name, now add the line number to the array<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReDim Preserve atcap(UBound(atcap) + 1) 'we now need to rebuild the array to add an element.<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+Next</p>
+<p>Dim cor As String 'this is our string to return.<br />
+cor = "" 'setting the string to blank so we don't have random built data. this is a deprecated step as new strings are built blank, but is good in practice.<br />
+For i = 1 To UBound(atcap) - 1 'this is to cycle through the previously built array. i is now a place holder for atcap.<br />
+&nbsp;&nbsp;&nbsp; cor = cor &amp; atcap(i) &amp; vbNewLine 'this is just building the array to return.<br />
+Next<br />
+'select that range of rows and copy to another spreadsheet.<br />
+</p>
+<p>'save the file to Attendance_Final_aname_date.xls</p>
+<p>'dump the variable values for a loop</p>
+<p>'insert formatting for the other spreadsheet for final editing.</p>
+<p>&nbsp;</p>
+<p>end sub</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bernie Deitrick, Excel MVP 2000-2010" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "BD"); this.style="display: inline-block";'
+<h3> bernie deitrick, excel mvp 2000-2010  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Here is a better way to do what you want using Excel's Filtering capability - it is almost always better to use built in methods instead of creating your own.&nbsp;</p>
+<p>Run the macro "DoIt" when the workbook containing the sheet Att_Raw is the active workbook - change "Bernie" to the name you want. But try the macro below the first two, called ExportDatabaseToSeparateFiles - I've assumed that your data&nbsp;headers are in row
+ 1.</p>
+<p>Bernie</p>
+<p>&nbsp;</p>
+<p>Sub DoIt()<br />
+ExtractOneValue "Bernie"<br />
+End Sub</p>
+<p>Sub ExtractOneValue(Aname As String)<br />
+Dim myBook1 As Workbook<br />
+Dim myBook2 As Workbook<br />
+Set myBook1 = ActiveWorkbook</p>
+<p>Set myBook2 = Workbooks.Add<br />
+myBook1.Activate<br />
+With Sheets("ATT_Raw").Range("D:D")<br />
+&nbsp;&nbsp;&nbsp; .AutoFilter _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Field:=1, Criteria1:=Aname<br />
+&nbsp;&nbsp;&nbsp; .SpecialCells(xlCellTypeVisible).EntireRow.Copy _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; myBook2.Worksheets(1).Range("A1").EntireRow<br />
+&nbsp;&nbsp;&nbsp; .AutoFilter<br />
+End With<br />
+myBook2.SaveAs "Attendance_Final_" &amp; Aname &amp; ".xls"<br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>And here is a sub that will create a file for each unique name in colum D:</p>
+<p>&nbsp;</p>
+<p>Sub ExportDatabaseToSeparateFiles()<br />
+'Export is based on the value in the desired column<br />
+Dim myCell As Range<br />
+Dim mySht As Worksheet<br />
+Dim myName As String<br />
+Dim myArea As Range<br />
+Dim myShtName As String<br />
+Dim KeyCol As String<br />
+Dim myField As Integer</p>
+<p>myShtName = ActiveSheet.Name<br />
+KeyCol = "D"</p>
+<p>Set myArea = Intersect(ActiveCell.CurrentRegion, Range(KeyCol &amp; "1").EntireColumn).Cells</p>
+<p>Set myArea = myArea.Offset(1, 0).Resize(myArea.Rows.Count - 1, 1)<br />
+myField = myArea.Column - ActiveCell.CurrentRegion.Cells(1).Column + 1</p>
+<p>For Each myCell In myArea<br />
+On Error GoTo NoSheet<br />
+myName = Worksheets(myCell.Value).Name<br />
+GoTo SheetExists:<br />
+NoSheet:<br />
+Set mySht = Worksheets.Add(Before:=Worksheets(1))<br />
+mySht.Name = myCell.Value<br />
+With myCell.CurrentRegion<br />
+&nbsp;&nbsp;&nbsp; .AutoFilter Field:=myField, Criteria1:=myCell.Value<br />
+&nbsp;&nbsp;&nbsp; .SpecialCells(xlCellTypeVisible).Copy _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mySht.Range("A1")<br />
+&nbsp;&nbsp;&nbsp; mySht.Cells.EntireColumn.AutoFit<br />
+&nbsp;&nbsp;&nbsp; .AutoFilter<br />
+End With<br />
+Resume<br />
+SheetExists:<br />
+Next myCell</p>
+<p>For Each mySht In ActiveWorkbook.Worksheets<br />
+If mySht.Name = myShtName Then<br />
+Exit Sub<br />
+Else<br />
+mySht.Move<br />
+ActiveWorkbook.SaveAs "Attendance_Final_"&nbsp;&amp; ActiveSheet.Name &amp; ".xls"<br />
+ActiveWorkbook.Close<br />
+End If<br />
+Next mySht<br />
+End Sub<br />
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>6233, RM-145, code 0541162 - Microsoft Community</title>
+<h3> blaikie  say:</h3>
+<h2>            6233, RM-145, code 0541162</h2>
+                    Hi,<br />
+<br />
+is it possible to get an update for 6233, RM-145, code 0541162?<br />
+Thank you!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> basmic  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<hr />
+<span>22-Jan-2007<br />
+</span><span>08:18 AM</span><br />
+blaikie wrote:<br />
+Hi,<br />
+<br />
+is it possible to get an update for 6233, RM-145, code 0541162?<br />
+Thank you!<br />
+<hr />
+</blockquote>
+According to this: <a href="http://www.nokia.co.uk/A4305060" target="_blank" rel="noreferrer nofollow">http://www.nokia.co.uk/A4305060</a> - no.<br />
+<br />
+But try with NSU anyway, you never know. :)
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> blaikie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            STILL MISS NSU FOR RM-145:<br />
+- CODE 0541162<br />
+- CODE 0532184
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bizimmuhtar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,<br />
+<br />
+is it possible to get an update for 6233, RM-145, code 0533114?<br />
+Thank you!
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 Favorites List - Email accounts keep moving to bottom of - Microsoft Community</title>
+<h3> colangus7  say:</h3>
+<h2>            Outlook 2016 Favorites List - Email accounts keep moving to bottom of the list</h2>
+                    Each time I log in to Outlook 2016, the order of folders changes so that my email accounts appear at the bottom of the list. I need them at the top, or in whatever order I place them. I never had this issue in 2007.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Roady &#91;MVP&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "R"); this.style="display: inline-block";'
+<h3> roady &#91;mvp&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>These are probably folders of IMAP accounts and is a known issue due to the timing of the IMAP accounts. It also happens in Outlook 2007 (although less frequently) &nbsp;but you might had the accounts configured as POP3 instead then.</p>
+<p>
+</p><p>There really isn't anything you can do about it. If it really is important to you, contact Microsoft Support and report it as a bug. It is a known issue but it hasn't received enough "votes" yet to push for a fix.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sp3customer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Same issue here. &nbsp;Having to resort favorites order is a pain!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sp3customer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Same issue here. &nbsp;Having to resort favorites is a pain!</p>
+<p>
+</p><p>I hope someone can figure out a workaround.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ballatessan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's the inboxes. &nbsp;The default Outlook inbox, plus an added IMAP account. &nbsp;Each time Outlook is opened the inboxes are relocated to the bottom of the Favorites list instead of the top - where I place them manually each time.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john.morris  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Same issue here - this HAS to be a bug that can be fixed - the sort order should be saved when you close the client.&nbsp; It is a COMPLETE pain to have to move all of my inboxes back to the top of the favorites folder each time I open Outlook.....
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>We regret the inconvenience this has caused.</p>
+<p>You can recommend your feedback to Microsoft in <strong>File</strong>&gt;<strong>Feedback</strong>&gt;<strong>Suggest a feature.</strong></p>
+<p>
+</p><p>Thank you.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ramond de vrede  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            having it here too.... it's annoying! since I added an account with IMAP this is causing favorites to become unusable. Please fix it.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ramond de vrede  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I did... but it's not the correct way... it's not a feature I request it's a bugfix!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Ramond,</p>
+<p><br />
+You can try this workaround which would resort the order of your folders in favorite list. If one of the folder is IMAP, you can put IMAP folders in the bottom of the favorite list and check if the shuffling of the folders gets reduced.<br />
+<br />
+You can also try clicking on the folders and select to open in new window. Opening in new window will resort the folders in favorite list correctly.<br />
+<br />
+Thank you.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rubencohen  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>I have the exact same problem and it's driving me crazy!. &nbsp;
+<br />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Latest Version - Microsoft Community</title>
+<h3> christopherparnell  say:</h3>
+<h2>            Latest Version</h2>
+                    Why has Microsoft taken a product that was fit for purpose and ruined it?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mdsca  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Because that is what Microsoft is - another giant irresponsible callous garbage American corporation. They won't even provide support for what they wreck. It destroyed my contact list, destroyed sound, so is utterly and totally useless.
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> serds_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi, <a href="https://answers.microsoft.com/en-us/profile/efa34bb7-0a82-48f6-9081-ca6e48c02ee5" title="ChristopherParnell">
+<p>
+</p><p>What specific issues are you experiencing with the Skype application?</p>
+<p>
+</p><p>For us to further assist and help you with these issues you are having, please provide more details.</p>
+<p>
+</p><p>If there is something missing, we can take your feedback to help with the upcoming Skype updates.</p>
+<p>
+</p><p>I look forward to your reply.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> christopherparnell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p>
+</p></div>
+ so they are harder to find and use. As for the "Translate" function, really? I can’t imagine anybody ever having a Skype chat other than in a common language.</p>
+<div>
+<p>
+</p><p class="contentStandard">Please remember the old adage "if it ain’t bust …".</p>
+<div>
+<p>
+</p><p class="contentStandard">Regards,</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cevin&#126;7  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I use to have a version that allowed more useability. With the update, I got this dumbed down version that has virtually no adjustment parameters. Why????
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gerald jh66  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I sadly updated my Skype to Version 8.24.0.2 and it seems like I've regressed back 10 years - you say functionality? There is no such thing, all reasonable functionality has been removed....... Avoid the updates!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> serds_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'll be taking all your feedback as well so this will be reviewed by our developers. This can help with the upcoming Skype updates.</p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> alex201806  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The new version is very bad. Does anyone know how to downgrade the version? Thanks.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> serds_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>If you are referring to downgrading to the classic version of Skype and your computer is running on Windows 10 operating system, click this downloader link:
+<em><a href="http://download.skype.com/msi/SkypeSetup_7.41.0.101.msi" target="_blank" rel="noreferrer nofollow" title="http://download.skype.com/msi/SkypeSetup_7.41.0.101.msi Ctrl+Click or tap to follow the link"><span style="color: rgba(5, 99, 193, 1)">http://download.skype.com/msi/SkypeSetup_7.41.0.101.msi</span></a></em>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> marksegal1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm on Mac OSX El Capitan using Firefox. </p>
+<p>
+</p><p>I think now that Microsoft has acquired Skype, it has also acquired the responsibility to review previous versions, from several years back, and study carefully what worked better back then technically and in terms of GUI design. One release after another
+ it just becomes more unreliable and more obscurantist to manage and use properly. Between functionality and sexy I'll take functionality 10 times out of 10. Thanks.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> christopherparnell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>The good news is that there are s few tutorials on YouTube and a few web pages that explain how to revert to - and keep - Classic Skype.<span>
+<br />
+</span></span>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_skype_insider_program">&#40;archived&#41;_skype_insider_program, </a> <br>
+<a href="/search?q=skype_preview_for_mac">skype_preview_for_mac, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>SELECT ROW_NUMBER&#40;&#41; OVER &#40;PARTITION BY - Microsoft Community</title>
+<h3> colin jarvis  say:</h3>
+<h2>            SELECT ROW_NUMBER&#40;&#41; OVER &#40;PARTITION BY</h2>
+                    <p>Hi</p>
+<p>
+</p><p>I Hope that someone can help with the following:</p>
+<p>
+</p><p>My code is as follows:</p>
+<p>
+</p><p>SELECT&nbsp; &nbsp; &nbsp;TOP (100) PERCENT INVOICE_LINE_TYPE, TRANSACTION_TYPE_NAME, INVOICE_NUMBER, INVOICE_DATE, PAYMENT_TERM, [Order] AS NOMINAL_CODE, ROW_NUMBER() OVER(PARTITION BY INVOICE_NUMBER ORDER By [ORDER]) AS INVOICE_LINE_NUMBER</p>
+<p>FROM&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;dbo.[1_Oracle_Sub_Table]</p>
+<p>WHERE&nbsp; &nbsp; &nbsp;(INVOICE_NUMBER = N'701806')</p>
+<p>ORDER BY INVOICE_NUMBER, NOMINAL_CODE, INVOICE_LINE_TYPE</p>
+<p>
+</p><p>and I get the following results:</p>
+<p>
+</p><p>INVOICE_LINE_TYPE<span> </span>TRANSACTION_TYPE_NAME<span>
+</span>INVOICE_NUMBER<span> </span>INVOICE_DATE<span>
+</span>PAYMENT_TERM<span> </span>NOMINAL_CODE<span>
+</span>INVOICE_LINE_NUMBER</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41001&nbsp; &nbsp; &nbsp;<span>
+</span>2</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41001&nbsp; &nbsp; &nbsp;<span>
+</span>1</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41024&nbsp; &nbsp; &nbsp;<span>
+</span>3</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41024&nbsp; &nbsp; &nbsp;<span>
+</span>4</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>53500&nbsp; &nbsp; &nbsp;<span>
+</span>6</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>53500&nbsp; &nbsp; &nbsp;<span>
+</span>5</p>
+<p>
+</p><p>But what I would like to achieve is a grouping&nbsp; on the invoice line number(Last Column):</p>
+<p>
+</p><p>INVOICE_LINE_TYPE<span> </span>TRANSACTION_TYPE_NAME<span>
+</span>INVOICE_NUMBER<span> </span>INVOICE_DATE<span>
+</span>PAYMENT_TERM<span> </span>NOMINAL_CODE<span>
+</span>INVOICE_LINE_NUMBER</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41001&nbsp; &nbsp; &nbsp;<span>
+</span>1</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41001&nbsp; &nbsp; &nbsp;<span>
+</span>1</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41024&nbsp; &nbsp; &nbsp;<span>
+</span>2</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>41024&nbsp; &nbsp; &nbsp;<span>
+</span>2</p>
+<p>LINE<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>53500&nbsp; &nbsp; &nbsp;<span>
+</span>3</p>
+<p>TAX<span> </span>Invoice – Corp<span>
+</span>701806<span> </span>01/05/2019<span>
+</span>NET 14<span> </span>53500&nbsp; &nbsp; &nbsp;<span>
+</span>3</p>
+<p>
+</p><p>Please accept my thanks in anticipation</p>
+<p>
+</p><p>Kind regards</p>
+<p>Colin<br />
+</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Colin, I'm an independent Adviser and will try to help.
+<br />
+<br />First I would get rid of the TOP (100) PERCENT. Using TOP is for when you want less than all records. 
+<br />
+<br />Second, it looks like you was to sort by Invoice Line Number, not Group by it. So all you need is 
+<br />
+<br />ORDER BY INVOICE_LINE_NUMBER, INVOICE_LINE_TYPE. 
+<br />
+<br />I'm not sure what those other fields you are including are all about.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>realplayer with windows 8.1 - Microsoft Community</title>
+<h3> jonijording  say:</h3>
+<h2>            realplayer with windows 8.1</h2>
+                    <p>So do I do restore system to go back to default to Windows 8? I have had realplayer for years so if windows 8.1 won't work with realplayer this is what I will have to do</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>Thanks for posting your query to Microsoft forum. I will certainly help you with this.</p>
+<p>
+</p><p>I would like to know if you have&nbsp;the latest version installed of&nbsp;<span>real player?</span></p>
+<p>
+</p><p><span>If you do not have the latest version installed then, download the same and install it to check the problem.</span></p>
+<p>
+</p><p>This might be due to the program not being compatible with Windows 8.1. you may try running the program in compatibility mode and check.
+</p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>Please refer this Microsoft help article: </span>
+</span></p>
+<p><a href="http://windows.microsoft.com/en-us/windows-8/older-programs-compatible-version-windows" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)"><span>Make older programs compatible with this version of Windows</span></span></a></p>
+<p>
+</p><p><span>If the issue is specific to real player then please contact real player support:
+</span><span><a href="http://www.real.com/support" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">www.real.com/support</span></a></span></p>
+<p>
+</p><p>Hope this information is helpful.&nbsp;Please post back for further assistance, we'll be glad to assist you.</p>
+<p>___________________</p>
+<p>Thanks &amp; Regards,</p>
+<p>Isha Soni</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>FREQUENT LOST OF CONTACTS - Microsoft Community</title>
+<h3> fridaymichael-ofuonye  say:</h3>
+<h2>            FREQUENT LOST OF CONTACTS</h2>
+                    <p>I bought a Nokia Lumia 530 in February 2015 (this year) and set up my Microsoft Account.&nbsp; I have account @ outlook and msn, as well as google.</p>
+<p>
+</p><p>Yet several times without reason/explanation/cause when I tried to call up a contact to make a phone call, I discovered suddenly that the contact is no longer there on my phone?</p>
+<p>
+</p><p>I need urgent help as my phone suppliers are unable to help me, even with the "claimed" warranty/guarantee" promised.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> eshiejamz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <a href="https://answers.microsoft.com/en-us/profile/9019babb-14fe-475d-ae1f-2335cff43ab3" title="FridayMichael-Ofuonye">
+FridayMichael-Ofuonye</a>. Did you make any changes on your phone's settings prior to this? Can you find all your contacts by signing in your Microsoft account at
+<a href="https://people.live.com" target="_blank" rel="noreferrer nofollow">https://people.live.com</a>?&nbsp;If you've already set up&nbsp;those accounts under Settings &gt; email+accounts, will there be any difference after syncing? You may also check if all your contacts are
+ selected from People hub &gt; ... &gt; settings &gt; filter contacts list. We'll be waiting for your response.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="93tid" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> 93tid  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Why do you open another thread after you already posted this question <a href="http://answers.microsoft.com/en-us/mobiledevices/forum/mdlumia-mdaccount/contact-phone-numbers-going-missing/80f077bb-ab4b-4711-8e3c-faa1c23031cb">
+HERE</a> and in your own thread earlier today ?<br />
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> fridaymichael-ofuonye  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you for your reply.</p>
+<p>
+</p><p>I can find my contacts in <a href="https://people.live.com" target="_blank" rel="noreferrer nofollow">https://people.live.com</a>, but most of them have no telephone numbers anymore.</p>
+<p>
+</p><p>I have done sync several times, even gone to SLOT where I bought the telephone.&nbsp; They did the same and said it was okay.&nbsp; But it was never okay.&nbsp; I chatted with Microsoft Support on Live Chat who asked me to reset the phone.&nbsp; I did that, yet the result remains
+ the same.</p>
+<p>
+</p><p>I even tried to do a phone swap for an android phone at SLOT where I bought the windows Lumia, but they said they could not because of the problems associated with the brand - Lumia 530.</p>
+<p>
+</p><p />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>i have to say i am not a fan of the 9926 enterprise UI start menu - Microsoft Community</title>
+<h3> ace_banner  say:</h3>
+<h2>            i have to say i am not a fan of the 9926 enterprise UI start menu</h2>
+                    <p>if the taskbar is locked on desktop, the start menu&nbsp;cuts off the bottom&nbsp;half of the tiles, the apps area on the left I thought was great in the earlier versions. in 9926 might as well said 8.1 with a list all apps function.</p>
+<p>
+</p><p>desktop default font size is great for those "young'ins" but for those of us who have been doing this for a while the default size is too small to see with glass's on! much less the blur without.
+</p>
+<p>
+</p><p>What do you think "Insiders"?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I agree that the start menu is just awful in 9926, the worst yet.</p>
+<p>
+</p><p>There are a whole host of things that have changed for the worse in this build, and the Cortana new feature really isn't ready to make her debut. &nbsp;The forum is just littered with stability problems as well.</p>
+<p>
+</p><p>Honestly I can't think of <strong>any </strong>reason a business wouldn't rather stay with Windows 7, or Windows 8.1 (with ClassicShell) if they use touch.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dylansukha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I just feel I have the right to the OPTION of transparency in the start menu and taskbar.</p>
+<p>Also the new icons are downright pitiful. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jac70  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I agree, the Start menu in 9879 was better. It was familiar to 7 users but added the Live Tiles which helped differentiate it from previous OS'.
+</p>
+<p>
+</p><p>The one in 9926 places too much emphasis on Live Tiles. As a desktop user these tiles are pretty much irrelevant. I use the Weather, Clock and Photos tiles so I can see interesting and useful info when I click the Start button. However the tiles often display
+ old info, especially the Clock - which makes me wonder if these things have much value at all.
+</p>
+<p>
+</p><p>The Search menu being on the Taskbar is OK but it gets clumsy if you open the start menu because the text box remains on screen and covers other UI elements. Plus the large 'Bing' box that opens when you type something pops up over the Start menu. Sometimes
+ it stays there and is a pain to get rid of. It's all starting to look a bit fussy.</p>
+<p>
+</p><p>The one thing I do like is the slightly reduced size of the tiles which makes them look a little less simplistic and 'child-friendly'.
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If a clock can't display the CURRENT time, it's actually worse than useless, it's misinformation.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> donearl  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The build 9926 start menu has improved in that it allows me to place all icons in a single vertical column in order to reduce the size of the start menu... only there is no way to reduce the menu size! Now I have this huge wasted space to the right of the
+ column of icons. It seems pretty elementary to be able to resize the start menu to eliminate wasted space.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i have not tested enterprise, but 9926 non enterprise has a horrid start menu, a huge step back from build 9879, i hope they bring it back towards the way it used to be in 9879<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Ronnie Vernon" role="img">
+<h3> ronnie vernon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>if the taskbar is locked on desktop, the start menu&nbsp;cuts off the bottom&nbsp;half of the tiles, the apps area on the left I thought was great in the earlier versions. in 9926 might as well said 8.1 with a list all apps function.</p>
+<p>
+</p><p>desktop default font size is great for those "young'ins" but for those of us who have been doing this for a while the default size is too small to see with glass's on! much less the blur without.
+</p>
+<p>
+</p><p>What do you think "Insiders"?</p>
+</blockquote>
+<p>
+</p><p>Hi</p>
+<p>
+</p><p>You can use the Scroll Bar to move the Start Menu contents vertically.</p>
+<p>
+</p><p>To change the default Text Size.</p>
+<p>
+</p><p>1. <strong>Right Click</strong> the <strong>Desktop</strong> and select <strong>
+Screen Resolution</strong>. Click the <strong>Make text and other items larger or smaller</strong> option.</p>
+<p>
+</p><p>2. Place a check mark in the<strong> Let me choose one scaling level for all my displays</strong> option.</p>
+<p>
+</p><p>3. Select the <strong>Larger - 150%&nbsp;</strong> option. Click <strong>Apply</strong>,
+<strong>log off/log on</strong> to see the changes.</p>
+<p>
+</p><p>Let us know if this helps.</p>
+<p>
+</p><p>Regards</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aleksandrrdn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry, if I understand correctly complement DylanSukha.<br />
+Tiles themselves whether this can be done in a certain way, at least transparent or with variable transparency. More precisely the substrate under the icons in the tiles. On the desktop, too, they do not look comfortable.<br />
+My personal opinion - a combination of interfaces for mobile devices and desktop computers is not entirely correct due to the very different screen sizes.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aleksandrrdn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am sorry for my english
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jac70  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>If a clock can't display the CURRENT time, it's actually worse than useless, it's misinformation.
+</blockquote>
+<p>
+</p><p>Yes, although I have learned to not trust that clock anyhow :D</p>
+<p>
+</p><p>Another small thing. They changed the user icon to be a circle. I didn't like that as soon as I saw it. It makes an already small element even smaller but I question why they wasted time doing that when the OS has a very square look in almost every other
+ aspect. </p>
+<p>
+</p><p>Makes me wonder if there is someone employed to create a visual language that is consistent throughout the UI.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Waiting for sync - Microsoft Community</title>
+<h3> paulelston-evans  say:</h3>
+<h2>            Waiting for sync</h2>
+                    <p>I'm fairly computer illiterate, so any answers will have to be simple so that an idiot like me can understand! I have a hotmail email account on my tablet, but about 5 days ago it just came up with a blank white screen with the text "Waiting for sync, your
+ email will appear soon". Does anyone have any idea how I can get it back to normal? I still get emails to my windows phone, but it's not so easy to deal with them on there.</p>
+<p>Any help would be greatly appreciated.</p>
+<p>Thanks.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> paulelston-evans  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>Reinstalling Outlook application will not delete your emails, contacts nor change your current user name and password.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>Thank you.</p>
+</blockquote>
+<p>A friend who is much more computer literate than me has solved the problem. I told him what you said about deleting the account, so he did that. When we tried to re-install hotmail it would not work. Eventually, he worked out that the email icon that was
+ installed on my tablet was trying to link to a server that was no longer valid. When he looked up which server to connect to, everything was hunky dory!</p>
+<p>Problem solved. Thanks for your help.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Vanishing live tile - Microsoft Community</title>
+<h3> katebevan  say:</h3>
+<h2>            Vanishing live tile</h2>
+                    <p>An odd one. Running Windows 10 build no 10.0.10586.164 on my Nokia Lumia 1520 and the Messaging app (SMS and Skype) live tile pinned to Start has vanished, and I can't repin it: the option to do on the All Apps screen is greyed out.
+</p>
+<p>
+</p><p>Any ideas on how to fix this short of restoring from the backup I probably don't have as it happened almost immediately after the upgrade, or doing a hard reset?</p>
+<p>
+</p><p>Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sapphirelady&#35;18  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <a href="https://answers.microsoft.com/en-us/profile/4de202f8-8271-41ec-b990-6e73e3e448da" title="KateBevan">
+KateBevan</a>. If you're still experiencing this issue, we'd love to help. When did you start noticing this behavior? Have considered rebooting the phone by pressing the volume down &amp; the power keys together until it vibrates? We'll wait for your reply.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=using_windows_10_on_phone">using_windows_10_on_phone, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Whatsapp doenst work on HTC 8X &#40;cant connect to whatsapp&#41; - Microsoft Community</title>
+<h3> robind24  say:</h3>
+<h2>            Whatsapp doenst work on HTC 8X   &#40;cant connect to whatsapp&#41;</h2>
+                    <p>Hello</p>
+<p>&nbsp;</p>
+<p>Ive tried updating and reinstall several times. Everytime when is want to signup. It says: 'Cannot connect to Whatsapp. Check your networkconfig and try again later'</p>
+<p>&nbsp;</p>
+<p>Its killing me! </p>
+<p>&nbsp;</p>
+<p>Help ?!?!?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vasile M." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "VM"); this.style="display: inline-block";'
+<h3> vasile m.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello <span>RobinD24</span>, </p>
+<p>&nbsp;</p>
+<p>Thanks for the Forum entry.</p>
+<p>&nbsp;</p>
+<p>i have investigated the issue, was not able to reproduce the error.</p>
+<p>seams that that was a temporary issue.</p>
+<p>if the issue still persists you have a few options.</p>
+<p>on would be sort restart. (power down and up)</p>
+<p>hard reset. (please back up as much as possible then tap settings about and reset)</p>
+<p>if this 2 steps did not solve the issue then please contact <span>whats</span> app to get the issue investigated.
+</p>
+<p>that is of cause it the issue occurs only with on application. if with more then one then might be an live id issue.
+</p>
+<p>&nbsp;</p>
+<p>Best Regards</p>
+<p><span>Vasile</span> <span>M</span>.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andregoh  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i have the same problem on the htc 8s<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> fob95  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Did anyone get this issue sorted? Currently having the exact same problem
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It may be related to the specfic device/phone.&nbsp; Best bet would be to contact the Whatsapp developers directly.&nbsp; (Maybe they have a web page??)
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook link opens a new window in IE10 very glitchy&#33; - Microsoft Community</title>
+<h3> brentke  say:</h3>
+<h2>            Outlook link opens a new window in IE10 very glitchy&#33;</h2>
+                    Window's update installed IE10 on my Windows 7 64-bit&nbsp;Computer. If I have an IE10 window open and I click on a hyperlink in an email in Outlook 2010, Internet Explorer opens a new IE Window. I have selected in internet options to have IE "Open links from
+ other programs in: A new tab in the current window". Sometimes I can get this option setting to work properly if I open the email hyperlink first, but it is not always repeatable. It is very annoying to have IE constantly opening new windows rather than just
+ opening a new tab. This new version of IE seems to be very glitch!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ThrashZone" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TH"); this.style="display: inline-block";'
+<h3> thrashzone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The easiest work around (If a mouse is being used) is to Center mouse wheel click on the hyperlinks.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brentke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Dissed,</p>
+<p>&nbsp;</p>
+<p>Clicking the center wheel on a mouse in an Outlook email turns on the scroll feature. Not sure what you are suggesting here.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ThrashZone" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TH"); this.style="display: inline-block";'
+<h3> thrashzone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yes it should open the point to scroll feature (if) your not over a Hyperlink,</p>
+<p>Usually (check your mouse setting) the default action to center clicking on a hyperlink is to open in a new tab.</p>
+<p>Check these Tab browsing settings,</p>
+<p><a href="https://33giqq.bay.livefilestore.com/y2pWn11LJTfWCzBloIwakCrOh-iaqGMMH5xbpv14tuGmQ-I6GTkitKlWd-AXvpUAClFbTSJAFyhxlX9Y4PWwHiS5BvGIBosKzkaWih-rSAuGY8sQOg5Y4Pe4y9ugbHlxM8x/internet%20options%20general%202.jpg?psid=1" target="_blank" rel="noreferrer nofollow">https://33giqq.bay.livefilestore.com/y2pWn11LJTfWCzBloIwakCrOh-iaqGMMH5xbpv14tuGmQ-I6GTkitKlWd-AXvpUAClFbTSJAFyhxlX9Y4PWwHiS5BvGIBosKzkaWih-rSAuGY8sQOg5Y4Pe4y9ugbHlxM8x/internet%20options%20general%202.jpg?psid=1</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brentke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Dissed,</p>
+<p>&nbsp;</p>
+<p>My mouse is set to default setting in both Windows 7 and in Logitech's Setpoint settings.
+</p>
+<p>&nbsp;</p>
+<p>If you are speaking about clicking a hyperlink in an IE window/tab, you are correct, it opens the hyperlink in a new tab.&nbsp;
+<strong><u>HOWEVER</u></strong>, I am speaking of opening a hyperlink in an <u>Outlook 2010 email message</u>. Clicking the center wheel in an "<u>email message</u>" in Outlook 2010 turns on the scroll feature.</p>
+<p>&nbsp;</p>
+<p>Please note, I am <strong><u>NOT</u></strong> talking about Microsoft's new online Outlook service. I am talking about the email software that resides on one's computer call Outlook and the version I have is 2010.</p>
+<p>&nbsp;</p>
+<p>As for the hyperlink you included (which by the way I did surf to with a center wheel&nbsp;click) my Internet options are set the same as shown at your hyperlink.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ThrashZone" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TH"); this.style="display: inline-block";'
+<h3> thrashzone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for clarifying exactly where your having the issues,</p>
+<p>Office outlook only opens in a new window,</p>
+<p>For a better more in depth reason and possible solution you should edit and move your question to the Office outlook 2010 forum,</p>
+<p><a href="http://answers.microsoft.com/en-us/office/forum/office_2010-outlook?tm=1368038311037">http://answers.microsoft.com/en-us/office/forum/office_2010-outlook?tm=1368038311037</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brentke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Dissed,</p>
+<p>&nbsp;</p>
+<p>This issue did not occur when using Outlook 2010 with IE9. So it is not a Outlook issue, it is an issue with the new version of IE.&nbsp; Additionally, I can sometime fake out IE10 to open tabs instead of windows by changing the internet setting then setting
+ them back as shown in your earlier example and opening a link in an Outlook link first. But upon reboot the issue returns.</p>
+<p>&nbsp;</p>
+<p>So in my opinion, this is a glitch in the new IE10 that needs to be resolved.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ThrashZone" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TH"); this.style="display: inline-block";'
+<h3> thrashzone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Possibly is a ie10 issue ask another question in the office forum for more input on the matter ?</p>
+<p>I rarely open hyperlinks through office outlook so what are the option if you right click them ?</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_10">internet_explorer_10, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you select only certain records in an Access table and initiate - Microsoft Community</title>
+<h3> jeffgehman  say:</h3>
+<h2>            How do you select only certain records in an Access table and initiate an email to just those selected in that table&#63;</h2>
+                    <i>MS Access to MS Outlook</i>
+<div><br />
+</div>
+<div>How do you select only certain records in an Access table and initiate an email to just those selected in that table?</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tricky300  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I suspect that it should be possible to do an append query to Contacts (or a subfolder thereof). In Access you can link to Outlook contacts folders as external data.</p>
+<p>Tricky</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Nicholas_W_" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "NI"); this.style="display: inline-block";'
+<h3> nicholas_w_  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Jeff
+<div><br />
+<div>I have moved this thread from Windows XP Desktop forum to the Microsoft Office Access forum.&nbsp;</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jeffgehman  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>I suspect that it should be possible to do an append query to Contacts (or a subfolder thereof). In Access you can link to Outlook contacts folders as external data.</p>
+<p>Tricky</p>
+</blockquote>
+<p><br />
+But how do you do that?</p>
+<p>&nbsp;</p>
+<p>Jeff</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tricky300  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Jeff,</p>
+<p>I only have experience of doing things the other way (Outlook to Access) and that was a few years ago. I am really a Windows man, though I have dabbled from time to time with Access, I am no expert. I have only ever asked in the Access forum, never answered.</p>
+<p>Now this thread is in the Office forum I expect someone with the right experience and knowledge will give an answer that will take them minutes whereas I would have to spend hours learning how to answer your question.</p>
+<p>I thought that if I pointed you in the right direction you might be able to walk there yourself.</p>
+<p>If you search this forum you may even find an answer before someone replies.</p>
+<p>Good luck.</p>
+<p>Tricky</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Create a Query in Access, and mailmerge from that Query rather than mailmerging from the table itself.</p>
+<p>You don't say how you want the selection done, so I can't say how to write the query, but... that would how to approach it.</p>
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Edge is dead and more info - Microsoft Community</title>
+<h3> crazykats  say:</h3>
+<h2>            Edge is dead and more info</h2>
+                    <p><a href="https://www.neowin.net/news/microsoft-reportedly-killing-edgehtml-and-building-a-chromium-based-browser?fbclid=IwAR3b0o9L_dQp7cpLB8oSZ3Y_KymSrH4jmqUUC440YgxrRHCsZ8fL_ssmKHs" target="_blank" rel="noreferrer nofollow">https://www.neowin.net/news/microsoft-reportedly-killing-edgehtml-and-building-a-chromium-based-browser?fbclid=IwAR3b0o9L_dQp7cpLB8oSZ3Y_KymSrH4jmqUUC440YgxrRHCsZ8fL_ssmKHs</a></p>
+<p>
+</p><p>JMO, but I would love it if this is true.</p>
+<p>I use Chrome and the AOL Chromium browser</p>
+<p>every day.</p>
+<p>
+</p><p>Added info:</p>
+<p><a href="https://betanews.com/2018/12/06/microsoft-edge-chromium/" target="_blank" rel="noreferrer nofollow">https://betanews.com/2018/12/06/microsoft-edge-chromium/</a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    8 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="JoeNamco" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> joenamco  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Interesting why don't MS just tell people to use Chrome as that is what I've used and most of my customers except for a few IE users
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jmarco0921" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmarco0921  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's about time! I only use Edge to interact with Mircosoft &amp; their apps. When I was using W10 version 1803 Edge kept opening at startup and always with the wrong Homepage. Chrome is my default browser and also use Firefox Nightly browser for its speedy
+ interaction.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Terry Smart" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "TS"); this.style="display: inline-block";'
+<h3> terry smart  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Seems like MS is a bit too willing to jump into something with both feet and lots of hoorah, then jump out when it gets difficult. Like Windows 8, the whole smartphone/Nokia adventure, Windows 10 for phones, Edge, and finally the situation with some of the
+ surface devices that rather than getting fixed a new model is released. </p>
+<p>
+</p><p>But with Edge, I think it's a good move, but my faith in MS in any market except OS and Office is getting eroded.</p>
+&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Johnny_55" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> johnny_55  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Remember the music player MS brought out, just another sinking ship.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="hawkeyes46" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "HA"); this.style="display: inline-block";'
+<h3> hawkeyes46  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Rich Woods is pretty reliable in his reports. As a former Edge and Firefox user now using Chrome, I would welcome a change in Edge to a chromium based browser but not as a third browser just changed underneath.</p>
+&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Hula_Baloo" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "HU"); this.style="display: inline-block";'
+<h3> hula_baloo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            &nbsp;If true, I won't miss it.&nbsp; I use Chrome and Firefox 95% of the time and IE when I need something translated to English.&nbsp; The biggest problem I see with Edge is that when they get it working fairly well, they add silly stuff that most will never use and
+ it gets full of bugs.&nbsp; RIP Edge!&nbsp; :)
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="&#123;&#123;michael&#125;&#125;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> &#123;&#123;michael&#125;&#125;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'm happy to see that Edge is being replaced.&nbsp; I will not use Chrome browser because to use a bookmark bar it requires signing into a Google account (for tracking?).&nbsp; I do not have nor do I want a Google account.&nbsp; Mozilla Firefox works for me.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> illsteward  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p><a href="https://www.neowin.net/news/microsoft-reportedly-killing-edgehtml-and-building-a-chromium-based-browser?fbclid=IwAR3b0o9L_dQp7cpLB8oSZ3Y_KymSrH4jmqUUC440YgxrRHCsZ8fL_ssmKHs" target="_blank" rel="noreferrer nofollow">https://www.neowin.net/news/microsoft-reportedly-killing-edgehtml-and-building-a-chromium-based-browser?fbclid=IwAR3b0o9L_dQp7cpLB8oSZ3Y_KymSrH4jmqUUC440YgxrRHCsZ8fL_ssmKHs</a></p>
+<p>
+</p><p>JMO, but I would love it if this is true.</p>
+<p>I use Chrome and the AOL Chromium browser</p>
+<p>every day.</p>
+</blockquote>
+<p>Damn… Can't access the article due to HTTPS error, but if it's true, it's actually pretty sad. I do understand Edge is neither popular, nor particularly hype, but it's very solid browser. I have yet to encounter crash using Edge in non-insider build and
+ most of the insider-related stuff was also quite "meh". On the other hand, I got called at least once a week to someone's RAM being eaten by Chrome, or see people closing pages and reopening them in "the other browser" a lot because something looks ugly or
+ doesn't work. But I guess much like many other good ideas from Microsoft, it was too late and too underhyped to be of any use...</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Lead3" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "LE"); this.style="display: inline-block";'
+<h3> lead3  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>I'm happy to see that Edge is being replaced.&nbsp; I will not use Chrome browser because to use a bookmark bar it requires signing into a Google account (for tracking?).&nbsp; I do not have nor do I want a Google
+ account.&nbsp; Mozilla Firefox works for me. </blockquote>
+<p>I use Google Chrome and have the bookmarks bar and do not sign into my Google account.</p>
+<p>How have you tried to show and or use the bar?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bob kennaway  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This is sad, I am very satisfied with Edge. I use it 99% of the time. Hopefully they will keep the same or a very similar interface when they switch to the Chromium engine behind the scenes. Moving to an open source engine may be better in the long run.
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>802.1x &#40;PEAP&#41; over WEP solution&#63; - Microsoft Community</title>
+<h3> bastuhan  say:</h3>
+<h2>            802.1x &#40;PEAP&#41; over WEP solution&#63;</h2>
+                    
+<p>My phone is E71 and&nbsp;</p>
+<p>I can't connect my university network</p>
+<p>&nbsp;</p>
+<p>Is there anyone who know how I can overcome this problem...</p>
+<p>802.1x (PEAP) over WEP</p>
+<p>&nbsp;</p>
+<p>you can see settings for XP by this site</p>
+<p><a href="http://www.iie.org.pl/wirr.doc" target="_blank" rel="noreferrer nofollow">settings for xp</a></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hadimassa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You can't use WEP for EAP on the E71. You better use 802.1x and continue from there. Set EAP-PEAP as priority. Turn off (unmark) other protocols. Use EAP-MSCHAPv2.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bastuhan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>did you see link?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hadimassa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yes, and then?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bastuhan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>i havent connected network yet, something wrong again..</p>
+<p>&nbsp;</p>
+<p>i dont understand something,</p>
+<p>&nbsp;</p>
+<p>can i connect network or is it impossible for e71</p>
+<p>you know i want to use 802.1x&nbsp;authentication&nbsp;over WEP</p>
+<p>but if i select WEP i cant use 802.1x</p>
+<p>but if i select 802.1x, it says me wpa/wpa2 in settings?</p>
+<p>&nbsp;</p>
+<p>according to&nbsp;this <a href="http://www.iie.org.pl/wirr.doc" target="_blank" rel="noreferrer nofollow">
+link</a>,&nbsp;could you please write settings step by step for e71?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hadimassa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>As I wrote earlier, you can't use WEP and EAP in combination. Check this topic from Saataja to get a rough idea how to set up EAP-PEAP.</p>
+<p>/discussions/board/message?board.id=connectivity&amp;message.id=25714#M25714</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dontommazo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What you tell basuhan to do is to configure his phone with EAP-PEAP even though the network he want to connect to isn't supported. Are you trying to fool him?<br />
+<br />
+As far as I understand from above, 802.1x over EAP (PEAP) with WEP encryption isn't possible from Nokia phones? This is unbelievably bad. A lot of company and university networks use that configuration, so how is it possible that Nokia didn't add support for
+ that? All the other smart phone brands support it, like Android, iPhone and so on.<br />
+<br />
+My company use a similar intranet WLan configuration as bastuhan try to access, and like him I'm not able to connect to it and access my work emails etc. Extremely annoying.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> saataja  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;</p>
+<blockquote>
+<hr />
+dontommazo wrote:<br />
+What you tell basuhan to do is to configure his phone with EAP-PEAP even though the network he want to connect to isn't supported. Are you trying to fool him?<br />
+<br />
+As far as I understand from above, 802.1x over EAP (PEAP) with WEP encryption isn't possible from Nokia phones? This is unbelievably bad. A lot of company and university networks use that configuration, so how is it possible that Nokia didn't add support for
+ that? All the other smart phone brands support it, like Android, iPhone and so on.<br />
+<br />
+My company use a similar intranet WLan configuration as bastuhan try to access, and like him I'm not able to connect to it and access my work emails etc. Extremely annoying.
+<hr />
+</blockquote>
+<p>&nbsp;</p>
+<p>Nokia phones do support "dynamic WEP" encryption with 802.1X (EAP) authentication, which I suppose is what you're looking for to achieve.</p>
+<p>&nbsp;</p>
+<p>You have to define your phone's IAP settings so that the "WLAN security mode" is set to 802.1X. After you have selected the 802.1X WLAN security mode go to the "WLAN Security settings" view and make sure that "EAP" authentication is selected (instead of
+ Pre-shared key) and define your EAP plug-in settings just like you would be configuring them for the WPA/WPA2-EAP.</p>
+<p>&nbsp;</p>
+<p>I guess 802.1X security mode (on Nokia phones) can be considered as an "legacy" compliant extension to the standards based WPA/WPA2 mode. And when 802.1X security mode is selected on the phone it will basically support both "EAP authenticated dynamic WEP"
+ networks and at the same time this "802.1X" mode will also support the WPA/WPA2 networks (you can select EAP or Preshared Key).</p>
+<p>&nbsp;</p>
+<p>Note that the WEP "WLAN security mode" is just for regular static WEP encryption, where user has to manually configure the WEP encryption key in to phone's settings (and same key must be on the WLAN AP/router). So WEP "WLAN security mode" is in no way not
+ suitable for EAP/802.1X authenticated "dynamic WEP" security that you are asking for but you should select the 802.1X "WLAN security mode" on the phone and configure EAP plugin settings accordingly.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Sort on a running total column - Microsoft Community</title>
+<h3> rs987  say:</h3>
+<h2>            Sort on a running total column</h2>
+                    <p>How can I sort on a running total column without getting an error?&nbsp; The formula in the&nbsp;first row of column B1&nbsp;is "=A1".&nbsp; The formula in the second row of the column B&nbsp;is "B1+A2".&nbsp; The formula in the&nbsp;third row of the column B&nbsp;is "B2+A3", etc.</p>
+<p>
+</p><p>When I sort, column B1 is no longer "=A1", which affects the running total.&nbsp; Is there a way to sort on a running total column?&nbsp; Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> rs987  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Hi V_Agarwal!</p>
+<p>I have additional columns as well (e.g. Description, Model Number, etc.) that I need to sort on as well. &nbsp;I would like the running total to adjust no what other column I am sorting on.</p>
+<p>
+</p><p>I do want to thank you for your quick response to my question.&nbsp;</p>
+</blockquote>
+<p>I found the formula I needed to solve my sorting problem with a column that has a running total.&nbsp; The code I used was "=SUM($A$1:A1)", which I placed in column&nbsp;B and copied down to the other rows in column B.&nbsp; Now when I sort on the other columns, it keeps
+ a running total in column B, no matter which other columns I sort on.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="V_Agarwal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "V"); this.style="display: inline-block";'
+<h3> v_agarwal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You should sort data without selecting column B. &nbsp;Sort only column A and you should get correct results.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>New generation OneDrive sync and sharepoint shares - Microsoft Community</title>
+<h3> robinhelgelin  say:</h3>
+<h2>            New generation OneDrive sync and sharepoint shares</h2>
+                    
+<p>As of right now, the new generation sync client can't handle Sharepoint or OneDrive groups. However, the old client does and as far as I can find information, both clients can be installed at the same time.</p>
+<p>Our users get the old OneDrive for Business with the installation of Office 2016 from our Office 365 E3 license.</p>
+<p>I just need some sort of confirmation that this will not change until the new generation sync can handle Sharepoint and OneDrive groups. As in, I don't want our users to suddenly get the new generation sync client bundled in an Office install or update and
+ everything breaks.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> ericyang_msft6286  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Robin,</p>
+<p>We haven’t got any information that the OneDrive for Business Next Generation sync client will replace the previous OneDrive for Business sync client in the Office Suite. Also, even if this may happen some day in the future, you will be notified in advance
+ before it is actually executed and help to complete the process with the minimum impact. Besides, you may still be able to install the previous version of OneDrive for Business using the
+<a href="https://technet.microsoft.com/en-us/library/jj219422.aspx" target="_blank" rel="noreferrer nofollow">Office Deployment Tool</a>.</p>
+<p>Best Regards,<br />
+Eric Yang</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can I link outlook calendar with the correct email account&#63; - Microsoft Community</title>
+<h3> notagainct  say:</h3>
+<h2>            How can I link outlook calendar with the correct email account&#63;</h2>
+                    Recently upgraded to outlook 2010 (from 2007)and the outlook calendar defaults to the WRONG email account. There are several email addresses linked to&nbsp;my OUTLOOKk and the calendar (arbitrarily it seems) has decided to attach the&nbsp;calendar to the one that
+ comes first alphabetically, NOT the account that I need it to associate a calendar with. There is nothing in&nbsp;any of the 'help' I've been able to find &nbsp;to tell me how to change the default to associate an outlook calendar with the appropriate email address/user
+ this account. I never had this problem with 2007 and am at a loss and very frustrated.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Anoop K M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> anoop k m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div><span>How many email accounts are configured in Outlook?</span></div>
+<div><span>What type of account is your primary email account? (POP/IMAP/Exchange/MAPI)</span></div>
+<div><span>Do you have multiple PST files in Outlook or are you using the same PST file for all the accounts?</span></div>
+<div>&nbsp;</div>
+<div><span>The default Outlook calendar is part of the default PST file configured in Outlook.
+</span></div>
+<div><span>In Outlook, click on File &gt; Account Settings &gt; Data Files tab &gt; select the PST file for the primary email account &gt; click Set As Default &gt; close &amp; restart Outlook.
+</span></div>
+<div>&nbsp;</div>
+<div><span>You may also enable the Folder List view in Outlook to check the calendar that is associated with your primary email account (click on the folder icon at the bottom left of the Navigation
+ Pane). If you have multiple PST files, this view will show the complete personal folder list and all the calendars associated with it.</span></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Adding a 5th Weekend&#47;Day as a Recurring Calendar Option - Microsoft Community</title>
+<h3> hrae  say:</h3>
+<h2>            Adding a 5th Weekend&#47;Day as a Recurring Calendar Option</h2>
+                    <p>I need to be able to add a recurring day of the month to my calendar, but the only options are "<em>Add 1st, 2nd, 3rd, or Last Friday of every month</em>" choosing "Last" will put it on the calendar for every 4th Friday and no option for a 5th Friday. There
+ are months that have 5 weekends. Is there ever going to be an option for this?&nbsp;</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            &gt;&gt;choosing "Last" will put it on the calendar for every 4th Friday 
+<br />Are you saying it is not putting it in on the 5th Fri (when one exists)?  
+<br />
+<br />I'm not expecting a 5th (day) option, because not all months have 5 weeks and Outlook wouldn't know what to do when there is only 4. Using last (day) covers this scenario - if there are 5 fridays, it should be on the 5th, if one exists.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="HRae" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "HR"); this.style="display: inline-block";'
+<h3> hrae  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>&gt;&gt;choosing "Last" will put it on the calendar for every 4th Friday
+<br />
+Are you saying it is not putting it in on the 5th Fri (when one exists)? <br />
+<br />
+I'm not expecting a 5th (day) option, because not all months have 5 weeks and Outlook wouldn't know what to do when there is only 4. Using last (day) covers this scenario - if there are 5 fridays, it should be on the 5th, if one exists.
+</blockquote>
+<p>It does put it on the 4th Friday of every month and I only need it for the 5th Fridays of those months that have 5. It's a child custody schedule that requires designated 2nd and 5th weekends, beginning on Fridays. So when I choose the "Last" Friday, it
+ puts it recurring on all months as the 4th Friday, except for those that do have a 5th. I need it designated to only recognize the 5th Fridays of those months and not all last Fridays of every month, which is usually the 4th. If this makes sense. :)</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Since there is no pattern to when there will be a 5th Fri, using something like "last Fri of every 3 month" won't work. You'll either need to create individual appointments (you can create one and copy, paste it to the other days or copy in place, then change the dates) or delete the events on the 4th Fridays.       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="HRae" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "HR"); this.style="display: inline-block";'
+<h3> hrae  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I figured I'd have to do it individually after trying other scenarios. Thank you so much for your help.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=calendars_and_tasks">calendars_and_tasks, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

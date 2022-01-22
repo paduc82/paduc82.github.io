@@ -1,0 +1,1961 @@
+    <title>Make VBA scroll until a specific column&#47;row is the last one - Microsoft Community</title>
+<h3> lenard van der maas  say:</h3>
+<h2>            Make VBA scroll until a specific column&#47;row is the last one visible &#40;on any screen size&#41;</h2>
+                    <p>Hi everyone,</p>
+<p>
+</p><p>I recently came across a problem for which I couldn't find a solution online, but after a lot of research, I figured out a solution, so I thought I'd share it with you.</p>
+<p>
+</p><p class="contentHeader1"><strong>Question:</strong></p>
+<p>How do I let VBA scroll through an excel sheet until a specific colum/row is the last one visible on the screen?</p>
+<p>
+</p><p class="contentHeader1"><strong>Example:</strong></p>
+<p>Here's the spreadsheet on which I wanted to apply this macro.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/3c9d036c-a71d-42f9-9de1-2d59fe768047?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/3c9d036c-a71d-42f9-9de1-2d59fe768047?upload=true" /></a></p>
+<p>The blurred columns on the left are frozen. Then there are 103 columns to the right of that, each one representing 1 week, in which I enter data every week. VBA automatically hides the columns that represent future weeks so the last week visible is the current
+ week. Then to the right of that, there are 2 more columns with some extra information about each row of data.</p>
+<p class="contentHeader1"><strong>What I wanted:</strong></p>
+<p>As soon as anyone opens the file, VBA should scroll through the columns to make show as much of the column I prefer to be the most right column (column 'DI'), while showing as little of columns to the right of column 'DI' as possible. All this regardless
+ the size of the window.</p>
+<p class="contentHeader1"><strong>Why this is difficult:</strong></p>
+<p>All the methods for scrolling in VBA make the destination column the center or leftcolumn, except 1, which is</p>
+<p class="contentCodeblock">ActiveWindow.SmallScroll</p>
+<p>The problem with it is that it's relative to the current scroll. It simply takes the most left column/top row applicable for scrolling (it ignores frozen cells) and scrolls up/down/left/right a specific amount of cells, so that if row 9 is the first row
+ visible and you use ActiveWindow.SmallScroll to scroll up 1 row, it will make row 8 the first visible row, etc.</p>
+<p class="contentHeader1"><strong>How I solved it:</strong></p>
+<p>I came across this way of getting the visible range of cells of the active window. That is: the range that is actually visible on the screen.</p>
+<p class="contentCodeblock">ActiveWindow.VisibleRange</p>
+<p>Now I saw this as a way of checking what the right most visible column is. So I took the last column of this range and took it's column number:</p>
+<p class="contentCodeblock">currLastVisibleCol = ActiveWindow.VisibleRange.Columns(ActiveWindow.VisibleRange.Columns.Count).Column</p>
+<p>Now the only thing I had to do is scroll through the columns in a loop until the last row visible is the one I want:</p>
+<p class="contentCodeblock">&nbsp;&nbsp;&nbsp; prefLastVisibleCol = numberOfTheLastColumnToBeVisible<br />
+&nbsp;&nbsp;&nbsp; currLastVisibleCol = ActiveWindow.VisibleRange.Columns(ActiveWindow.VisibleRange.Columns.Count).Column<br />
+&nbsp;&nbsp;&nbsp; lastActualScrollCol = ActiveWindow.ScrollColumn + 1<br />
+&nbsp;&nbsp;&nbsp; While currLastVisibleCol &lt;= prefLastVisibleCol And lastActualScrollCol &lt;&gt; ActiveWindow.ScrollColumn<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lastActualScrollCol = ActiveWindow.ScrollColumn<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ActiveWindow.SmallScroll 0, 0, 1, 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; currLastVisibleCol = ActiveWindow.VisibleRange.Columns(ActiveWindow.VisibleRange.Columns.Count).Column<br />
+&nbsp;&nbsp;&nbsp; Wend<br />
+&nbsp;&nbsp;&nbsp; lastActualScrollCol = ActiveWindow.ScrollColumn + 1<br />
+&nbsp;&nbsp;&nbsp; While currLastVisibleCol &gt; prefLastVisibleCol And lastActualScrollCol &lt;&gt; ActiveWindow.ScrollColumn<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lastActualScrollCol = ActiveWindow.ScrollColumn<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ActiveWindow.SmallScroll 0, 0, 0, 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; currLastVisibleCol = ActiveWindow.VisibleRange.Columns(ActiveWindow.VisibleRange.Columns.Count).Column<br />
+&nbsp;&nbsp;&nbsp; Wend</p>
+<p class="contentStandard">Now let me explain what this does:</p>
+<p class="contentStandard">It first sets prefLastVisibleCol to the number of the column that you prefer to be the last one visible.</p>
+<p class="contentStandard">Then it stores the number of the column that is currently the last one visible in currLastVisibleCol.</p>
+<p class="contentStandard">Then it takes the current scrollcolumn, increases it by 1 (I'll explain why a little later) and stores it in lastActualScrollCol .</p>
+<p class="contentStandard">Then it starts a while loop that runs as long as </p>
+<p class="contentStandard" style="margin-left: 30px">currLastVisibleCol is smaller of equal to prefLastVisibleCol. This is to make sure that it scrolls right until the column right of the desired column is visible</p>
+<p class="contentStandard" style="margin-left: 30px">AND</p>
+<p class="contentStandard" style="margin-left: 30px">lastActualScrollCol is NOT equal to the current Scroll Column that is retrieved through ActiveWindow.ScrollColumn. The lastActualScrollCol is updated every loop, just before it executes the smallscroll.
+ So if the smallscroll succeeded, the lastActualScrollCol value should not be equal to the actual current scroll column. If it is, that is probably because smallscroll somehow didn't succeed. In that case, it should stop the loop, because if it doesn't, it
+ will just keep looping until excel stops the process and that's not what we want. That's why we need to add this to the while loop condition.</p>
+<p class="contentStandard">In this while loop:</p>
+<p class="contentStandard" style="margin-left: 30px">lastActualScrollCol is set to ActiveWindow.ScrollCol</p>
+<p class="contentStandard" style="margin-left: 30px">'ActiveWindow.SmallScroll 0, 0, 1, 0' is executed to scroll 1 to the right.</p>
+<p class="contentStandard" style="margin-left: 30px">currLastVisibleCol is set to the last visible column by doing:</p>
+<p class="contentCodeblock" style="margin-left: 30px">currLastVisibleCol = ActiveWindow.VisibleRange.Columns(ActiveWindow.VisibleRange.Columns.Count).Column</p>
+<p class="contentStandard">After that, another while loop is started that runs as long as</p>
+<p class="contentStandard" style="margin-left: 30px">currLastVisibleCol is greater than prefLastVisibleCol. This is to make sure that it scrolls left until the column right of the desired column is not visible anymore</p>
+<p class="contentStandard" style="margin-left: 30px">AND</p>
+<p class="contentStandard" style="margin-left: 30px">lastActualScrollCol is NOT equal to the current Scroll Column that is retrieved through ActiveWindow.ScrollColumn as explained before.</p>
+<p class="contentStandard">
+</p><p class="contentStandard">And that's actually everything there is to it.</p>
+<p class="contentStandard">It works with any window size, zoom settings and column width.</p>
+<p class="contentStandard">I hope this was helpful. I've been searching for a solution for hours and I don't want anyone else to have to do the same.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    15 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Preserving animations when saving to pdf - Microsoft Community</title>
+<h3> msb&#64;au  say:</h3>
+<h2>            Preserving animations when saving to pdf</h2>
+                    For use in the classroom I sometimes use power point presentations saved as pdf.<br />
+I do this because I can then use my iPad to annotate slides on the fly to draw attention to, or amplify, points as I am talking (underlining a word or writing in a few words from the audience for example).<br />
+However saving to pdf in PP for Mac 2011 loses all animations, which is a drawback.<br />
+I don't need to preserve anything fancy; just point-by-point delivery on single slides.<br />
+After some Googling around I found this page which relates to PP for Mac 2007:<br />
+http://neilmitchell.blogspot.com.au/2007/11/creating-pdf-from-powerpoint-with.html<br />
+It involves making and using a VBA macro. I have not used such things before and anyway don't know whether it will work for the 2011 version.<br />
+Is there an add-in or third party tool I can use instead?<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Steve Rindsberg" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "SR"); this.style="display: inline-block";'
+<h3> steve rindsberg  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>That'd be PowerPoint for WINDOWS 2007. &nbsp;There's no 2007 version for Mac.</div>
+<div><br />
+I just had a quick look at the code and the author's improved version at
+<div>&nbsp;<a href="http://neilmitchell.blogspot.com/2007/11/powerpoint-pdf-part-2.html" target="_blank" rel="noreferrer nofollow">http://neilmitchell.blogspot.com/2007/11/powerpoint-pdf-part-2.html</a></div>
+<div><br />
+<div>Both will probably work in PPT 2011. &nbsp;I'd give them a try (on a COPY of your valuable original presentation, of course).</div>
+<div><br />
+<div><br />
+<div>
+<div><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft office for MAC update won&#39;t install - Microsoft Community</title>
+<h3> lisapsaras  say:</h3>
+<h2>            Microsoft office for MAC update won&#39;t install</h2>
+                    every time I try to install the automatic update it downloads then can't install because its telling me to "shut down Microsoft DataBase Daemon and SynScerticeAgent". &nbsp;this is driving me nuts. &nbsp;I can never install the updates. &nbsp;how do I fix this? &nbsp;its
+ 14.5.2 update. &nbsp;thank you
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Phillip M Jones" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "PM"); this.style="display: inline-block";'
+<h3> phillip m jones  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <ol>
+<li>Restart Computer with shift key down (Safe-mode)</li><li>Sign in with computer's password when asked.&nbsp;</li><li>When completed loading</li><li>Open any of the Office applications except Outlook</li><li>Go to Help menu and Choose check for Updates<br />
+Or open Microsoft Auto Updater and Run update.</li></ol>
+<p>Or you can Try this and see if works it was recently reported by a Office User on the answers forum.</p>
+<ol>
+<li>Open Outlook</li><li>Go to Outlook Menu &gt; Preferences</li><li>Go to Sync Services</li><li>Write down everything that has a checkmark beside it.</li><li>Then get out of Preferences.</li><li>Then Close Outlook.</li><li>Restart computer Normally (or log out and back in).</li><li>Now Try update.</li></ol>
+<p>Its reported by the user you can update without issue.&nbsp;</p>
+<p><strong>_________</strong></p>
+<p><strong>Disclaimer:</strong></p>
+<p><em>The questions, discussions, opinions, replies &amp; answers I create, are solely mine and mine alone, and do not reflect upon my position as a Community Moderator.</em></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>excel 2016 online select non-contiguous cells - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            excel 2016 online select non-contiguous cells</h2>
+                    <p>in Excell 365 online, I seem to be&nbsp;missing the ability to select non contiguous ranges using the ctrl key, as is with the pc "standalone" version.&nbsp; is this actually the case or am I missing something?&nbsp; Is there a work around with the online version?&nbsp; What
+ other significant features are not available in the online worksheet environment versus the traditional pc-based version?</p>
+<p>
+</p><p>Thanks!</p>
+<p>
+</p><p>
+</p><p>Cal</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Norman David Jones" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "ND"); this.style="display: inline-block";'
+<h3> norman david jones  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Cal,</p>
+<p>
+</p><blockquote>
+<p>in Excell 365 online, I seem to be&nbsp;missing the ability to select non contiguous ranges using the ctrl key, as is with the pc "standalone" version.&nbsp; is this actually the case or am I missing something?&nbsp; Is there a work around with the online version?&nbsp;
+</p>
+</blockquote>
+<p>As you have discovered, it is not possible to select multiple ranges in Excel365 online. In this connection, see, and perhaps add your vote:</p>
+<p><a href="https://excel.uservoice.com/forums/274580-excel-online/suggestions/10676208-there-is-no-way-to-select-non-adjacent-cells-as-in" target="_blank" rel="noreferrer nofollow">https://excel.uservoice.com/forums/274580-excel-online/suggestions/10676208-there-is-no-way-to-select-non-adjacent-cells-as-in</a></p>
+<p>
+</p><blockquote>
+<p>What other significant features are not available in the online worksheet environment versus the traditional pc-based version?</p>
+</blockquote>
+<p>Try a Google/Bing search but, as a starting point, see:</p>
+<p><a href="https://support.office.com/en-gb/article/Differences-between-using-a-workbook-in-the-browser-and-in-Excel-f0dc28ed-b85d-4e1d-be6d-5878005db3b6" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-gb/article/Differences-between-using-a-workbook-in-the-browser-and-in-Excel-f0dc28ed-b85d-4e1d-be6d-5878005db3b6</a></p>
+<p><br />
+</p>
+<p>
+</p><p>
+</p><p>
+</p><p>===</p>
+<p>Regards,</p>
+<p>Norman</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=office_online">office_online, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Having multiple problems with Word. Grouping, PDF conversion, - Microsoft Community</title>
+<h3> learntodrawfast.com  say:</h3>
+<h2>            Having multiple problems with Word. Grouping, PDF conversion,</h2>
+                    I used MS Word 2007 forever with fabulous results.<br />
+<ul>
+<li>Great tool.</li></ul>
+Now I installed MS Word 2010 and I HATE it.<br />
+<br />
+<b>Is anyone else having these issues?</b><br />
+<ul>
+<li>Can't group images or text boxes</li></ul>
+<ul>
+<li>When it <b><i>says it grouped something,</i> </b>I try to grab the entire page of "grouped" items
+</li></ul>
+and it cuts and pastes them individually. <br />
+<ul>
+<li>I can't select a whole page and move it.</li></ul>
+<ul>
+<li>I can't save the files as a PDF.</li></ul>
+<ul>
+<li>Text boxes now appear to be Jpeg files instead of text boxes.</li><li>Images randomly get a solid white box blocking half or more of the image</li><li>I have to delete the image and text box and start over to fix it.<br />
+</li></ul>
+<br />
+I used to use Word as a graphic design tool and it was FABULOUS.<br />
+Now I'm planning to uninstall 2010 and ship it back and <br />
+reinstall 2007.<br />
+<br />
+The only reason I switched from 2007 is that it was crashing <br />
+every 10 minutes.<br />
+<br />
+What to do????<br />
+MS... if something ain't broke... don't fix it.<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sanwin2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There is no Word 2012.&nbsp; If you are referring to Word 2010 then there is something seriously wrong with your installation.</p>
+<p>&nbsp;</p>
+<p>If you are referring to Word 2013 then the whole point of a preview is to get people to report the bugs they find.&nbsp; Click the little smiley face near the top right, select the frown, fill in the bug report and send it in.&nbsp; The more people that report problems
+ the more likely that they will be fixed.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="LearnToDrawFAST.com" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "LE"); this.style="display: inline-block";'
+<h3> learntodrawfast.com  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's MS Word 2010.<br />
+All the bad things happen as described.<br />
+Any advise?<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sanwin2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Go to the Developer Tab and click COM add-ins.&nbsp; Disable any add-ins by unticking the box next to them.&nbsp; Close and reopen Word and try your problems again.&nbsp; If that fixes anything then re-introduce the add ins one at a time to check which is causing your
+ problem(s)</p>
+<p>&nbsp;</p>
+<p>I certainly don't have the PDF problem, I've saved two already today.&nbsp;&nbsp;I don't know about your grouping problems.&nbsp; The last time I did a text box is stayed a text box.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Syncing issues between Outlook contacts and tasks - Microsoft Community</title>
+<h3> qweenb  say:</h3>
+<h2>            Syncing issues between Outlook contacts and tasks</h2>
+                    
+<p>I am trying to create a printable task list through Outlook. My issue is that I am scheduling individual tasks while in a contact window. For example: while viewing "John Doe's" contacting
+ information, under the 'Actions' drop down, I am selecting 'New Task for Contact'. While this process is easy to do, the problem that I am having is that all the pertinant information that I want to carry over in my task window, such as his company and contact
+ numbers, are not carrying over. </p>
+<p>&nbsp;</p>
+<p>I have tried customizing the view and adding the fields I wish to see from the 'All contact fields' menu, but still no luck on viewing the information that I wish to see.</p>
+<p>&nbsp;</p>
+<p>Does anyone know of any syncing issues that might be causing this problem for me?
+<img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2fforums.microsoft.com%2fWindowsMobile%2fWebResource.axd%3fd%3dNySzF1eivP_rMoc50GQJzcvS4MHMOEKwYrCIgDtzuzlw7GsNki3H_INlfYaLgkxFwAr0uh1RPOKhICkOAso47ykZzTt59GYICFvFgYER8fE1%26amp%3bt%3d633337194230757564" /></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This seems to be a default.
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lumia 640 XL protective cases are missing - Microsoft Community</title>
+<h3> ronaldmcvicar  say:</h3>
+<h2>            Lumia 640 XL protective cases are missing</h2>
+                    <p>I can not find a protective case for the Microsoft Lumia 640 XL case: AT&amp;T does not have them, the local At&amp;t store does not have them. Microsoft Store does not include them. You must have protective cases? Hundreds of phones have cases to protect against
+ drops, etc. If I am missing something please redirect and excuse my ignorance.</p>
+<p>
+</p><p>Sincerely,</p>
+<p>
+</p><p>a faithful Microsoft customer since 1990's.............</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="TomBrad95" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TO"); this.style="display: inline-block";'
+<h3> tombrad95  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            A good website that sells accessories for windows phone is windows central, they sell accessories under loads of categories for every windows phone
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> garym123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Most are third party cases. </p>
+<p><a href="http://shop.windowscentral.com/lumia-640-xl-cases.htm" target="_blank" rel="noreferrer nofollow">http://shop.windowscentral.com/lumia-640-xl-cases.htm</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> nokia640 user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Ronald, her you go my friend,.. <a href="http://www.microsoft.com/en/mobile/accessories/all/?action=accessorysearch&amp;product=5693466" target="_blank" rel="noreferrer nofollow">
+http://www.microsoft.com/en/mobile/accessories/all/?action=accessorysearch&amp;product=5693466</a></p>
+<p>
+</p><p>Above is just a link to Microsoft's page for accessories for the Nokia 640 XL.</p>
+<p>If the link doesn't work, you could try entering something like 'Nokia 640 XL case' into your search engine and looking through the results.</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jackboo89  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Has anyone managed to get a official back cover i found 1 on amazon ordered it but not hopefull of it turning up, i want the one without the flap as in the one that comes as standard on the phone . I cannot believe that a phone that is marketed in this
+ way doesnt have the spare parts , the case has cracked when inserting the sim due to design fault but as it came from china (simply electronics) i am not sending it back there . I need a new cover to sell it as i now seen the light and got a galaxy s6 edge
+ (another problem screen protectors ) anyhow would buy one if i can find 1
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=accessories">accessories, </a> <br>
+<a href="/search?q=shells">shells, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can not use secondary number on special cases - breaks WhatsApp, Viber - Microsoft Community</title>
+<h3> ange_  say:</h3>
+<h2>            Can not use secondary number on special cases - breaks WhatsApp, Viber etc.</h2>
+                    <p>I have a personal phone that I use also&nbsp;as business phone. My employer pays every business call I make with my phone.</p>
+<p>In my country the operator can distinguish business calls and personal calls by the prefix used in the number.</p>
+<p>151 prefix is for indicating personal calls.</p>
+<p><br />
+</p>
+<p>In my contacts&nbsp;I have to enter the personal contact numbers twice so that I can see who is calling in. Once with 151 prefix (primary number for making 'personal' calls out) and once with real number without the prefix (incoming callers name&nbsp;shows up correctly
+ on phone or outgoing call for a 'friend' but a business call paid by employer).</p>
+<p><br />
+</p>
+<p>for example:</p>
+<p>151 50 999999 (primary number)</p>
+<p>+358 50 999999 (secondary number)</p>
+<p><br />
+</p>
+<p>Phone shows incoming callers name correctly.&nbsp;If I have to make business call to same number the contact&nbsp; the number +358 50 999999 is not shown up in contacts at all. It shows up only if I edit the contanct.</p>
+<p>Also WhatsApp,Viber or any similar app cannot find the right contact number hidden by the phone as app's favorite contacts.</p>
+<p><br />
+</p>
+<p>You will see the same issue if you have a contact who has two same numbers from different operators. Save them in without country code:</p>
+<p>050 999999 (primary number)</p>
+<p>040 999999 (secondary number)</p>
+<p><br />
+</p>
+<p>--&gt; you can not make a call to the&nbsp;secondary number (not shown up).</p>
+<p>BTW this is not model specific problem.</p>
+<p><br />
+</p>
+<p>Br</p>
+<p>Ange</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Ange_,</p>
+<p>&nbsp;</p>
+<p><br />
+Thanks for posting!</p>
+<p><br />
+Yes, you're correct this is not model specific, it's by the system design. </p>
+<p><br />
+I would suggest you to have a look at the link below; </p>
+<p><br />
+<a href="http://windowsphone.uservoice.com/forums/101801-feature-suggestions" target="_blank" rel="noreferrer nofollow">http://windowsphone.uservoice.com/forums/101801-feature-suggestions</a></p>
+<p><br />
+...and post your feedback, so this could be adjusted in the near future. </p>
+<p>&nbsp;</p>
+<p>Kind Regards,<br />
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to Uninstall Internet Explorer 11 in Windows 7 - Microsoft Community</title>
+<h3> eacepay  say:</h3>
+<h2>            How to Uninstall Internet Explorer 11 in Windows 7</h2>
+                    <p>I open up the search box and type in programs and features. I go to windows programs and NO IE Explorer folder or item is seen in the program registry. I am currently operating the latest version 11.09 600. 17358</p>
+<p>
+</p><p>Yes, i have the icon on destop and can use IE 11 as&nbsp; my browser.&nbsp; I have had trouble with this version, so I really want to put IE 10 back on. Therefore, I want to uninstall IE 11 so I need to find where the program is on my computer. This is so strange?
+ Can you help?&nbsp; Thanks so much.&nbsp; EJ</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jetta48" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "JE"); this.style="display: inline-block";'
+<h3> jetta48  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>
+</p><p>...&nbsp; I have had trouble with this version, so I really want to put IE 10 back on. Therefore, I want to uninstall IE 11 so I need to find where the program is on my computer...</p>
+</blockquote>
+<p>Hi</p>
+<p>
+</p><p>Please see:</p>
+<p><a href="http://answers.microsoft.com/en-us/ie/wiki/ie11-windows_7/how-to-uninstall-internet-explorer-10-or-internet/4e280525-1856-4fa1-bb16-efda4ea8b5f1" title="Applies to: Internet Explorer 10 and Internet Explorer 11 on Windows 7 Internet Explorer (IE) 10 and 11 can get installed on Windows 7 manually or via Windows Update. If you have decided that you do not want IE10 or IE11 and want to go back to your previously installed version of IE then this procedure is for you. A method for stopping IE10 and IE11 from getting automatically reinstalled afterwards by Windows Update is also covered."><strong>How
+ to uninstall Internet Explorer 10 or Internet Explorer 11 from Windows 7</strong></a> .</p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you for contacting Microsoft Community.</span></p>
+<p>
+</p><p><span>I understand that you are trying to uninstall Internet Explorer 11 and install Internet Explorer 10 on it.</span></p>
+<p>
+</p><p><span>I suggest you to use Internet Explorer 11 and report the problem that you are facing with it so that we can help you in fixing the issue.</span></p>
+<p>
+</p><p><span>As Internet explorer is an internal feature of Windows it will not show up in Program and features. You may find Internet Explorer in
+<a href="http://windows.microsoft.com/en-us/windows/turn-windows-features-on-off#1TC=windows-7" target="_blank" rel="noreferrer nofollow">
+Turn Windows features on or off</a>. If you turn off Internet explorer feature it will remove Internet Explorer completely. Updates for internet explorer are provided through Windows update so if you remove Internet Explorer 11 from Windows update it will revert
+ it back to Internet Explorer 10.</span></p>
+<p>
+</p><p><span>If you want to remove Internet Explorer 11 and reinstall Internet Explorer 10 please follow the
+<strong>Uninstall Internet Explorer</strong> section from the article below:</span></p>
+<p>
+</p><p><span><strong><span style="color: rgba(0, 112, 192, 1)">Install or uninstall Internet&nbsp;Explorer</span></strong></span></p>
+<p><span><a href="http://windows.microsoft.com/en-us/internet-explorer/install-ie#ie=ie-11-win-7" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/internet-explorer/install-ie#ie=ie-11-win-7</a></span></p>
+<p>
+</p><p><span>Hope this information helps, get back to us if you need further assistance with Windows.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to share contacts with your contacts - Microsoft Community</title>
+<h3> kevinoechsle  say:</h3>
+<h2>            How to share contacts with your contacts</h2>
+                    <p>Since the new update, i have been unable to share my contacts with other people, i could do it with the "classic" Skype easy enough, just click the contacts button and pick who you wanted to share with.&nbsp;</p>
+<p>
+</p><p>Now i have 2 buttons for Emojis.... that isn't helpful at all. </p>
+<p>
+</p><p>Does anyone know how to do this in the new version of Skype? Note that we aren't going to go back to the Classic version of Skype, since every update is likely going to push this version to us anyway. FYI i have yet to find one person at our company that
+ likes this version of Skype.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> julie_s1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/6a8e60d7-c2ac-4b50-bf16-7f57acbf5a5b" title="KevinOechsle">
+<p>
+</p><p>Unfortunately, sending contacts in the new Skype is not yet available. However, you can send contacts using Skype for Web. For the meantime, you can use that as an option while the feature is not yet available.</p>
+<p>
+</p><p>Should you have further questions, please do not hesitate to reply to this post.
+<br />
+Thank you!<br />
+&nbsp;<br />
+&nbsp;<br />
+Julie_S1<br />
+Skype Community Moderator</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_windows_desktop">skype_for_windows_desktop, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+<a href="/search?q=contacts">contacts, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>DELETION OF SKYPE BUT STILL SHOWS UP WHEN I LOG INTO - Microsoft Community</title>
+<h3> brutalsrose  say:</h3>
+<h2>            DELETION OF SKYPE BUT STILL SHOWS UP WHEN I LOG INTO MSN&#33;&#33;&#33;&#33;&#33;</h2>
+                    <p>Im using windows 7.&nbsp; Deleted my Skype account over a year and a half ago or so I was led to believe, yet the past week have noticed when I log into my MSN account via Hotmail, instead of the usual chat section, instead its highlighting a Skype chat logo/section
+ in place of what should be there!!&nbsp; It is incesently infuriating, and find I need to log out, scrub my page, run a cleaner then RE-LOAD my page to sign in again then its remedied.&nbsp; Can someone please explain to me why?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you for posting your query on Microsoft Community.</span></p>
+<p>
+</p><p><span><span>Kindly be informed that </span><span>Skype and Outlook.com are integrated Microsoft services. We want to deliver the best possible experience to your inbox by making it easier to chat with your friends, family and colleagues.&nbsp; In an effort to
+ be transparent with our users, we present the Skype Terms of Use and privacy statement, so users will know what terms apply when they use Skype within Outlook.com.</span></span></p>
+<p>
+</p><p><span><span>I would like to know how exactly did you disable or disconnect from Skype?</span></span></p>
+<p>
+</p><p><span><span>You may opt out of the pop up by going through the below mentioned step:</span></span></p>
+<p>
+</p><p><span><span>You can choose not to use Skype for Outlook.com and close the Skype side bar once you have selected “<strong><span>continue</span></strong>.”
+</span></span></p>
+<p><span><br />
+Let us know if the information was helpful to you. For further assistance feel free to post your queries in Microsoft forums. We will be glad to assist you.</span></p>
+<p>
+</p><p><span>Thank You.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I cannot uninstall Microsoft Security Essentials error 0x8007064C and - Microsoft Community</title>
+<h3> sandra frustrated  say:</h3>
+<h2>            I cannot uninstall Microsoft Security Essentials error 0x8007064C and I earlier received a message that Clientm.dll is missing &#63;&#63;&#63;</h2>
+                    <p>I cannot uninstall Microsoft Security Essentials error )x8007064C and I earlier received a message that Clientm.dll is missing.</p>
+<p>What steps do I take to rememdy this?</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> le boule  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>I cannot uninstall Microsoft Security Essentials error )x8007064C and I earlier received a message that Clientm.dll is missing.</p>
+<p>What steps do I take to rememdy this?</p>
+<p>&nbsp;</p>
+</blockquote>
+<p><a href="http://www.revouninstaller.com/revo_uninstaller_free_download.html" target="_blank" rel="noreferrer nofollow">http://www.revouninstaller.com/revo_uninstaller_free_download.html</a></p>
+<p>&nbsp;</p>
+<p>OR</p>
+<p>&nbsp;</p>
+<div>
+<p><span>You <b>may</b> need to uninstall/reinstall MSE.&nbsp; </span></p>
+<p><span>You should be able to remove MSE from Control Panel.&nbsp; Any problems uninstalling see:
+<a href="http://answers.microsoft.com/en-us/protect/forum/protect_start/uninstalling-mse/a63b8c4b-58ed-437e-8086-fa08d80725a4">
+<span>http://answers.microsoft.com/en-us/protect/forum/protect_start/uninstalling-mse/a63b8c4b-58ed-437e-8086-fa08d80725a4</span></a></span></p>
+<p><span>Recommend you reboot the computer to ensure the uninstall is complete.&nbsp;&nbsp;&nbsp;&nbsp;
+</span></p>
+<p><span>If needed, you can download&nbsp;a new&nbsp;MSE Installation File from <a href="http://windows.microsoft.com/en-US/windows/security-essentials-download" target="_blank" rel="noreferrer nofollow">
+<span><span>http://windows.microso<span>ft.com/en-US/windows/security-essentials-download</span></span></span></a></span></p>
+<p>&nbsp;</p>
+<p><span>Hope this helps...</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Edit &#47; replace online CPR files - Microsoft Community</title>
+<h3> thasniper  say:</h3>
+<h2>            Edit &#47; replace online CPR files</h2>
+                    Hello.<br />
+<br />
+I need to do some changes on a .CPR file and I'm able to copy it from the device to my desktop and edit it. But I can't apply it back to the device because the original file is always in use. I've tried both with the file explorer on the device, and with file
+ explorer on my desktop. I need to replace the original files with the modified ones.<br />
+<br />
+How can I achieve this?<br />
+<br />
+Thank you.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> thasniper  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I solved my problem already.<br />
+<br />
+Well, I think that the only way to replace files that are always in use by the operative system, is by making an install to apply the files and run it. Windows Mobile will ask to reboot the device and will replace the files. The problem is that I don't know
+ how to build a .cab install.<br />
+<br />
+Fortunatelly, I found a program called QuickCab, that makes it very easy to build simple .cab as this one. Takes 1 minute to create. Got it from XDA Developers forum. Problem solved.
+<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 2003 - Using a dropdown to show &#47; hide a table - Microsoft Community</title>
+<h3> benjohns  say:</h3>
+<h2>            Word 2003 - Using a dropdown to show &#47; hide a table</h2>
+                    Afternoon<br />
+<br />
+I am trying to create a dropdown list that depending on which entry is selected will show or hide a couple of tables.&nbsp; I am having to use word as the form is for someone with sight problems otherwise I would use Livecycle etc.&nbsp; I'm normally not too bad with
+ macros and script but this is stumping me.&nbsp; What I esentially want is below.<br />
+<br />
+Dropdown list <br />
+A<br />
+B<br />
+<br />
+Table <br />
+1<br />
+2<br />
+<br />
+So if option A is selected from the dropdown Table 1 shows and Table 2 disappears, and vice versa.<br />
+<br />
+I'd appreciate some advice on how I go about this please.&nbsp; I've been looking through the scripts and the individual tables don't have specific names which is also confusing me.<br />
+<br />
+Many thanks in advance <br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'm assuming your dropdown is a Word form field (not ActiveX, not vba). That field will have a bookmark name in its properties. You also want the property for that field checked to calculate on exit.<br />
+<br />
+You want your table inside an <a href="http://www.addbalance.com/usersguide/fields.htm#IF_field" target="_blank" rel="noreferrer nofollow">
+IF Field</a> that tests for the value of the bookmark. If people are going to actually insert anything inside the table, the insertion points also need to be form fields.<br />
+<br />
+<a href="http://www.addbalance.com/usersguide/forms.htm" target="_blank" rel="noreferrer nofollow">Making Forms with Microsoft Word</a>
+<br />
+<br />
+Start with IF fields that test for the value of your dropdown and simply tell you which option you have.<br />
+<br />
+{ IF { Dropdown1 } = "A" "A is chosen" }{ IF { Dropdown1 } = "B" "B is chosen" }<br />
+<br />
+<a href="http://www.addbalance.com/usersguide/fields.htm#IF_field" target="_blank" rel="noreferrer nofollow">IF Field</a>
+<br />
+<br />
+<a href="http://office.microsoft.com/en-us/word-help/field-codes-if-field-HP005186163.aspx?CTT=1" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-us/word-help/field-codes-if-field-HP005186163.aspx?CTT=1</a><br />
+<br />
+Then instead of "A is chosen" and "B is chosen" copy your entire tables into the fields between the quotation marks in the appropriate place.<br />
+<br />
+Note that the document must be "protected for forms" and the user must tab out of the dropdown to activate the test. The field delimiter braces
+<b>{ }</b> cannot be typed, you need to use Ctrl+F9 to insert a pair and the text goes inside the pair. (There are other ways, but that is the easiest.)<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjohns  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for the quick reply, really appreciate it.&nbsp; <br />
+<br />
+I've set this up and when I avtivate the protection the tables disappear as they should but when selecting the dropdown menu nothing happens.&nbsp; Does it need some sort of show reference in the script?&nbsp; I have clicked 'calculate on exit'<br />
+<br />
+This is what I have:<br />
+<br />
+{ IF {Dropdown3} = "A" "Pasted in the 1st table" }{ IF {Dropdown3} = "B" "Pasted in 2nd table" }<br />
+<br />
+Thanks again<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Maxey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> greg maxey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Since Dropdown3 only contains A and B this is all you should need:</p>
+<p><br />
+</p>
+<p>{ IF {Dropdown3} = "A" "Your Entire Table A with content""Your Entire Table B with content" }</p>
+<p><br />
+</p>
+<p>All the field braces must be entered using CTRL=F9<br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Also, after A or B is selected, you must use the tab key. That will move you to the next form field if there is one, but it also activates the "calculate on exit."<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjohns  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Morning<br />
+<br />
+I'm still struggling.&nbsp; Is there any chance I could send you the document I'm working on please?&nbsp; Once I've got this bit working I can use it to complete my form.<br />
+<br />
+Many thanks<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You are welcome to email it to the address below. (You'll have to parse it.)<br />
+<br />
+I am a trial lawyer, though. Do not expect a quick return time. Perhaps a week.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjohns  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for the offer.&nbsp; I've managed to get it working.&nbsp; One of the brackets I used wasn't created using Ctrl + F9.&nbsp; Very amateurish of me.<br />
+<br />
+Thanks again for helping me sort this.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjohns  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Another problem sorry.&nbsp; Within the tables I've pasted into the IF fields, I have text form fields that I want users to fill in but they aren't showing when the table is presented.&nbsp; It is possible to show the relevant table depending on the dropdown and
+ then have users fill in the form fields?<br />
+<br />
+Sorry to pester&nbsp; <br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I had believed you could put other form fields inside the table inside the IF Field but was mistaken.
+<br />
+<br />
+<b>The underlying problem, of which I was unaware, is that <i>if a Form Field is inside an IF field it is not accessible as a form field</i>. This is true even when the document is unprotected. Only when the field codes are displayed does Word see it as a Form
+ Field.</b> Then Word treats it as a Form Field. You can double-click on it to get the properties.<br />
+<br />
+In one of my forms I use on-exit macros that make changes in the document including enabling fill-in on other text form fields (that are otherwise invisible to the user when the document is protected). These could probably insert a table with form fields using
+ AutoText to hold the table. Such a macro needs to unprotect the form, make the change, reprotect the form, and go to the appropriate field.<br />
+<br />
+This is more programming than I would want to undertake without a powerful reason, though.<br />
+<br />
+Should you choose to undertake it, though, here is the code to protect and unprotect a password protected form. You would call these procedures from your on-exit macro.<br />
+<br />
+Sub UnProtectForm() <br />
+&nbsp;&nbsp;&nbsp; Dim sPass as String<br />
+&nbsp;&nbsp;&nbsp; With ActiveDocument<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sPass = "MyPassword"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If .ProtectionType &lt;&gt; wdNoProtection Then .Unprotect (sPass)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' End If<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+End Sub<br />
+<br />
+Sub ProtectForm()<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Dim sPass as String<br />
+&nbsp;&nbsp;&nbsp;&nbsp; With ActiveDocument<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sPass = "MyPassword"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If .ProtectionType = wdNoProtection Then .Protect Type:=wdAllowOnlyFormFields, NoReset:=True, Password:=sPass<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' End If<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+End Sub<br />
+<br />
+<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Maxey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> greg maxey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Since Charles has brought you this far, we might as well go the full course ;-)</p>
+<p><br />
+</p>
+<p>1. Define TableA with your appropriate formfields, select it, press ALT+F3 and save it as an AutoText entry named TableA.&nbsp;
+</p>
+<p><br />
+</p>
+<p>2. Define TableB with your appropriate formfields, select it, press ALT+F3 and save it as an AutoText entry named TableB.</p>
+<p><br />
+</p>
+<p>3. Delete tables A and B from the document.</p>
+<p><br />
+</p>
+<p>4.&nbsp;Add a bookmark where table A or B&nbsp;should appear.&nbsp; Name it&nbsp;bmTableRange.</p>
+<p><br />
+</p>
+<p>5.&nbsp; Add the following code to&nbsp;a standard code module in the document.&nbsp; If required,&nbsp;see:
+<a href="http://gregmaxey.mvps.org/word_tip_pages/installing_employing_macros.html" target="_blank" rel="noreferrer nofollow">
+http://gregmaxey.mvps.org/word_tip_pages/installing_employing_macros.html</a> for instructions to employ the VBA code provided:</p>
+<p><br />
+</p>
+<p>Sub InsertTable()<br />
+Dim oRng As Word.Range<br />
+With ActiveDocument<br />
+&nbsp; If .ProtectionType = wdAllowOnlyFormFields Then<br />
+&nbsp;&nbsp;&nbsp; .Unprotect<br />
+&nbsp;&nbsp;&nbsp; Set oRng = ActiveDocument.Bookmarks("bmTableRange").Range<br />
+&nbsp;&nbsp;&nbsp; If oRng.Tables.Count = 1 Then oRng.Tables(1).Delete<br />
+&nbsp;&nbsp;&nbsp; If .FormFields("Dropdown3").Result = "A" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set oRng = .AttachedTemplate.AutoTextEntries("TableA").Insert(Where:=oRng, RichText:="True")<br />
+&nbsp;&nbsp;&nbsp; ElseIf .FormFields("Dropdown1").Result = "B" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set oRng = .AttachedTemplate.AutoTextEntries("TableB").Insert(Where:=oRng, RichText:="True")<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; .Bookmarks.Add "bmTableRange", oRng<br />
+&nbsp;&nbsp;&nbsp; .Protect wdAllowOnlyFormFields, True<br />
+&nbsp; End If<br />
+End With</p>
+<p>End Sub<br />
+</p>
+<p><br />
+</p>
+<p>6. Set an InsertTable to run OnExit from your Dropdown3 field.&nbsp; You must have another valid field following dropdown3 to tab or click into so the exit event fires.</p>
+<p><br />
+</p>
+<p>7.&nbsp; Lock the form and toggle between "A" and "B" and exit the field.</p>
+<p><br />
+</p>
+<p><br />
+</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to disable Exchange email, Skype for Business, One Drive and Delve - Microsoft Community</title>
+<h3> sharepoint user 426  say:</h3>
+<h2>            How to disable Exchange email, Skype for Business, One Drive and Delve for Tenant level&#63;</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I am trying to disable the Exchange email, Skype for Business, One Drive, Delve and other office 365 features are at tenant level. When i search online to disable them i don't see any options for tenant level. &nbsp;Let me know if there is any way to disable
+ them at tenant level or do they need to be done at user level only?</p>
+<p>
+</p><p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Thank you,</span></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="William Zeng MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "WZ"); this.style="display: inline-block";'
+<h3> william zeng msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi SharePoint User 426,</span></p>
+<p>
+</p><ol>
+<li><span>For Exchange email, Skype for Business and Sway, I suggest you assign/remove Exchange Online license, Skype for Business and Sway licenses from users.</span></li><li><span>For Office Store, you can go to Admin center &gt; Service &amp; add-ins &gt; Office Store to turn ON/OFF it.</span></li><li><span>For OneDrive, you can go to the SharePoint admin center and select user profiles, click Manage User Permission under People. Then, Add Everyone except external users and uncheck Create Personal Site</span>
+<span>(required for personal storage, newsfeed, and followed content) and click OK to save the change.</span></li></ol>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="https://filestore.community.support.microsoft.com/api/images/86b7d6f6-f2c0-4a3b-9ff8-f25bb8175cb4" target="_blank" rel="noreferrer nofollow">
+<img src="https://filestore.community.support.microsoft.com/api/images/86b7d6f6-f2c0-4a3b-9ff8-f25bb8175cb4" /></a><br />
+</p>
+<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4. For Delve, you can go to the SharePoint admin center and select Settings, under Office graph, select Don’t allow access to the Office graph to disable it for users.</span>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/9e58883c-e8c7-4ae0-a274-04e9237106b7" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/9e58883c-e8c7-4ae0-a274-04e9237106b7" /></a></p>
+<p><br />
+</p>
+<p><span>In addition, you can also use PowerShell to disable these kind of services. Please refer to the following articles:</span></p>
+<p><span><a href="https://technet.microsoft.com/library/dn771769.aspx" target="_blank" rel="noreferrer nofollow">Disable access to services with Office 365 PowerShell</a></span></p>
+<p><span><a href="https://support.office.com/en-us/article/Office-Delve-for-Office-365-admins-54f87a42-15a4-44b4-9df0-d36287d9531b?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">Office Delve for Office 365 admins</a></span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>William</span></p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="William Zeng MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "WZ"); this.style="display: inline-block";'
+<h3> william zeng msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi SharePoint User 426,</span></p>
+<p>
+</p><p><span>You are right. OneDrive can’t be disable if it has been provisioned for users while Delve can be disable for</span>
+<span>existing users.</span></p>
+<p><span>If you don’t allow access to the Office Graph, Delve will be removed from the Office 365 app launcher. When users visit a person’s page, for example by clicking on a person in OneDrive for Business, that person’s page will contain only user profile
+ information. No documents will be shown. Users can still search for other people, but not for documents or boards.</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>William</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia N95 and HBH-DS970 BT headset not working - Microsoft Community</title>
+<h3> reza666---01  say:</h3>
+<h2>            Nokia N95 and HBH-DS970 BT headset not working</h2>
+                    Hi,<br />
+<br />
+I read on the web and reviews about DS970 working with N95 but for me it pairs fine but when it gets to the connect part it fails.<br />
+<br />
+I have the latest firmware version v 10.0.018 (i think).<br />
+<br />
+So far i'm impressed by the phone but i REALLY hoped to use my headset with the phone so a bit disappointed right now.<br />
+<br />
+Any ideas?<br />
+<br />
+BR /Reza
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> reza666---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I found the solution.<br />
+I went to the SonyEricsson shop (100 meter from where i work :D ) and asked them if there were any update for the headset and they said there was so once it was updated it worked like a charm on first try. It does not show the file tag or name as with my W950i
+ but works anyhow and thats whats important...<br />
+<br />
+REALLY HAPPY now.<br />
+<br />
+<br />
+I was considering to buy a Nokia headset but i really like my DS970 so now i can continue using it :D
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Using 6233 bought in Netherlands in Canada&#63; - Microsoft Community</title>
+<h3> keybored---01  say:</h3>
+<h2>            Using 6233 bought in Netherlands in Canada&#63;</h2>
+                    Hi there,<br />
+<br />
+I bought my 6233 in the Netherlands. I will be visiting Canada and would like to know if I can use it there. It is not locked and I was able to use it in Ireland with an Irish SIM card. Can I do that in Canada?<br />
+<br />
+Thanks for your help,<br />
+:)
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="nj15" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "NJ"); this.style="display: inline-block";'
+<h3> nj15  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes.Assuming its SIM-Free.<br />
+<br />
+If you plan to use your current SIM-Card in canada, you need to activate your roaming service.You can ask your network operator to activate your roaming service.;0
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> keybored---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for your reply!<br />
+<br />
+I was hoping to buy a SIM card in Canada and use it there as a local phone. This is what I did on my recent trip to Ireland. I got a local Irish SIM card, which gave me a new phone number, and my phone acted as if it was local. That is what I would like to
+ do in Canada. I would prefer not to use the "roaming" option as it can be very expensive.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>facebook photo upload tagging - Microsoft Community</title>
+<h3> andyc06  say:</h3>
+<h2>            facebook photo upload tagging</h2>
+                    <p>Ok so I have updated to wp8.1 and now have a huge annoyance. How are we supposed to tag people in photos when we upload them to Facebook? Before we could just go to the photo hit, hit share on Facebook and tag people in the photo. You no cannot do this and
+ the only way to tag people is to upload via Facebook, wait for it to upload, then go to the picture and then add the&nbsp;tags which is such a tedious task. Whereas before it was very quick and you could upload multiple picks and tags rather quickly. Now it takes
+ 2-3 mins per picture. Before it was less than a minute.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="7thSense" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "T"); this.style="display: inline-block";'
+<h3> 7thsense  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I suggest you send this feedback to Facebook so they can improve the Windows Phone integration in their app.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook Delegate with Folder Permissions - Microsoft Community</title>
+<h3> erica warren  say:</h3>
+<h2>            Outlook Delegate with Folder Permissions</h2>
+                    <p>Hey</p>
+<p>Is it possible to set a user up as a delegate on my Outlook account and then restrict a few of the folders within the account to grant them no access? Trying to offer the majority of my folders to a user but maintain a couple of folders where highly sensitive
+ material can reside. I have looked at the One Note import with password protect option but find it a little clunky compared to an email folder.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sylvie Liang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "SL"); this.style="display: inline-block";'
+<h3> sylvie liang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hello Erica,</span></p>
+<p>
+</p><p><span>Thanks for your reply. I am monitoring this thread by now. Based on my knowledge, when you make someone else as your delegate, the user is just able to access your Inbox, calendar, Tasks, Contacts, Notes.
+ Other folders (such as Inbox sub-folders) are not available. </span></p>
+<p>
+</p><p><span>If you want to lock calendar, contacts folder, etc., you can change the delegate permission to None via
+<strong>File</strong> &gt; <strong>Account Settings</strong> &gt; <strong>Delegate Access</strong> &gt;
+<strong>Permissions</strong>. For your reference: <a href="https://support.office.com/en-us/article/allow-someone-else-to-manage-your-mail-and-calendar-41c40c04-3bd1-4d22-963a-28eafec25926" target="_blank" rel="noreferrer nofollow">
+Change permissions for a delegate</a></span></p>
+<p>
+</p><p><span>If you are referring to some other folders, you don’t need to lock it as delegates cannot access them by default.</span></p>
+<p>
+</p><p><span>Best Regards,</span></p>
+<p><span>Sylvie</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Edge is slow and sluggish&#63; - Microsoft Community</title>
+<h3> adrian29  say:</h3>
+<h2>            Edge is slow and sluggish&#63;</h2>
+                    <p>MS EDGE Experiencing slow and sluggish response times using commands.</p>
+<p>IE: Multiple windows open when attempting to close windows it takes 15-25 seconds to close until the last window and then edge locks up.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p><span>Thank you for posting your query in Microsoft Community. I understand your concern and I’ll be glad to assist you.</span></p>
+<p>
+</p><p><span><strong>Method 1</strong>: </span></p>
+<p><span><strong>Step 1</strong>: I would suggest you run the Windows app troubleshooter and check if the issue persist.
+</span></p>
+<ol>
+<li><span>Type troubleshooter in the search bar and click on the troubleshooter that pops first on the list.
+</span></li><li><span>Select view all.</span></li><li><span>From the&nbsp;troubleshooter list, Click on Windows Store app and follow the on-screen instructions.</span></li></ol>
+<p><strong>Step 2:</strong></p>
+<p>Press <strong>Windows +R</strong></p>
+<p>Type <strong>temp </strong></p>
+<p>Hit enter. Select all&nbsp;and then delete. </p>
+<p>
+</p><p>Press <strong>Windows +R</strong></p>
+<p>type<strong> prefetch</strong></p>
+<p>Hit enter. Select all and then delete. </p>
+<p>
+</p><p><span><strong>Method 2: </strong></span></p>
+<p><span>Let’s use the System File Checker (SFC) tool to see if it can find any missing or corrupted system files. If so, it will attempt to repair and/or replace them.&nbsp; Follow these steps to run an SFC scan:</span></p>
+<p>
+</p><p><span>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><strong>Press Windows + X </strong>on your keyboard</span></p>
+<p>
+</p><p><span>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Select command prompt admin</span></p>
+<p>
+</p><p><span>3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; At the command prompt type “<strong>sfc /scannow</strong>” (no quotes), and then press ENTER</span></p>
+<p>
+</p><p>
+</p><p>
+</p><p><span>Hope this helps in resolving the issue. If&nbsp;the issue persists, do get back to us. We are happy to assist you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jedoeuk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>Hi,</p>
+<p>
+</p><p><span>Thank you for posting your query in Microsoft Community. I understand your concern and I’ll be glad to assist you.</span></p>
+<p>
+</p><p><span><strong>Method 1</strong>: </span></p>
+<p><span><strong>Step 1</strong>: I would suggest you run the Windows app troubleshooter and check if the issue persist.
+</span></p>
+<ol>
+<li><span>Type troubleshooter in the search bar and click on the troubleshooter that pops first on the list.
+</span></li><li><span>Select view all.</span></li><li><span>From the&nbsp;troubleshooter list, Click on Windows Store app and follow the on-screen instructions.</span></li></ol>
+<p><strong>Step 2:</strong></p>
+<p>Press <strong>Windows +R</strong></p>
+<p>Type <strong>temp </strong></p>
+<p>Hit enter. Select all&nbsp;and then delete. </p>
+<p>
+</p><p>Press <strong>Windows +R</strong></p>
+<p>type<strong> prefetch</strong></p>
+<p>Hit enter. Select all and then delete. </p>
+<p>
+</p><p><span><strong>Method 2: </strong></span></p>
+<p><span>Let’s use the System File Checker (SFC) tool to see if it can find any missing or corrupted system files. If so, it will attempt to repair and/or replace them.&nbsp; Follow these steps to run an SFC scan:</span></p>
+<p>
+</p><p><span>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span><strong>Press Windows + X </strong>on your keyboard</span></p>
+<p>
+</p><p><span>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Select command prompt admin</span></p>
+<p>
+</p><p><span>3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; At the command prompt type “<strong>sfc /scannow</strong>” (no quotes), and then press ENTER</span></p>
+<p>
+</p><p>
+</p><p>
+</p><p><span>Hope this helps in resolving the issue. If&nbsp;the issue persists, do get back to us. We are happy to assist you.</span></p>
+</blockquote>
+<p>I have tried both of these methods to help speed up Edge. </p>
+<p>Lets hope they work.&nbsp; I tried deleting all temp and prefetch files.&nbsp; There were a couple in each folder&nbsp;that said ' are in use ' so could not delete them so skipped.&nbsp; Going to restart and see if this works.</p>
+<p>
+</p><p>I;m really surprised that after all the hype over Windows 10 coming they as in developers would have at least tested and re-tested the Edge browser???&nbsp; It should not be this slow....</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> oily beau hunk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi JedoeUK,</p>
+<p>
+</p><p>I had some similar performance issues and found similar advice.&nbsp; I ended up deleting my cache, etc., and got a the same error message about files in use.&nbsp; Afterwards, I noticed no real improvement and, to make matters worse, following those deletions I noticed
+ that my browsing history was no longer being captured and Edge could not remember my user names in login fields, etc.&nbsp; That process essentially broke my Edge experience.</p>
+<p>
+</p><p>After much searching and trying numerous things I found quick relief by simply deleting my user profile and creating a new one.&nbsp; To do this, I granted my wife's user profile admin privileges and then logged in as her to delete my profile.&nbsp; Then I created
+ a new user profile for me and upon logging in, everything was back to new.&nbsp; Performance has been outstanding ever since.&nbsp; I highly recommend this approach.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mrstjohn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have two similar PC machines, quite new ones. On the first one I received Win10 upgrade and Edge is working very fast. On the second one it was unhappy, slow, shameful failure of an application. Not that much difference between both PC in hardware and
+ apps. The fast one has Bullguard, the slow one - NOD32 antivirus. Otherwise, the faster one has a bit more memory, but both have sufficient. Hopefully, someone will find the reason of Edge failure, as more and more machines are switching to Win10.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> oily beau hunk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's still running great for me on this VERY modest PC (Core2 Duo with 4 GB RAM).&nbsp; In fact, I'm more impressed every day.&nbsp; Definitely NOT a failure.
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=microsoft_edge_and_internet_explorer_on_insider_preview">microsoft_edge_and_internet_explorer_on_insider_preview, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Improvements to sync with ovi.com - Microsoft Community</title>
+<h3> atammin  say:</h3>
+<h2>            Improvements to sync with ovi.com</h2>
+                    
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>We've done some improvements to the contacts sync between Nokia Ovi Suite and ovi.com during past couple of weeks.</p>
+<p>&nbsp;</p>
+<p>Based on our own tests things have really improved. But I would appreciate some comments from You.&nbsp;</p>
+<p>&nbsp;</p>
+<p><em><strong>Is the sync with ovi.com working better now?</strong></em></p>
+<p>&nbsp;</p>
+<p>thanks,</p>
+<p>Aki</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> krizanand  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Good day atammin, If you are asking sync with ovi.com in general, Yes, its improved a lot i sync my contacts, calendes, notes with ovi using ovi sync application on my 5800. I had tough times synchronizing with it after installing v50, doing a reset worked
+ for me. Now everything is going on well. Having said that i found the contact groups on the phone aren't synchronized as groups and multiple e-mail entries too aren't working only the first one shows up. Thanks.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pwallin---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi</p>
+<p>&nbsp;</p>
+<p>I use the built in sync function in the phone to sync directly between the phone and my Ovi account (calendar, notes, contacts).</p>
+<p>In general it works fine, but I have problems with syncing Notes.</p>
+<p>If I add a new note to the phone or in the web browser, the note will be synced fine (I have activated sync both ways).</p>
+<p>If I add more info at the very end of the note everything is still fine.</p>
+<p>&nbsp;</p>
+<p><strong>BUT</strong> if I for some reason modify the note somewhere else (beginning, middle, ...), the sync function doesn't behave the way I would prefer - regardless of if I do the modification on the phone or the web.</p>
+<p>The result is that the info in the note is almost duplicated!</p>
+<p>I would prefer that the most recently modified note&nbsp;completely&nbsp;replaces the other one. Or&nbsp;possibly&nbsp;an alternative in the sync setting if you rather would like the system to try to combine the versions in the phone and on the web server.</p>
+<p>&nbsp;</p>
+<p>Hope I've managed to explain what I mean... and also that you can solve this issue.</p>
+<p>The&nbsp;basic&nbsp;principle of ovi sync is great!</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>/Per</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tpt635601  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hey pwallin,</p>
+<p>&nbsp;</p>
+<p>Do u find any relevant thing Nokia Ovi Suite can play in this, r u talking abt sync between ur device and ovi.com...&nbsp; R u&nbsp; synching three way - Nokia device, Nokia Ovi Suite and Ovi.com ?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pwallin---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi</p>
+<p>I'm syncing TWO ways - only between my device and ovi.com. I don NOT use Ovi Suite.</p>
+<p>Regards,</p>
+<p>/Per</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>1020 SW update - Microsoft Community</title>
+<h3> joregw  say:</h3>
+<h2>            1020 SW update</h2>
+                    <p>I updated my 1020 to 8.1. The glance display changed so that it can't be changed at all. I also compared the program versions to another 1020&nbsp; and all are lower numbered. So to my opinion they are older versions. When I check the phone for new versions it
+ says that it is up to date.</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="93tid" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> 93tid  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You also need to check if there are any updates for the system apps, including Glance. Go to Store &gt; ... &gt; settings &gt; check for updates.<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=1000-series">1000-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Print from Microsoft WORD direct to printer without filing - Microsoft Community</title>
+<h3> grahamgriffen  say:</h3>
+<h2>            Print from Microsoft WORD direct to printer without filing</h2>
+                    <p>Envelopes used to be printed direct from WORD but now requires saving in file.</p>
+<p><br />
+</p>
+<p>Once saved in file document prints as if on paper NOT Envelope!</p>
+<p><br />
+</p>
+<p>This has altered since changing to WINDOWS 8.1. </p>
+<p><br />
+</p>
+<p>Have reinstalled Printer &amp; Microsoft Word.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Check the active printer in Word.&nbsp; Sounds like it might be set to the Microsoft Document Image Writer or the Microsoft XPS Document Writer, rather than to a physical printer attached to your computer or network,
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office renewal &#40;student - help with free subscription&#41; - Microsoft Community</title>
+<h3> kirstyramsden  say:</h3>
+<h2>            Office renewal &#40;student - help with free subscription&#41;</h2>
+                    I bought a Microsoft Office package for one year which has now expired. As I am now a full time student I can get one years subscription free. When trying to set this up, I am asked for my college email and password which I give. A message then pops up
+ saying that I already have an account under this email (which I don't&nbsp;-&nbsp;the previous subscription was with a personal email). To get the one year free subscription I have to sign in with my college email. It will not accept a personal one as it&nbsp;is not verified
+ by the college. I have spoken to the IT team at the college on numerous occasions and they can not help me. Does anybody know how to get round this please? Thank you.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hi Kirsty,</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">Thank you for posting your query on Microsoft Office Community.</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">Since you're unable to associate your college student's email address&nbsp;with Office subscription by your college, I kindly request you to
+</span><span>contact Microsoft Support by following steps mentioned below and address this issue.
+<br />
+<br />
+1) Go to the following link.<br />
+<br />
+</span>2) Click on <strong>Contact Support </strong>which appears in the bottom right of the page &gt;
+<strong>Ask Microsoft</strong>.<br />
+<br />
+3) Now select <strong>Account and billing &gt;</strong>&nbsp;<strong>Store, Windows, Office, or other &gt; Chat online with a Microsoft Answer Tech</strong>,
+<strong>Schedule a call </strong>or <strong>Call me as soon as possible</strong>.</span></p>
+<p>
+</p><p><span>If you have further questions related to this, feel free to ask.</span></p>
+<p><span><br />
+Thank you.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Voice Recording - Microsoft Community</title>
+<h3> miketak  say:</h3>
+<h2>            Voice Recording</h2>
+                    I just bought a Palm 700wx with WM5.0 ... now if I could only find a <span>
+<b>voice</b></span> recorder that works. I tried PhatNotes (MS approved), the <span>
+<b>recording</b></span> utility comes up but nothing happens when I try to record. ... I've read WM documentation that talks about voice recording as if it's a standard feature, this is a feature I'd really like to use. Anyone found something that works?<br />
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>There are several good ones out there if you don't want the built in voice recorder in Notes.</p>
+<p>&nbsp;</p>
+<p>I have a personal preference to RESCO and several of their products.&nbsp; Their Voice Recorder works well.&nbsp;
+</p>
+<p><a href="http://www.resco.net/pocketpc/audiorecorder/default.asp" target="_blank" rel="noreferrer nofollow">http://www.resco.net/pocketpc/audiorecorder/default.asp</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

@@ -1,0 +1,2100 @@
+    <title>Import data from one excel workbook to another - Microsoft Community</title>
+<h3> wissamk  say:</h3>
+<h2>            Import data from one excel workbook to another</h2>
+                    
+<p><span>Hi,</span></p>
+<p><span>I have&nbsp;2 excel&nbsp;workbooks (PATIENTS2010 ; PATIENTS2011) that have similar sheet structure with the exception of containing data on
+ different patients from 2 different years (2010 and 2011). Each&nbsp;workbook has multiple sheets named PatientA, PatientB,... with each sheet&nbsp;containing&nbsp;laboratory&nbsp;data for a single patient. A patient may have a sheet&nbsp;in workbook PATIENT2011 but not in PATIENT2010
+ (because patient&nbsp;got enrolled in clinic in 2011&nbsp;and did not belong to clinic in 2010;&nbsp;similarly, a patient may be present in 2010 but not in 2011 because patient was&nbsp;discharged from clinic in late 2010). For any patient&nbsp;sheet, rows&nbsp;have lab values (for instance,
+ Row 7 is Hemoglobin, Row 8 is sodium,.. till Row 15 which has values for potassium; note: Row 6 is header for columns). Each&nbsp;column in&nbsp;the patient sheet has a&nbsp;month (Column A is headers for the Labs; Column&nbsp;B is Jan; Column C is Feb;...; Column M is Dec).&nbsp;&nbsp;</span></p>
+<p><span>I need a VBA code that will be&nbsp;embedded in a command button on a sheet in PATIENTS2011 and when clicked will&nbsp;import DEC&nbsp;data for
+ patients from file PATIENTS2010 to file PATIENTS2011 (data will be placed in column N&nbsp;in PATIENTS2011; column labeled as&nbsp;"LastDec" in cell N6). The code would work as follows:</span></p>
+<p><span>1. Since the location of PATIENT2010 may change, the VBA code asks the user to browse and select&nbsp;the file&nbsp;that has data to be imported&nbsp;(in
+ this case, the&nbsp;user browses and selects&nbsp;PATIENT2010 file).</span></p>
+<p><span>2. For each sheet (i.e patient) in PATIENT2011, see if&nbsp;there is a sheet in PATIENT2010 with similar name. If a sheet with&nbsp;a match&nbsp;name
+ (let us say "PatientA") is&nbsp;found, then do following:&nbsp; copy values from&nbsp;PATIENTS2010,&nbsp;sheet PatientA, M7 till M15&nbsp;and past/special values into PATIENTS2011, Sheet PatientA, N7 till N15. Thus the column N would contain lab data from Dec of previous year.</span></p>
+<p><span>Any help is appreciated.</span></p>
+<p><span>Thanks.</span></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Try this:</p>
+<p>Sub ImportFromLastYear()<br />
+&nbsp; Dim strFileName As String<br />
+&nbsp; Dim wbkCur As Workbook<br />
+&nbsp; Dim wbkOld As Workbook<br />
+&nbsp; Dim wshCur As Worksheet<br />
+&nbsp; Dim wshOld As Worksheet</p>
+<p>&nbsp; On Error GoTo ErrHandler</p>
+<p>&nbsp; ' Prompt user to locate last year's workbook<br />
+&nbsp; strFileName = Application.GetOpenFilename(Title:="Please select last year's workbook")<br />
+&nbsp; If strFileName = "False" Then<br />
+&nbsp;&nbsp;&nbsp; MsgBox "No workbook selected!", vbExclamation<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+&nbsp; End If<br />
+&nbsp; Application.ScreenUpdating = False<br />
+&nbsp; Set wbkCur = ActiveWorkbook<br />
+&nbsp; ' Open last year's workbook<br />
+&nbsp; Set wbkOld = Workbooks.Open(strFileName)<br />
+&nbsp; ' Loop through sheets of this year's workbook<br />
+&nbsp; For Each wshCur In wbkCur.Worksheets<br />
+&nbsp;&nbsp;&nbsp; Set wshOld = Nothing<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; ' Try to match with sheet in last year's workbook<br />
+&nbsp;&nbsp;&nbsp; Set wshOld = wbkOld.Worksheets(wshCur.Name)<br />
+&nbsp;&nbsp;&nbsp; On Error GoTo ErrHandler<br />
+&nbsp;&nbsp;&nbsp; If Not wshOld Is Nothing Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; wshOld.Range("M7:M15").Copy<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; wshCur.Range("N7:N15").PasteSpecial Paste:=xlPasteValuesAndNumberFormats<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp; Next wshCur</p>
+<p>ExitHandler:<br />
+&nbsp; On Error Resume Next<br />
+&nbsp; wbkOld.Close SaveChanges:=False<br />
+&nbsp; Application.ScreenUpdating = True<br />
+&nbsp; Exit Sub</p>
+<p>ErrHandler:<br />
+&nbsp; MsgBox Err.Description, vbExclamation<br />
+&nbsp; Resume ExitHandler<br />
+End Sub</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Insert a line</p>
+<p>&nbsp; Application.EnableEvents = False</p>
+<p>before opening the workbook, and add a line</p>
+<p>&nbsp; Application.EnableEvents = True</p>
+<p>to the ExitHandler section.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Aliases created in outlook.com but can&#39;t sent to of send from them - Microsoft Community</title>
+<h3> toothwright  say:</h3>
+<h2>            Aliases created in outlook.com but can&#39;t sent to of send from them</h2>
+                    <p style="margin-left: 30px">I have created 2 aliases in outlook.com and they both appear in the "Manage how you sign into Microsoft" page. However I am unable to sent mail or send mail from them and they do not appear in the "send from" tab when I compose a
+ new message. I understood that I could use an alias just like any other email account/address but maybe I got the wrong end of the stick" or have made a mess of creating said aliases.</p>
+<p style="margin-left: 30px">
+</p><p style="margin-left: 30px">I am using a fully updated version of Windows 10 and apparently the latest version of Outlook.com</p>
+<p style="margin-left: 30px">
+</p><p style="margin-left: 30px">Please advise where I am going wrong.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>
+</p><p>In order for you to manage you alias correctly, we suggest that you check the links below:</p>
+<br />
+<ul>
+<li><strong><a href="https://support.office.com/en-us/article/Add-or-remove-an-email-alias-in-Outlook-com-459b1989-356d-40fa-a689-8f285b13f1f2?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">Add or remove an email alias in Outlook.com</a></strong>.
+</li><li><strong><a href="https://support.microsoft.com/en-us/help/12407/microsoft-account-manage-aliases" target="_blank" rel="noreferrer nofollow">Manage aliases on your Microsoft account</a></strong>.</li></ul>
+<p>
+</p><p>From the new interface of Outlook.com, there is also an option for you to manage you alias, see screenshots below:</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/76ece5ab-81e3-4c6e-a512-a0025693e169" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/76ece5ab-81e3-4c6e-a512-a0025693e169" height="471" width="539" /></a></p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/8a33df89-cd4f-400c-9530-be5dd14fe6d1" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/8a33df89-cd4f-400c-9530-be5dd14fe6d1" height="425" width="547" /></a></p>
+<p>
+</p><p>
+</p><p>Let us know if you have other concerns.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p style="margin-left: 30px">
+</p><p style="margin-left: 30px">I am using a fully updated version of Windows 10 and apparently the latest version of Outlook.com</p>
+<p style="margin-left: 30px">
+</p></blockquote>
+<p>How are&nbsp; you accessing your email?</p>
+<p>You will be able to select an alias address if you use a browser or the Windows 10 Mail app.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> toothwright  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the responses</p>
+<p>
+</p><p>Have tried everything - can now receive emails but when I send the emails disappear into the ether - never to be seen again.</p>
+<p>
+</p><p>I've given up on outlook.com and am using a proprietary email client with success.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> alexnicholson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi, I have the same issue since my mailbox was moved from outlook.com to outlook based on Exchange. When I send from the alias it ends up in my drafts folder. You only discover this if you logon to your account at outlook.com from a web browser. If I send
+ it from my email address @outlook.com it sends fine but when I send it from my own domain @mydomain.com for example it does not work. It gets sent to the drafts folder. I have gone through all the recommendations above to no avail. All help appreciated. Alex</p>
+<p />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Not getting version 1511 - Microsoft Community</title>
+<h3> abdul majid 13  say:</h3>
+<h2>            Not getting version 1511</h2>
+                    <p>Hi,</p>
+<p>I'm Abdul Majid,</p>
+<p>
+</p><p>I have already signed up for the windows 10 insider program but I still didn't get the version 1511 ( build 10586). I recently got the update and&nbsp;I went through it successfully and got it on my PC, but then I preferred to go back to build 10240 and then
+ I went to the previous build. But I changed my mind now and I really want build 10586 (version 1511).</p>
+<p>
+</p><p>Now I'm stuck in build 10240 and the media creation tool also no longer offers the November update to me. I've heard that Microsoft stopped giving the November update in Windows update too, is that true?</p>
+<p>Below is a screenshot that I'm an insider:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/cd8547d3-b4a2-42d4-be0b-a9a8da2661d2" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/cd8547d3-b4a2-42d4-be0b-a9a8da2661d2" /></a></p>
+<p>Please give me solution to this.</p>
+<p>
+</p><p>Thanks.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="&#39;Mike P" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "P"); this.style="display: inline-block";'
+<h3> &#39;mike p  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Windows updates wont offer&nbsp;your computer the 10586 until 31 days&nbsp;after the current&nbsp;build was installed.</p>
+<p>
+</p><p>If you have the 10586 iso you certainly can install it from a booted usb/dvd drive and install it fresh.</p>
+<p>
+</p><p>This morning I was able to&nbsp;make the 10586 windows.iso&nbsp;using <a href="http://download.microsoft.com/download/1/C/4/1C41BC6B-F8AB-403B-B04E-C96ED6047488/MediaCreationTool.exe" target="_blank" rel="noreferrer nofollow" title="http://download.microsoft.com/download/1/C/4/1C41BC6B-F8AB-403B-B04E-C96ED6047488/MediaCreationTool.exe">
+this particular</a> downloaded 10586&nbsp;media creation tool.&nbsp; Not saying it still will still&nbsp;work , but probably will.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Headphones - Microsoft Community</title>
+<h3> revinbray  say:</h3>
+<h2>            Headphones</h2>
+                    When my headphones are plugged into my PC and I play music, the sound comes out of the PC and not the headphones (yes, I checked my audio settings) and sometimes it comes out of both the PC and the headphones. How can I fix this?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>
+<div>More often than not when a device isn't working it is because the driver has become corrupted. Re-installing a fresh copy should help</div>
+<a href="http://windows.microsoft.com/en-us/windows7/Update-a-driver-for-hardware-that-isnt-working-properly?SignedIn=1" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/windows7/Update-a-driver-for-hardware-that-isnt-working-properly?SignedIn=1</a><br />
+<div><a href="http://captaindbg.com/how-to-update-drivers-on-windows-7/" target="_blank" rel="noreferrer nofollow">http://captaindbg.com/how-to-update-drivers-on-windows-7/</a>&nbsp; &nbsp;(works on win 8 &amp; win 10)</div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>E-mail merge&#58; How can I use the &#8220;Direct Replies To&#8221; - Microsoft Community</title>
+<h3> laurie____  say:</h3>
+<h2>            E-mail merge&#58;  How can I use the &#8220;Direct Replies To&#8221; option in Outlook when I&#8217;m doing an e-mail merge from Word&#63; </h2>
+                    I would like to do an e-mail merge in word that "direct replies to" a different e-mail address than I'm sending from.&nbsp; I start the e-mail merge and select my recipients from an excel document with other specific information,&nbsp;but I don't see in Word where
+ you can direct replies to another e-mail address. &nbsp;Is this possible?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Hal Hostetler - MVP-Outlook" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "HH"); this.style="display: inline-block";'
+<h3> hal hostetler - mvp-outlook  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yep, its entirely due to using Exchange Server. See if this thread helps:</p>
+<p><span><a href="http://social.technet.microsoft.com/Forums/en-US/exchangesvrtransport/thread/3928de1d-bb57-4bf5-b9fb-3d57c88cbdc3" target="_blank" rel="noreferrer nofollow">How Do I set a&nbsp;<strong>Reply Address</strong> &nbsp;in&nbsp;<strong>Exchange</strong> &nbsp;2007</a></span></p>
+<p>&nbsp;</p>
+<hr />
+Hal<br />
+--<br />
+Hal Hostetler, CPBE<br />
+Senior Engineer/MIS -- MS MVP-Print/Imaging -- WA7BGX<br />
+<a href="http://www.kvoa.com" target="_blank" rel="noreferrer nofollow">www.kvoa.com</a> -- KVOA Television, Tucson, AZ.<br />
+Live at Hot Licks - <a href="http://www.badnewsbluesband.com" target="_blank" rel="noreferrer nofollow">www.badnewsbluesband.com</a>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>cant sign in nokia pc suite - Microsoft Community</title>
+<h3> arun999  say:</h3>
+<h2>            cant sign in nokia pc suite</h2>
+                    
+<p>Hi,</p>
+<p>&nbsp;&nbsp; I use nokia asha 303.Of late i am having problems in signing up pc suite.Whenever i sign in i get this messg..COULD NOT CONNECT TO YOUR NOKIA ACCOUNT&gt;CHECK YOUR INTERNET CONNECTION AND TRY LATER.But my internet connection is absolutely fine.I tried taking
+ help from nokia care but alas my problem is not yet solved.I even uninstalled pc suite an installed again.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Similar issue as <span style="text-decoration-line: underline"><em><strong><a href="http://answers.microsoft.com/Thread/6F2451D6-57D5-4574-A4AF-F127AA974321">THIS</a></strong></em></span>&nbsp;???&nbsp;</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Update problem in Windows 10 Build 9926 - Microsoft Community</title>
+<h3> mrityunjay naskar  say:</h3>
+<h2>            Windows Update problem in Windows 10 Build 9926</h2>
+                    <p style="text-align: justify">I recently installed Windows 10 Build 9926 on my Samsung Laptop. I used the .iso file available in the Windows Insider Program&nbsp;to perform&nbsp;a clean install.&nbsp; I'm using a mobile broadband connection which is detected as a 'Metered
+ Connection' by Windows itself. As the Windows Update policy doesn't allow automatic updates over metered connections, I&nbsp;could not&nbsp;download the updates and thereby&nbsp;encountered with an error 0x8024402F. Then I changed the type of the connection to "Non-metered"
+ and Windows Update did find some available updates and it started downloading them. But unfortunately the
+<strong>download status&nbsp;was stuck at "Downloading updates 0%"</strong>. I restarted the system and noticed that the Windows Update has come up with some new updates and it has skipped the earlier ones!! But again, the Windows Update&nbsp;was stuck at 0%.</p>
+<p>
+</p><p style="text-align: justify"><em>I checked resmon.exe to find out that the service responsible for Windows Update [svchost.exe (netsvcs)]&nbsp;was not consuming any of my bandwidth. I tried using Windows Update Diagnostic Tool to resolve the issues and the tool
+ showed an error "Service Registration is missing or corrupt" which it could not fix. I also tried sfc utililty but it stopped at 16%.</em></p>
+<p>
+</p><p>I could not download any of driver updates and most importantly kb3034229 and kb3035129 though I can see both of them in the Windows Update. This is utterly frustrating now!&nbsp;Still&nbsp;I was able to install the&nbsp;virus&nbsp;definition updates&nbsp;through Windows Defender
+ itself. I&nbsp;have been&nbsp;using Windows 10 preview from the very first public builds but never had this weird problem.&nbsp;</p>
+<p>
+</p><p>
+</p><p>Eagerly waiting for your&nbsp;response!</p>
+<p>
+</p><p>
+</p><p>Thanks in advance,</p>
+<p>Mrityunjay</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> almaury1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I just solved it: My computer is a Dell 17 series 5000 with i7 processor and 8gig Ram, Windows 10 build 9926.</p>
+<p>Go to Control Panel, Administrative Tools, Disk Cleanup. Choose Disk C. Be sure to mark update cleanup. click yes. After the Cleanup, Restart. Go to the updates (via Ask me ) Windows update settings. It works!</p>
+<p>Alain Maury</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I can&#39;t open xml files that have been saved in my - Microsoft Community</title>
+<h3> evasandle  say:</h3>
+<h2>            I can&#39;t open xml files that have been saved in my &#34;Documents&#34;  Ideas&#63;</h2>
+                    I have saved many types of files (some I have made with word 2010 and some that I have copied fo Internet to word) they all say "colorschememapping" when I try to open them along with other files, but I can never view contents, no matter which one I click.&nbsp;
+ They say they have been saved as xml files.&nbsp; I wonder if I have made some change in my control panel by accident o ris there another problem
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> elaine deng  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Based on my research, word 2010 offered two ways to save the file as a xml file. You can choose from ‘save as type’ in Save as dialog.
+ ‘Word XML Document’ and ‘Word 2003 XML Document’ will cause some different effect. First check whether these two ways all fail to open xml files.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If still not work, it perhaps caused by IIS setting, because Visual Studio installed before IIS. You can close IIS in Control Panel or
+ re-register asp.net.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Regards,</span></p>
+<p><span>Elaine</span></p>
+<p><span>&nbsp;</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote for iPad erase feature - Microsoft Community</title>
+<h3> cravingcoffee  say:</h3>
+<h2>            OneNote for iPad erase feature</h2>
+                    why is the erase feature not precise in onenote for ipad? I want to erase just a portion of a pen stroke in onenote but it erases the entire stroke. Is there a setting or update to fix this? It works fine when using erase feature in other apps so i know
+ it could work this way in onenote.&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>This could have happened due to several reasons like corrupted application. We suggest that you uninstall and reinstall your OneNote on your iPad. We also suggest that you follow the steps on this link:
+<a href="https://support.office.com/en-us/article/Erase-ink-strokes-in-Microsoft-OneNote-68e89773-02d8-477f-9661-d1096e8cc6e2" target="_blank" rel="noreferrer nofollow">
+Erase ink strokes in Microsoft OneNote.</a></p>
+<p>
+</p><p>Let us know how it goes.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> swischner  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yes. Of course. reinstalling OneNote will completely change the data model of OneNote objects.....</p>
+<p>
+</p><p>Ink "strokes" in OneNote (as in some other note taking programs) are handled as / converted to vector graphic objects and not stored pixel by pixel. This for example gives you the option to move a stroke which is overlapping another one without damaging
+ the underlying object or leave a gap as it is simply "redrawn" at the new position.</p>
+<p>
+</p><p>It's also a prerequisite for handwriting recognition as the program needs to "know" that you have drawn a circle like shape to identify it as "o" or "0". It could not read an "o" if there is only a bunch of unrelated pixels which (for human eyes) happen
+ to form a circle.</p>
+<p>
+</p><p>So if you draw a line of a certain length it is stored as a line with exactly that length. You can not shorten it by removing some pixels with an eraser. That is only possible in pixel based paint programs.&nbsp;</p>
+<p>
+</p><p>But maybe all of these facts will totally change when you reinstall OneNote. Good luck :)</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cravingcoffee  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can shorten ink strokes in the pc version. In fact, there are four options for eraser. Apparently this feature is not available in the ipad version. Frustrating when office apps are not fully functional across the platforms.&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>We suggest that you submit your query using the <a href="https://onenote.uservoice.com/" target="_blank" rel="noreferrer nofollow">
+UserVoice</a>. We consider suggestions and comments provided by our users. These queries are being collated, reviewed, and can be considered for future updates.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>n73&#58; RM-132 vs RM-133 - 3g support&#63; - Microsoft Community</title>
+<h3> trendkillsp  say:</h3>
+<h2>            n73&#58; RM-132 vs RM-133 - 3g support&#63;</h2>
+                    Hey guys, last week I told you that the RM-132 seens to not support the 3G network...<br />
+<br />
+I told that cause of my experience using the RM-133 and now the RM-132...<br />
+<br />
+In the RM-132 the GSM only or UMTS support dissapears from the settings menu and the 3G icon never appear in the screen again...<br />
+<br />
+Well, never before last weekend...<br />
+<br />
+I just went to travel to a far city where my phone don´t receive the operator signal.. For my surprise when the phone finish searching for the normal GSM signal, the 3G icon pop up in the screen!<br />
+<br />
+Damn! Now I´m really confused!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haider_up32  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i also recently bought a n73-5 rm-132...i am also confused whether it supports 3g or not?? the bundled manual and the official nokia service manual states that rm-132 doest not support WCDMA 2100 .i wrote an email to nokia to confirm this ...waiting for
+ a reply<br />
+<br />
+the thing u wrote happened with me too when i had 6630 while travelling in train the 3g icon appeared when there was no signal
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ulysses_sax  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I got RM-132 too. If it doesn't support 3G, why it has the cam, supposely the same hardware... I remember I read that when people changed their firmware to the Music Edition, 3G had been enabled, wich means the phone has the same hard, just the soft is
+ limiting... Anyone confirms
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haider_up32  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This is the email i received from nokia<br />
+<br />
+<br />
+Dear Mr. Khan,<br />
+<br />
+Thank you for e-mailing Nokia Care.<br />
+<br />
+This e-mail is in reference to the features of Nokia N73-5. We appreciate your interest in Nokia products. You may kindly note that Nokia N73 is available in different versions such as Nokia N73, Nokia N73 Music Edition and Nokia N73-5. Nokia N73 and Nokia
+ N73 Music Edition phones support WCDMA (Wideband Code Division Multiple Access) technology whereas Nokia N73-5 does not support WCDMA technology.<br />
+<br />
+Further, this is a default feature of the phone and cannot be integrated in the phone via software or hardware upgrade.<br />
+<br />
+Please access the below mentioned web link for more information on the features of Nokia phones:<br />
+<br />
+<a href="http://www.nokia-asia.com/A4415002" target="_blank" rel="noreferrer nofollow">http://www.nokia-asia.com/A4415002</a><br />
+<br />
+For further enquiries, please feel free to contact our Technical Support Executives at 30303838 between the hours of 9:00am and 9:00pm, seven days a week. For online support, visit "Have a question? Ask Nokia" at
+<a href="http://www.nokia.co.in/asknokia." target="_blank" rel="noreferrer nofollow">www.nokia.co.in/asknokia.</a> You may also find answers to your queries at
+<a href="http://www.nokia.co.in/support." target="_blank" rel="noreferrer nofollow">www.nokia.co.in/support.</a> We reassure you of our continuous support.<br />
+<br />
+Please help us improve our services by clicking on the following link: <a href="http://www.nokia.co.in/caresurveys" target="_blank" rel="noreferrer nofollow">
+www.nokia.co.in/caresurveys</a><br />
+<br />
+Kind regards,<br />
+<br />
+Revathi Durai<br />
+Nokia Care
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vijaykakad  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            HUH ??? Nokia N73-5 does not support 3G ??? what the hell ??? My handset is also N73-5 model. I purchsed this handset in India. It is RM132 handset. i bought this handset thinking it's a 3G handset as Nokia proudly says. Now i come to know that it does
+ not support 3G and still Nokia sell it at same price that of N73. These 2 types of N73 normal are nowhere mentioned in technical details of N73 on Nokia website.<br />
+<br />
+My handset is still under warranty. Is there any chance Nokia will replace it with 3G handset ???<br />
+<br />
+Message Edited by vijaykakad on <span>10-Apr-2008</span> <span>
+10:33 AM</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ulysses_sax  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Nice question. Didn't saw this point before. They sell both at the same price, that's at least unfair. Mine is under warranty too...<br />
+<br />
+Well, as i said, I remember that time when some were changing their N73 normal edition to music edition and many said 3G was enable that time. In my opinion (selling both at same price confirms it) is that it has everything it needs, I mean hardware, but what
+ disables it is the firmware, made to work specifically for some operators wich doesn't offer 3G (my case, TIM here in Brazil).<br />
+<br />
+Well, dunno if someone can confirm it. If so, please let us know!!!<br />
+(it would be very nice if they replace our phones under warranty with other that supports 3G)
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haider_up32  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            what's the point in disabling it by firmware...i had 6630 with 3g..and in the settings you can disable WCDMA if u want....<br />
+<br />
+u can check the wikipedia page <a href="http://en.wikipedia.org/wiki/N73" target="_blank" rel="noreferrer nofollow">
+http://en.wikipedia.org/wiki/N73</a><br />
+<br />
+<br />
+3g requires special chip...n91 had two versions one with 3g and one without 3g..there was price difference between the two models...<br />
+<br />
+sooon i will be posting details on my blog <a href="http://techtemper.blogspot.com" target="_blank" rel="noreferrer nofollow">
+http://techtemper.blogspot.com</a><br />
+<br />
+Message Edited by haider_up32 on <span>10-Apr-2008</span> <span>
+01:34 PM</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haider_up32  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            also check<br />
+<br />
+/discussions/board/message?board.id=smartphones&amp;thread.id=62619&amp;view=by_date_ascending&amp;page=2
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ulysses_sax  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            well, people who changed the product code do change to Music edition had 3G enable after that...Despite its sold at the same price for both.<br />
+<br />
+Disabling 3G forces the customer to stay with the operator than migrating for another wich already offers 3G. That's a point to consider.<br />
+<br />
+For exemple, from the 3 biggest cell phone operator here, (Tim,Claro and Oi) only Claro is now offering 3G, while the others doesen't, YET. If i would like to use 3G with my phone, I just need to buy a chip from Claro and start using. Untill 2 months ago, lcked
+ phones were freely sold. Now, it's forbidden because it conflicts with a law that says a customer has the freedom to choose, as he paid and own the product, whoever he wants to provide services, including telephony. The lock on phone had that intention, to
+ make users be "attatched" to the operator, same way the disabling 3G feature.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> iyersri  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I recently purchased N73 music edition. But I guess i received n73-5 edition.<br />
+<br />
+Is N73-5 and N73 Music edition the same ? Could someone please confirm
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haider_up32  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            in india there are no 3g service providers....3g services will soon be launched in india....i know the firmware can be changed for n73-5 ..but i am not able to confirm whether the phone works on 3g or not ...OR its just the menu which appears
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel found unreadable content in &#34;___.xlsm&#34;. Do you want to - Microsoft Community</title>
+<h3> pc2k  say:</h3>
+<h2>            Excel found unreadable content in &#34;___.xlsm&#34;. Do you want to recover the contents of this workbook&#63;</h2>
+                    <p><b>Original Title:&nbsp;</b>"error opening excel 2007 file in windows 7"</p>
+<p>I have an excel 2007 file (.xlsm) that has macros and visual basic script in it. I created the file in excel 2007 over 2 years ago. I have been using the file for over 2 years with no problems at all on windows xp sp3. I am currently using office 2007 sp2.</p>
+<p>The file works perfect on windows xp, but when I try to open it on windows 7 using excel 2007 sp2 is gives an error.</p>
+<p><span style="text-decoration-line: underline"><strong>The error is:</strong> </span>
+</p>
+<div>Excel found unreadable content in "file name.xlsm"&nbsp; do you want to recover the contents of this workbook?&nbsp; If you trust the source of the workbook click yes.</div>
+<div><br />
+</div>
+<div><span style="text-decoration-line: underline"><strong>Clicking yes then brings up this error:</strong></span><br />
+</div>
+<div>&nbsp;</div>
+<div>Excel was able to open file by repairing or removing the unreadable content.</div>
+<div>&nbsp;</div>
+<div>Removed part: /xl/vba project.bin part (visual basic for application) VBA</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div>Once the visual basic is removed the file opens, but obviously does not work.</div>
+<div>Why does the file work perfect on windows xp but does not work on windows 7?</div>
+<div>Any idea on how I can get this to work on windows 7?</div>
+<div><br />
+</div>
+<div>Thanks.<br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> mjoz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Was having the exact same error on a work laptop that had been upgraded to Windows 7 and Office 2010. Turned out the default installation of Office 2010 didn't include VBA, and with the enhanced security features of Office 2010 in this configuration, any
+ macros are seen as unreadable and therefore removed for your protection.</p>
+<p>This is the case irrespective of any "Trusted&nbsp;Center" settings you change within Excel.</p>
+<p>The solution that worked for us was to install VBA in&nbsp;Office 2010&nbsp;(as well as making sure you have the "Trust Center" settings set to either allow macros or at least prompt you to enable/disable). Note that there were no administration rights restrictions
+ on the laptop.</p>
+<p>Found the following link had a simple step-by-step on installing VBA with Office already installed (just ignore the&nbsp;talk about ASAP Utilities!)
+<a href="http://www.asap-utilities.com/faq-questions-answers-detail.php?m=145" target="_blank" rel="noreferrer nofollow">http://www.asap-utilities.com/faq-questions-answers-detail.php?m=145</a></p>
+<p>Hope this helps someone, as I couldn't find this specific instruction elsewhere!!!</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Move files from SD Card to HTC HT7 - Microsoft Community</title>
+<h3> taranandanatha  say:</h3>
+<h2>            Move files from SD Card to HTC HT7</h2>
+                    How do I move NON-MEDIA files from an external SD card to HTC HD7?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I would upload them to my Skydrive account from my PC then use Office on my device to access the files.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Taranandanatha" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TA"); this.style="display: inline-block";'
+<h3> taranandanatha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            But that would incur me additional cost to my GPRS service provider, right?&nbsp;Earlier it was just couple of clicks away&nbsp;for sending through Bluetooth.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sonicboi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Not if you use WiFi.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>But that would incur me additional cost to my GPRS service provider, right?&nbsp;Earlier it was just couple of clicks away&nbsp;for sending through Bluetooth.</blockquote>
+<p><br />
+<strong>Bluetooth file transfer is not an option</strong> so you need to deal with it in a different manner.</p>
+<p>&nbsp;</p>
+<p>As I indicated above, since you have files stored on an SD card and want to move them to your Windows Phone, the easiest was is to&nbsp;upload them to&nbsp;your Skydrive account from your&nbsp;PC then use Office on&nbsp;your device to access the files.&nbsp;
+</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Taranandanatha" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TA"); this.style="display: inline-block";'
+<h3> taranandanatha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Well Jack, overall now I understand that that there is no point in asking questions related to file system management in Windows Phone 7, since it is not an OS in the classical and regular sense. It is just a SNS - Social Networking System. But the question
+ is why does Microsoft have to remove the OS interfaces as if they are afraid of something or someone!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>But the question is why does Microsoft have to remove the OS interfaces as if they are afraid of something or someone!</blockquote>
+<p><br />
+That question is well beyond our scope of helping out here Taranandanatha.&nbsp; Like you, we are just users that help out in the forums because we like working with folks and helping them through issues.&nbsp; That question is more of a philosophical issue and one that
+ I don't care to get into since I have little or no knowledge of the reason why.</p>
+<p>What I can say is that for me, using Windows Phone has been the best experience I have ever had on any device ... bar none! I can do everything I need to do quickly and efficiently.Are there features I would like to have?&nbsp; Sure, but in there absence, I have
+ adapted and frankly have found those adaptations are working out.</p>
+<p>Good luck with your device.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Taranandanatha" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "TA"); this.style="display: inline-block";'
+<h3> taranandanatha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Jack, I did as you suggested. But the downloaded file is not traceable in Office Hub. I have made a related post as a new thread in this. But still since here you suggested, is there a way to do that?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Jack, I did as you suggested. But the downloaded file is not traceable in Office Hub. I have made a related post as a new thread in this. But still since here you suggested, is there a way to do that?</blockquote>
+<p><br />
+When you open Office on your device you should see under Locations four options (SkyDrive, Phone, Office 365, Sharpoint).&nbsp; Click on SkyDrive, navigate to the file and click on it.</p>
+<p>One of the options after you are viewing the downloaded file is to save it to your device if you need to do that however once it was opened, it will appear in your Documents as a recently opened file.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Queen_Ladybug" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "QU"); this.style="display: inline-block";'
+<h3> queen_ladybug  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Well Jack, overall now I understand that that there is no point in asking questions related to file system management in Windows Phone 7, since it is not an OS in the classical and regular sense. It is just a SNS - Social Networking
+ System. But the question is why does Microsoft have to remove the OS interfaces as if they are afraid of something or someone!</blockquote>
+<br />
+<p>Is Apple afraid of someone or something then in your eyes? Do you not consider iOS versions OSes in the "classical and regular sense".
+</p>
+<p>Microsoft pretty much completely scrapped Windows Mobile. Windows Phone 7 is NOT an upgrade to WM6.5 or earlier. It's something entirely different.&nbsp; They didn't remove OS interfaces in this, they just created an OS where it's not necessary for the majority
+ of the population to worry with file structures and behind the scenes design. I can see this design thought process creeping into a lot of Microsoft products. No need to worry about HOW it works, just how to use it FOR your work.</p>
+<p>Yes, this is a little tough for those of us who enjoy hacking and tinkering with things on that level to accept. There ARE ways and you can find them on other sites, to hack and modify your WP7 on a more technical level. I'm perfectly happy with how my phone
+ works as it is though, to not bother. But I can see where some of my fellow geeks have that burning desire and wish them all kinds of enjoyment in it!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Joel Ivory Johnson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JI"); this.style="display: inline-block";'
+<h3> joel ivory johnson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<blockquote>Is Apple afraid of someone or something then in your eyes? Do you not consider iOS versions OSes in the "classical and regular sense".</blockquote>
+<p>Microsoft pretty much completely scrapped Windows Mobile. Windows Phone 7 is NOT an upgrade to WM6.5 or earlier. It's something entirely different.&nbsp; They didn't remove OS interfaces in this[...]</p>
+</blockquote>
+<br />
+<div>Based on past discussions that I've seen in this forum discussions on what does or does not constitute an operating system becomes a philosophical discussion that doesn't lead to agreement. So I'll leave that discussion open but for those wishing to look
+ into it further I think it is worth looking at how Windows Embedded CE images are built (Windows Phone is Windows CE based).&nbsp;</div>
+<div><br />
+<div>As you pointed out (And as was stated at the February 2010 announcement) Windows Phone doesn't inherit from Windows Mobile. So questions like "Why was feature xxxxx removed" are better asked in the form of "Why hasn't feature xxxxx been implemented (yet)?"</div>
+<div><br />
+<div>A better understanding of why Microsoft made some of the decisions that they did can be found in the announcements by Joe Belfiore and Steeve Ballmer during the 2010 year. There are also some decisions that start to make more sense once one gets a chance
+ to dive into what has been made available of Windows 8.&nbsp;</div>
+<div><br />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Duplicate birthdays - Microsoft Community</title>
+<h3> jonathanpollard  say:</h3>
+<h2>            Duplicate birthdays</h2>
+                    <p>When I want a birthday in my outlook calendar I add the date to the relevant contact via outlook 2013 and I make sure the birthday calendar is displaying. Outlook then creates an event series in both 'My Calendar' and the birthday calendar so I then delete
+ the former to avoid an extra duplicate. This isn't so bad (although I would like to know how to stop Outlook adding birthdays to both), however, some of my contacts still generate duplicate birthdays on my calendar even if I make sure there is no birthday
+ entered for that contact in my phone, outlook or outlook.com.</p>
+<p>
+</p><p>I've noticed two differences between the duplicates. The one that seemingly can't be deleted includes an apostrophe ie 'John Graham's birthday'. This is the one I'd like to get rid of. Whereas when I enter a birthday in a contact, it displays in the birthday
+ calendar without an apostrophe ie&nbsp;<span>'John Graham birthday'. The second difference is that when I open the birthday event that won't disappear it includes 'UTC' at the end of the line about recurrence ie. 'Recurrence&nbsp;</span>Occurs every September
+ 13 effective 13/09/1982 UTC.' under subject and location. The other duplicate has the same line minus 'UTC'.</p>
+<p>
+</p><p>Where is this duplicate being generated from?</p>
+<p>
+</p><p>And how do I stop Outlook adding a birthday to my calendar (I don't need it to when the birthday calendar already includes it)?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Its not a duplicate, in Calendar screen, My Callenders, on the left side, if you dont select Birthdays it wont show the Birthday Calendar but will still show in the primary Calendar<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jonathanpollard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks but I should've mentioned that both versions of the same birthday are only on the birthday calendar displayed in the same colour. Deselecting the birthday calendar stops displaying both. The only differences between them are mentioned in my original
+ post.
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>unable to download app windows phone 8 ativ s - Microsoft Community</title>
+<h3> micabol  say:</h3>
+<h2>            unable to download app windows phone 8 ativ s</h2>
+                    Hi, I have an Windows phone 8 Ativ S. I'm not able to download any app from the Windows store. When I press "Install"... The page stays on "downloading" and nothing happen. i oberve also That the last save on the cloud Is from 2 weeks ago. When I want
+ to save I have a message error. Anyone Can help me, I need to download some apps. Thank you
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gerald mal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,<br />
+<br />
+We would like to ask a few questions to better assist you.</p>
+<p>
+</p><ul>
+<li>What is the model of your phone?</li><li>Any available software updates on your phone?</li><li>Did you change something before this error appeared?</li><li>What are the troubleshooting steps that you've tried so far?</li></ul>
+<p>
+</p><p>Regards.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> micabol  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>Hi,<br />
+<br />
+We would like to ask a few questions to better assist you.</p>
+<p>
+</p><ul>
+<li>What is the model of your phone?</li><li>Any available software updates on your phone?</li><li>Did you change something before this error appeared?</li><li>What are the troubleshooting steps that you've tried so far?</li></ul>
+<p>
+</p><p>
+</p><p>Regards.</p>
+</blockquote>
+<p>- model of my phone : Samsung Ativ S / Windows phone&nbsp;8.0 </p>
+<p>
+</p><p>- my phone Is updated&nbsp; , no updates lately (I still waiting&nbsp;the upgrade to at least 8.1)</p>
+<p>
+</p><p>- I didn't change something. Just want to download a app and the store doesn t complete the downloading. I press #install and the page stay blocked with message #downloading. This happen with any app.&nbsp;&nbsp;</p>
+<p>
+</p><p>-&nbsp;I tried a soft reset but nothing.&nbsp;. I Check my password for m'y Microsoft account, no problem. I receive my emails.</p>
+<p>
+</p><p>i observe That i m not the only one with Windows phone 8.0 That have This issue. Can You please check what Is the problem with the store or Microsoft connecton. I would l</p>
+<p>
+</p><p>thank youike to have a solution. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gerald mal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>In this case, we suggest that you perform hard reset. Make sure to back up your files to avoid data loss.
+</p>
+<p>
+</p><ol>
+<li>Press and hold the<span>&nbsp;</span><strong>v</strong><span><strong>olume down</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f11fad6cb-5258-4ceb-9283-d30f67fb5e74%2fhardware-icon-volumeDWN-button_InvariantCulture_Default.png" />and<span>&nbsp;</span><span><strong>Power</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f71780ab3-e8a1-45b0-a0d1-220bfbe6b989%2fhardware-icon-power-button_InvariantCulture_Default.png" />buttons
+ at the same time until you feel a vibration (about 10–15 seconds).</li><li>
+<p>When you feel the vibration, release the buttons, and then immediately press and hold the<span>&nbsp;</span><span><strong>volume down</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f11fad6cb-5258-4ceb-9283-d30f67fb5e74%2fhardware-icon-volumeDWN-button_InvariantCulture_Default.png" />button
+ until you see a large exclamation mark.</p>
+</li><li>
+<p>Once the exclamation mark appears, press the following four buttons in this order:<span>&nbsp;</span><span><strong>volume up</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f6bd43a94-9d17-4c2d-8124-ac977d0da8b5%2fhardware-icon-volumeUP-button_InvariantCulture_Default.png" />,<span>&nbsp;</span><span><strong>volume
+ down</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f11fad6cb-5258-4ceb-9283-d30f67fb5e74%2fhardware-icon-volumeDWN-button_InvariantCulture_Default.png" />,<span>&nbsp;</span><span><strong>Power</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f71780ab3-e8a1-45b0-a0d1-220bfbe6b989%2fhardware-icon-power-button_InvariantCulture_Default.png" />,<span>&nbsp;</span><span><strong>volume
+ down</strong><span>&nbsp;</span></span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fassets.windowsphone.com%2f11fad6cb-5258-4ceb-9283-d30f67fb5e74%2fhardware-icon-volumeDWN-button_InvariantCulture_Default.png" />. Your phone should now reset and restart itself.</p>
+</li></ol>
+<p>
+</p><p>For future queries, don't hesitate to get back to us.</p>
+<p>
+</p><p>Regards.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> micabol  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><p>The issue Is also There, I Can't do a back up because I have the error message 0x8004888D when I tried to do a back up. I observe tha the last back up has been saved more than 2 weeks ago, and This Is not normal. &nbsp;.. I'm not sure That the hard back up Is
+ the solution because I saw in other post in This forum That people who made This hard reset Can t log or sign to their Microsoft account. I think There Is really a problem with the connection between Microsoft and Windows phone 8. (store, back up..) please
+ check again.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gerald mal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>We suggest that you use Windows Device Recovery Tool. </p>
+<p>
+</p><p>To recover your phone using the Windows Device Recovery Tool, complete the following steps:</p>
+<ul>
+<li>Download and install the<span>&nbsp;</span><a href="http://go.microsoft.com/fwlink/?LinkID=525569" target="_blank" rel="noreferrer nofollow">WDRT tool</a><span>&nbsp;</span>to your PC.<br />
+</li></ul>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/0665b46b-76e7-4c61-a0bc-d2f2abb7fe79" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/0665b46b-76e7-4c61-a0bc-d2f2abb7fe79" /></a></p>
+<ul>
+<li>Ensure that your device has a full charge if possible.<span>&nbsp;<span>&nbsp;</span></span>A minimum of 50% charge is required.</li><li>Open the WDRT software on your PC<br />
+<br />
+<a href="https://filestore.community.support.microsoft.com/api/images/926bc548-59ad-4a94-b875-f5561528c7b9" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/926bc548-59ad-4a94-b875-f5561528c7b9" /></a><br />
+</li><li>Connect the affected device to your PC via an appropriate USB cable:</li></ul>
+<p><span><span>o<span>&nbsp;&nbsp;<span>&nbsp;</span></span></span></span>If your device is detected appropriately, click the phone option as displayed.</p>
+<p><span><span>o<span>&nbsp;&nbsp;<span>&nbsp;</span></span></span></span>If your device is not detected, choose “My device was not detected” and follow the appropriate on-screen prompts.</p>
+<p><span><span>§<span>&nbsp;<span>&nbsp;</span></span></span></span>If using this option and the WDRT tool seems to “hang”, disconnect the phone from the USB cable, wait ~10 seconds, and reconnect.</p>
+<p><span><span>§<span>&nbsp;<span>&nbsp;</span></span></span></span>If disconnecting the device does not work, you may need to reboot your PC to re-enumerate the connected peripherals.</p>
+<ul>
+<li>The WDRT will check your device for available Firmware version and OS version:</li><li>The tool may say “You have the latest available software version”.<span>&nbsp;<span>&nbsp;</span></span>This is referencing the firmware on the device.<span>&nbsp;</span>This is expected.<span>&nbsp;<span>&nbsp;</span></span>You can view the Operating system version and see the
+ version that is available on the WDRT server (highlighted in red below).</li><li>Click Reinstall software.<span>&nbsp;<span>&nbsp;</span></span>The WDRT will download the appropriate software package and then begin the recovery process.<span>&nbsp;<span>&nbsp;</span></span>Ensure the device remains connected via USB during this entire process.<span>&nbsp;<span>&nbsp;</span></span>Removal
+ of the device during the flashing process may render it permanently inoperable.</li><li>Once the recovery image has flashed to the device, it will reboot and prompt you to complete setup.<span>&nbsp;<span>&nbsp;</span></span>The device is now fully recovered.</li></ul>
+<p>Let us know how it goes.</p>
+<p>
+</p><p>Regards.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> micabol  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I tried also the wdRT yesterday, but the tool didht recognize my phone Samsung ativ s. It doesnt prpose This company when I click on " my device was not detected". Is it normal That it s not working for Samsung?
+</p>
+<p>
+</p><p>other thing, I tried to downoad a app This morning, miracle it Works!! Even if i still doesn t reveive the notification for whatsapp and Messenger apps.</p>
+<p>
+</p><p>about the back up, it still doesn t work. I m not having the error message 0x8004888D anymore; now my error message is 0x8019019. What does it&nbsp;means?</p>
+<p>
+</p><p>last question, do You know why i'm still in window 8.0 version? I m not receiving the upgrade to at least 8.1. I m always checking in my phone if There Is an update but the answer Is always " your phone Is updates"</p>
+<p>
+</p><p>thanks for your answer.&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gerald mal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>
+<p>Hi,</p>
+<p>
+</p><p><span>Your phone notifies you when an update is available for you. You can also check for updates by going to<span>&nbsp;</span></span><strong>Settings</strong><span><span>&nbsp;</span>&gt;<span>&nbsp;</span></span><strong>Phone Update</strong><span><span>&nbsp;</span>and tapping<span>&nbsp;</span></span><strong>Check
+ for updates</strong><span>. You can install the update immediately, or postpone the update to a more convenient time.</span></p>
+<p>
+</p><ul>
+<li>To see your current firmware and OS versions, go to&nbsp;<strong>Settings &gt; about &gt; more information</strong>.</li><li>To see your current software release, go to<span>&nbsp;</span><strong>Settings &gt; extras + info</strong>.</li></ul>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Opening multiple email accounts in one browser - Microsoft Community</title>
+<h3> helenll  say:</h3>
+<h2>            Opening multiple email accounts in one browser</h2>
+                    Has Microsoft figured out a way to natively open multiple email accounts in one browser? I do not want to connect my emails to one account, but I want to be able to open them all within one browser. Gmail seems to do this fairly seemlessly, I am not certain
+ why we are still needing to have multiple browsers open to access multiple Outlook email accounts. Microsoft, pardon my frustration, but has this been resolved, or is it working toward being resolved?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    28 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can open private browsing tabs for each email account in the same browser or use an email client<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Add a password to a query that is being exported as an excel file - Microsoft Community</title>
+<h3> self untaught  say:</h3>
+<h2>            Add a password to a query that is being exported as an excel file</h2>
+                    <p>If my msaccess vba code creates an excel file, can I add code that then puts a password on the excel file?</p>
+<p>
+</p><p>Here is the code that creates the excel file:</p>
+<p>
+</p><p>&nbsp;DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel9, qryCaselist, "c:\MyPath\Caselist.xls", True</p>
+<p>
+</p><p>'Now I want to add a password here to "c:\MyPath\Caselist.xls"</p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Daniel  Pineault" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> daniel  pineault  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What do you mean code in 2 places?&nbsp; All the code should be in Access.</p>
+<p>
+</p><p>Something along the lines of</p>
+<p>
+</p><p>
+</p><p>Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)</p>
+<p><br />
+Sub d()<br />
+&nbsp;&nbsp;&nbsp; Dim sFile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As String</p>
+<p>&nbsp;&nbsp;&nbsp; sFilePath = "c:\Temp\"<br />
+&nbsp;&nbsp;&nbsp; sFileName = "Caselist"<br />
+&nbsp;&nbsp;&nbsp; sFileExt = "xls"<br />
+&nbsp;&nbsp;&nbsp; If Len(Dir(sFilePath &amp; sFileName &amp; "." &amp; sFileExt)) &gt; 0 Then Kill sFilePath &amp; sFileName &amp; "." &amp; sFileExt<br />
+&nbsp;&nbsp;&nbsp; DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel9, "Query3", sFilePath &amp; sFileName &amp; "." &amp; sFileExt, True<br />
+&nbsp;&nbsp;&nbsp; Do While Len(Dir(sFile)) = 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sleep (200)<br />
+&nbsp;&nbsp;&nbsp; Loop<br />
+&nbsp;&nbsp;&nbsp; Call XLS_SecureWrkBk(sFilePath, sFileName, sFileExt)<br />
+End Sub</p>
+<p>Public Sub XLS_SecureWrkBk(ByVal sFilePath As String, ByVal sFileName As String, ByVal sFileExt As String)<br />
+&nbsp;&nbsp;&nbsp; Dim oExcel&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As Object<br />
+&nbsp;&nbsp;&nbsp; Dim oExcelWrkBk&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; As Object<br />
+&nbsp;&nbsp;&nbsp; Const xlExcel8 = 56 'Excel 97-2003 Workbook (*.xls)</p>
+<p>&nbsp;&nbsp;&nbsp; On Error GoTo Error_Handler<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; FileCopy sFilePath &amp; sFileName &amp; "." &amp; sFileExt, sFilePath &amp; "MyTmp" &amp; "." &amp; sFileExt<br />
+&nbsp;&nbsp;&nbsp; Do While Len(Dir(sFilePath &amp; "MyTmp" &amp; "." &amp; sFileExt)) = 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sleep (200)<br />
+&nbsp;&nbsp;&nbsp; Loop<br />
+&nbsp;&nbsp;&nbsp; Kill sFilePath &amp; sFileName &amp; "." &amp; sFileExt</p>
+<p>&nbsp;&nbsp;&nbsp; Set oExcel = CreateObject("Excel.Application")&nbsp;&nbsp;&nbsp;&nbsp; 'Start Excel<br />
+&nbsp;&nbsp;&nbsp; oExcel.Visible = False&nbsp;&nbsp; 'Keep Excel hidden<br />
+&nbsp;&nbsp;&nbsp; oExcel.ScreenUpdating = False<br />
+&nbsp;&nbsp;&nbsp; oExcel.DisplayAlerts = False<br />
+&nbsp;&nbsp;&nbsp; Set oExcelWrkBk = oExcel.WorkBooks.Open(sFilePath &amp; "MyTmp" &amp; "." &amp; sFileExt)&nbsp;&nbsp;&nbsp; 'Start a new workbook<br />
+&nbsp;&nbsp;&nbsp; oExcelWrkBk.SaveAs sFilePath &amp; sFileName &amp; "." &amp; sFileExt, xlExcel8, "YourPassword"<br />
+&nbsp;&nbsp;&nbsp; oExcelWrkBk.Close False<br />
+&nbsp;&nbsp;&nbsp; Kill sFilePath &amp; "MyTmp" &amp; "." &amp; sFileExt<br />
+&nbsp;&nbsp;&nbsp; oExcel.Quit</p>
+<p>Error_Handler_Exit:<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; Set oExcelWrkBk = Nothing<br />
+&nbsp;&nbsp;&nbsp; Set oExcel = Nothing<br />
+&nbsp;&nbsp;&nbsp; Exit Sub</p>
+<p>Error_Handler:<br />
+&nbsp;&nbsp;&nbsp; MsgBox "The following error has occured" &amp; vbCrLf &amp; vbCrLf &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Error Number: " &amp; Err.Number &amp; vbCrLf &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Error Source: XLS_SecureWrkBk" &amp; vbCrLf &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Error Description: " &amp; Err.Description &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Switch(Erl = 0, "", Erl &lt;&gt; 0, vbCrLf &amp; "Line No: " &amp; Erl) _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; , vbOKOnly + vbCritical, "An Error has Occured!"<br />
+&nbsp;&nbsp;&nbsp; oExcel.DisplayAlerts = True<br />
+&nbsp;&nbsp;&nbsp; oExcel.ScreenUpdating = True<br />
+&nbsp;&nbsp;&nbsp; oExcel.Visible = True&nbsp;&nbsp; 'Make excel visible to the user<br />
+&nbsp;&nbsp;&nbsp; Resume Error_Handler_Exit<br />
+End Sub</p>
+<p>
+</p><p>Sorry about the formatting of the code, but this site doesn't handle copy/paste very well.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Formula to calculate minimum amount if result less than specific value - Microsoft Community</title>
+<h3> briancurtis24  say:</h3>
+<h2>            Formula to calculate minimum amount if result less than specific value</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I use Excel for simple invoice calculations to show the price to a client including "mark-up".</p>
+<p>
+</p><p>There are two possible factors:</p>
+<p>1) costs below 100.00 which have a mark-up of 15%</p>
+<p>2) costs above 100.00 which have a mark-up of 10%</p>
+<p>
+</p><p>The calculation I use is SUM(G10*0.1,G10,H10*0.15,H10), but I would like this to be able to show a minimum charge to the client it the result in column H is less that 1.25. Only one column in any row would have a cost to be calculated.</p>
+<p>
+</p><p>Any ideas would be greatly appreciated please as I am struggling.</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bernie Deitrick" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "BD"); this.style="display: inline-block";'
+<h3> bernie deitrick  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            =MAX(1.25,C1*1.1+D1*1.15)
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>booking annual leave through outlook - Microsoft Community</title>
+<h3> samfk2000  say:</h3>
+<h2>            booking annual leave through outlook</h2>
+                    <p>Is it possible to use Outlook 2013 for booking annual leave off? I want to find a quick and easy way to streamline our work system.</p>
+<p>
+</p><p>
+</p><p><em>***Post moved by the moderator to the appropriate forum category (from <strong>
+Outlook.com | Calendars and tasks | Adding events</strong> to <strong>Office | Outlook | Other/unknown | Office 2013</strong>).***</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brian tillman &#91;outlook mvp 2007-2019&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you're using an Exchange server, then a shared calendar would be one way to do it.
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Sent&#34; folder renamed itself to &#34;MeContact&#34; - Microsoft Community</title>
+<h3> davidtoso  say:</h3>
+<h2>            &#34;Sent&#34; folder renamed itself to &#34;MeContact&#34;</h2>
+                    <p>My OS is Windows 10. I have Office 216 University. The Outlook App on my computer has a strange problem. The "sent" folder renamed itself to "MeContact". When right clicking MeContact, the rename function is disabled.</p>
+<p>
+</p><p>Also, several subfolders in my "in" box had their content erased. My web based outlook email account has the sent folder as sent, and has content in the subfolders of the in box.</p>
+<p>
+</p><p>I have run several checks for viruses and malware, nothing was detected. I went into the control panel, found office, and right clicked to repair. That did not solve the problem.</p>
+<p>
+</p><p>I attempted to use the MicroSoft Support Recovery and Assistance app, but it does not support Outlook.com (of all crazy things). The schedule a call function on the office support site goes to error 404, wait time for chat is too long. Hence this post. Any
+ ideas?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> davidtoso  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That did the trick! When setting up the new account, when the wizard went to authenticate I encountered a problem as the window kept popping up. The solution was to delete "<strong>MicrosoftAccount/</strong> from the&nbsp;<strong>MicroSoftAccount/</strong>*** Email address is removed for privacy ***
+ in the username field. And my subfolders re-populated too!
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>If you are using an outlook.com mail account, in MS Outlook, File&gt;Account Settings&gt;Email Tab&gt;New&gt;add your outlook.com mail account back-in using the auto config page.</p>
+<p>Finish the process, restart MS Outlook and allow the new account to sync, which may take a while, once done remove the previous mail account, in Account settings</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Homepage icon not available in Edge on Build 10.0.10586 - Microsoft Community</title>
+<h3> oherb40  say:</h3>
+<h2>            Homepage icon not available in Edge on Build 10.0.10586</h2>
+                    The Homepage icon is not available in Edge on Build 10.0.10586. Can anyone help?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>This issue might cause because of corrupted browser settings. I suggest you to try the methods below and check if this helps.</p>
+<p>
+</p><p><strong>Method 1:</strong></p>
+<ol>
+<li>
+<div style="color: rgba(0, 0, 0, 1)">Press <strong>Windows + X</strong> keys on the keyboard, select
+<strong>Command prompt (admin).</strong></div>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">Enter the below commands one by one and hit <strong>Enter</strong> key. These commands will check and repair if there are any corrupted Windows files&nbsp;</p>
+<p style="color: rgba(0, 0, 0, 1)"><strong><span>Dism /online /cleanup-image /restorehealth</span></strong></p>
+<p style="color: rgba(0, 0, 0, 1)"><strong><span>Sfc /scannow</span></strong></p>
+</li></ol>
+<p>
+</p><p><strong>Method 2:</strong></p>
+<p>I suggest you to create a new user account and check if the same issue occurs.</p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>1.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Go to
+<strong>Settings</strong>.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>2.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Choose
+<strong>Accounts</strong> and then select <strong>Family and other users</strong>.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>3.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Select
+<strong>add someone else on this PC</strong>.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>4.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Enter a user name and hit next.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>5.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Click on
+<strong>Finish</strong>.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>6.<span>&nbsp;&nbsp;
+</span></span></span><span style="color: rgba(51, 51, 51, 1)">Sign out from the current Account and Log into the new account.</span></p>
+<p>
+</p><p>Write us back with the status of the issue to assist you further.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=microsoft_edge_and_internet_explorer_on_insider_preview">microsoft_edge_and_internet_explorer_on_insider_preview, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Print Area in Word 2013 - Microsoft Community</title>
+<h3> nancy3243  say:</h3>
+<h2>            Print Area in Word 2013</h2>
+                    Trying to set Print Area in Word 2013 Windows 7.&nbsp; Anyone know how or has this too been changed?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hi Nancy,</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Describe what do you mean by ‘Trying to set Print Area in Word 2013 Windows 7’?</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Are you trying to set the page margins?</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>If so, let us refer to the following link ‘Set page margins’ and check if it helps:</font></font></font></p>
+<p><a href="http://office.microsoft.com/en-ca/word-help/set-page-margins-HA102850056.aspx" target="_blank" rel="noreferrer nofollow"><font>http://office.microsoft.com/en-ca/word-help/set-page-margins-HA102850056.aspx</font></a></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>If that is not the case, provide us more information to help us assist you further.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Thank you</font></font></font></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Reset Protection recovery key - Microsoft Community</title>
+<h3> giorgiberuashvili  say:</h3>
+<h2>            Reset Protection recovery key</h2>
+                    Hello<br />
+I did the Lumia 640-Reset, ask me now I do not know who's recovery key- and the phone will not turn on<br />
+what can I do?<br />
+Thanks
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=microsoft_account">microsoft_account, </a> <br>
+<a href="/search?q=600-series">600-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Help me with a Game show format&#33; - Microsoft Community</title>
+<h3> _simpleman_  say:</h3>
+<h2>            Help me with a Game show format&#33; </h2>
+                    I would like to set up a Power Point (2003) to allow me to select a specific answer as it comes up. Think like "Family Feud" or "Jeopardy". It would be a fun way to train or educate a group. I can animate just fine I just cant animate it in a random pattern.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="David Marcovitz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "DM"); this.style="display: inline-block";'
+<h3> david marcovitz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What Lucy said, and...</p>
+<p>There are loads of PowerPoint Jeopardy templates already created. Just do a search for PowerPoint Jeopardy, and you will find something already made for you. All you'll have to do is enter the content. Here are some examples from a Google search:</p>
+<p>http://www.jmu.edu/madison/teacher/jeopardy/jeopardy.htm</p>
+<p>http://www.hardin.k12.ky.us/res_techn/countyjeopardygames.htm</p>
+<p>http://teach.fcps.net/trt10/PowerPoint.htm</p>
+<p>http://www.point4teachers.com/Jeopardy%20Templates.htm</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<hr />
+-- David M. Marcovitz, Author of _Powerful PowerPoint for Educators_, http://www.PowerfulPowerPoint.com/ Microsoft PowerPoint MVP, Associate Professor, Loyola University Maryland
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Lucy Thomson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "LT"); this.style="display: inline-block";'
+<h3> lucy thomson  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi</p>
+<p>You can do this by using triggered animations. John has some great tutorials here:</p>
+<p>http://www.pptalchemy.co.uk/powerpoint_hints_and_tips_tutorials.html#triggers</p>
+<p>Lucy</p>
+<hr />
+<b>Lucy Thomson</b><br />
+PowerPoint MVP<br />
+an easier tomorrow
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Booklets &#40;Book Fold&#41; - Microsoft Community</title>
+<h3> scotms  say:</h3>
+<h2>            Booklets &#40;Book Fold&#41;</h2>
+                    I need to be able to print booklets by using a book fold layout. I have looked through several of the supposed solutions on this site.&nbsp;
+<div><br />
+</div>
+<div>First, simply telling people that booklet layout (book fold) is not built in is insulting. That's pretty obvious. The bigger question is why Microsoft made that choice - a choice that hurts people and their ability to be productive. I totally understand
+ if you do not like being told that. I've never heard Microsoft take responsibility for its choices and the negative impacts to customers.&nbsp;</div>
+<div><br />
+</div>
+<div>Here's the deal. Microsoft made life much more difficult for people who use book fold - people who paid a lot of money for the product. I now work cross platform (Mac/PC; Office 2007, 2010, 2011), and you need to know that you certainly made my job much
+ more difficult. I have been a loyal Office customer for almost two decades, and I have paid Microsoft a LOT of money over the years. Microsoft's decision to remove functionality (or simply not to include it in the Mac version) is a betrayal. Do you have any
+ idea how much more work it is to perform page layout manually? Do you seriously expect end users to do that under the guise that we can be more "creative" in Publishing Layout view? I don't need to be "creative". I need to be able to print straight forward
+ documents as booklets. It was so easy.&nbsp;</div>
+<div><br />
+</div>
+<div>Please stop telling people to use time-consuming, external, or third-party "solutions" and put the functionality back in. Book fold is available and works well in your other product versions. There should be no reason not to include it in Mac Office 2011,
+ unless, of course, you really do intend on making my (and other people's) job more difficult.&nbsp;</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Daniel G. Grau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "DG"); this.style="display: inline-block";'
+<h3> daniel g. grau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>Let me begin by clarifying that anyone posting here does so in his/her own free time, out of sheer good will. We are all regular users just like you and we are not affiliated to Microsoft, whose only role in this forum is to provide a venue for users to
+ exchange messages and to assign them stars according to the number of contributions. Rarely does anyone from Microsoft visit here and when they do, it is only on a personal basis and not in an official capacity.</div>
+<div><br />
+<div>Thus, you should use the&nbsp;<i>Help &gt; Send Feedback about Word</i>&nbsp;feature to voice your concerns. Complaining here really serves no purpose and regular contributors like me already know these deficiencies.</div>
+<div><br />
+<div>
+<blockquote>I need to be able to print booklets by using a book fold layout. I have looked through several of the supposed solutions on this site.&nbsp;</blockquote>
+<div><br />
+<div>They are supposed suggestions from fellow users… and some actually do work.</div>
+<div><br />
+<div>
+<blockquote>First, simply telling people that booklet layout (book fold) is not built in is insulting. That's pretty obvious.&nbsp;</blockquote>
+<div>
+<div><br />
+Some users have Windows experience, where the feature is available, and many think they just cannot find it in the Mac.</div>
+<div><br />
+<div>
+<div>
+<blockquote>
+<div>The bigger question is why Microsoft made that choice - a choice that hurts people and their ability to be productive.</div>
+</blockquote>
+<br />
+<div>Just like in previous versions, they have made many trimmings in Office 2011 for Mac. I'm only familiar with Word, but I can point several shortcomings relative to the Windows version: horrible Help feature, no movie features, no PDF insertion, faulty
+ hyperlinks, missing fields and their switches, truncated mail merge options, no theme customization, no lockable styles, no quick parts, no right-to-left languages, no grammar analyzers in most languages, no Ribbon customization, missing form features, no
+ Access database… After all, Macs are a smaller market and they decided to adapt Office only so much.</div>
+<div><br />
+<div>
+<div>
+<div>
+<div>
+<blockquote>
+<div>I have paid Microsoft a LOT of money over the years. Microsoft's decision to remove functionality (or simply not to include it in the Mac version) is a betrayal.&nbsp;</div>
+</blockquote>
+<div>
+<div><br />
+<div>We all have paid, we all have experienced the bugs and yet we keep coming back. Why? Because Office is the standard.</div>
+<div>
+<div><br />
+<div>
+<div>
+<div>
+<blockquote>
+<div>Please stop telling people to use time-consuming, external, or third-party "solutions" and put the functionality back in.&nbsp;</div>
+</blockquote>
+<div>
+<div><br />
+<div>As far as I can tell, booklet printing was never part of the Mac versions.</div>
+<div><br />
+<div>Unfortunately, the solutions you disregard are the only course of action the responders know. And I will add one more:</div>
+<div><br />
+<div>Some HP printers have a booklet-printing option, whereby pages are collated as they are printed, right from the Print dialog box. If you need to buy a new printer, check for that feature. If you already have an HP printer, the new set of drivers from Apple
+ might have added it.</div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Screen Clippings missing URLs in Edge and Chrome - Microsoft Community</title>
+<h3> daver_52  say:</h3>
+<h2>            Screen Clippings missing URLs in Edge and Chrome</h2>
+                    <p>The screen clipping function in OneNote 2016 works perfectly for us in Internet Explorer. We absolutely require that screen clippings taken from the internet and then inserted into OneNote are accompanied by the corresponding URL so that other members of
+ our team can easily confirm the source. </p>
+<p>
+</p><p>Unfortunately when we do screen clippings from an Edge or Chrome browser, the resulting clipping into OneNote does not include the URL. We are planning to move to Edge or Chrome very soon because our IT folks don't want to support Explorer any longer. Any
+ suggestions on how we can obtain screen clippings with corresponding URLs when we use Edge or Chrome browsers? Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bernd P." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "BP"); this.style="display: inline-block";'
+<h3> bernd p.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>This is and ever was a IE-only feature (for technical reasons I think).</p>
+<p>
+</p><p>Bernd</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

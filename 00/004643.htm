@@ -1,0 +1,2084 @@
+    <title>Amending a customised TOC in word using VBA to modify the fieldcode - Microsoft Community</title>
+<h3> loisr  say:</h3>
+<h2>            Amending a customised TOC in word using VBA to modify the fieldcode when prompted by a userform checkbox</h2>
+                    <p>Apologies for writing such a long query - my intention is to provide as much information as possible to enable you to work out what i'm trying to do. I've got to where i'm up to by trial and error, rather than real understanding of VBA - so incidentally
+ if anybody can recommend a good resource/book for VBA basics then i'd be keen to hear about it.
+</p>
+<p>My query is this:</p>
+<p>I have a template with a Table of Contents and I have a userform which contains a checkbox. I want the user of the template to be able to select/unselect a checkbox on the userform which will make the style&nbsp;Heading 3 included/unincluded in the document's
+ TOC. </p>
+<p>In principle i should be able to do this by programming the true/false checkbox status to run the code to insert a TOC with the different levels specified, however in practice this is not possible (unless people can tell me otherwise), because this option
+ seems not to provide a means for specifying the TOC style which is applied to each Heading type, resulting in the TOC styles being incorrectly applied. Moreover, i have two custom heading styles&nbsp;which i wish to include, Heading 0, and Heading Appendix. One
+ set of code i have tried is below (although the AddedStyles line returns "Compile Error: Expected:Expression")</p>
+<p>Sub NewTOC()<br />
+Set myRange = ActiveDocument.Range(Start:=0, End:=0)<br />
+ActiveDocument.TablesOfContents.Add Range:=myRange, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UseFields:=False, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UseHeadingStyles:=True, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LowerHeadingLevel:=2, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UpperHeadingLevel:=1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AddedStyles:="Heading 0, Heading Appendix"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>My next option was to try programming the true/false checkbox status to amend the following field code from:</p>
+<p>{TOC \o “<strong>2-2</strong>”\h\z\t”Heading 1, 1,Heading 0,4,Heading Appendix,5” }</p>
+<p>to</p>
+<p>{TOC \o “<strong>2-3</strong>”\h\z\t”Heading 1, 1,Heading 0,4,Heading Appendix,5” }</p>
+<p>and vice versa. I hoped to achieve this by using the macro to&nbsp;find the field code in the document, and replacing it with the othe, however when i set up the macro to Find.Text" " etc, the quotation marks within the field code got in the way. My workaround
+ was to search only for "2-2" and "2-3". This in principle enables me to have my customised TOC content and corresponding TOC styles. The code i've tried is below:
+</p>
+<p>Private Sub chkTOC3_Change()<br />
+&nbsp; 'changes TOC with 2 levels to 3 levels and vice versa<br />
+If chkTOC3 = True Then<br />
+&nbsp;&nbsp;&nbsp; ActiveDocument.ActiveWindow.View.ShowFieldCodes = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Selection.Find<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .ClearFormatting<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Text = "2-2"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Replacement.ClearFormatting<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Replacement.Text = "2-3"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Execute Replace:=wdReplaceOne, Forward:=True, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wrap:=wdFindStop<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; ActiveDocument.ActiveWindow.View.ShowFieldCodes = False<br />
+Else<br />
+&nbsp;&nbsp;&nbsp; ActiveDocument.ActiveWindow.View.ShowFieldCodes = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Selection.Find<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .ClearFormatting<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Text = "2-3"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Replacement.ClearFormatting<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Replacement.Text = "2-2"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Execute Replace:=wdReplaceOne, Forward:=True, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wrap:=wdFindStop<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; ActiveDocument.ActiveWindow.View.ShowFieldCodes = False<br />
+End If<br />
+Selection.Fields.Update<br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>The strange thing here (to me at least)&nbsp;is that it works one way: it will change from "2-2" to "2-3", but it won't change back when i recall the user form. Also, although i have made other checkboxes in the form work, i cannot work out how to make the form
+ retain the check/uncheck status via the "Userform_Initilize" procedure (code below).</p>
+<p>&nbsp;</p>
+<p>Private Sub UserForm_Initialize()<br />
+Dim i As Long<br />
+With Me<br />
+&nbsp;&nbsp;&nbsp; If ActiveDocument.Styles(wdStyleHeading1).ParagraphFormat.PageBreakBefore = True Then Me.chkHeading1.Value = True Else: Me.chkHeading1.Value = False<br />
+End With<br />
+With Me<br />
+ActiveDocument.ActiveWindow.View.ShowFieldCodes = True<br />
+If Selection.Find.Text = "2-3" = True Then Me.chkTOC3.Value = True Else: Me.chkTOC3.Value = False<br />
+ActiveDocument.ActiveWindow.View.ShowFieldCodes = False<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End Sub</p>
+<p>&nbsp;</p>
+<p>FINALLY, the other problem with this method is if there happens to be another instance of "2-2" or "2-3" in the document -&nbsp;I want to make the search ideally ONLY within the TOC field code, or within Section 2, but i couldnt' work out how to do this.
+</p>
+<p>Any suggestions/guidance would be very much appreciated. </p>
+<p>Thanks in advance, </p>
+<p>Lois</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            For your field change in section 2 the following will limit the code to TOC fields in section 2. If there are more than 1 TOC field in Section 2 it will need changing to reflect which TOC field you wish to address (though in practice it will only affect
+ a TOC field that has 2-2 or 2-3). Your original macro incidentally inserts 1-2 so the following will not affect that field.<br />
+<br />
+Private Sub chkTOC3_Change() 'see note at end of macro<br />
+Dim oFld As Field<br />
+&nbsp; 'changes TOC with 2 levels to 3 levels and vice versa<br />
+If chkTOC3 = True Then<br />
+&nbsp;&nbsp;&nbsp; For Each oFld In ActiveDocument.Sections(2).Range.Fields<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If oFld.Type = wdFieldTOC Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; oFld.Code.Text = Replace(oFld.Code.Text, "2-2", "2-3")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; oFld.Update<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next oFld<br />
+Else<br />
+&nbsp;&nbsp;&nbsp; For Each oFld In ActiveDocument.Sections(2).Range.Fields<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If oFld.Type = wdFieldTOC Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; oFld.Code.Text = Replace(oFld.Code.Text, "2-3", "2-2")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; oFld.Update<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next oFld<br />
+End If<br />
+End Sub<br />
+<br />
+will toggle 2-2 and 2-3 with the setting of the check box - however I would apply the change when you click the command button to leave the form, rather than when you click the check box.<br />
+<br />
+To initialise the check box<br />
+<br />
+Private Sub UserForm_Initialize()<br />
+Dim oFld As Field<br />
+For Each oFld In ActiveDocument.Sections(2).Range.Fields<br />
+&nbsp;&nbsp;&nbsp; If oFld.Type = wdFieldTOC Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If InStr(1, oFld.Code.Text, "2-3") &gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; chkTOC3.Value = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; chkTOC3.Value = False<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit For<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+Next oFld<br />
+End Sub<br />
+<br />
+<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Kokonutsu really small - Microsoft Community</title>
+<h3> cyranthus  say:</h3>
+<h2>            Kokonutsu really small</h2>
+                    
+<p>&nbsp;</p>
+<p>this probably just has to do with incompatibility with my phone, but im just curious.</p>
+<p>&nbsp;</p>
+<p>I have a Samsung Blackjack phone... i downloaded the Kokonutsu game.&nbsp; i had to use the non-touchscreen version for smartphones..&nbsp; i installed, the game works fine, but the size of it is really small.&nbsp; i put the game on my mom's at&amp;t 8525 touchscreen
+ phone and its full screen and works fine.&nbsp; just wondering if theres a way to maximize the size of the game on my screen, because playing sudoku is a pain when your looking at a very small screen...</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The version you have was really made for a Pocket PC device so it does not format correctly on a smartphone.
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>formulae doesn&#39;t calculate until cell is clicked - Microsoft Community</title>
+<h3> robarillo  say:</h3>
+<h2>            formulae doesn&#39;t calculate until cell is clicked</h2>
+                    I have a spreadsheet that was created by someone else.&nbsp; One set of cells refers directly to another (ie formula "=BA49") so that when the original value changes so does the destination.&nbsp; However, it will not automatically update.&nbsp; The cell remains empty
+ except for a dash until it is clicked.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jeeped" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JE"); this.style="display: inline-block";'
+<h3> jeeped  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>... it will not automatically update.&nbsp; The cell remains empty except for a dash until it is clicked.
+</blockquote>
+<br />
+<div>Check the worksheet's calculation status in <i>Formulas, Calculation, Calculation Options</i>. It should be set for
+<i>Automatic</i>&nbsp;if you expect auto-updating as you've described.<br />
+<br />
+The <i>dash</i>&nbsp;probably represents a <i>zero</i>&nbsp;through <i>Accounting</i>&nbsp;or&nbsp;<i>custom number formatting.</i></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Bing webmaster tools problems - Microsoft Community</title>
+<h3> osvaldkorad  say:</h3>
+<h2>            Bing webmaster tools problems</h2>
+                    <p>I have problems with bing webmaster tools</p>
+<p>
+</p><div>
+
+Bing services aren't available right now
+<p style="color: rgba(0, 0, 0, 1)">We're working to restore all services as soon as possible.<br />
+We know you want to get back to searching. Please check back soon.</p>
+</div>
+<div>
+<p><span>Ref A: 9AAEBF93938A4D5E9E5CB29033B3E217 Ref B: D972F8B03010F5C216F8202C43A8D7BC Ref C: Fri Mar 04 02:32:48 2016 PST</span></p>
+<p>
+</p><p>
+</p><p><span>Why is this happening, tryed changing ip and does not help.</span></p>
+</div>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Try using this link</p>
+<p><a href="http://www.bing.com/toolbox/webmaster/" target="_blank" rel="noreferrer nofollow">http://www.bing.com/toolbox/webmaster/</a></p>
+        </p>
+<a href="/search?q=bing">bing, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=bing_users_and_consumers">bing_users_and_consumers, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia 5800 Xpressmusic&#58; no songs in Media Player but in Memory - Microsoft Community</title>
+<h3> sunbleyde  say:</h3>
+<h2>            Nokia 5800 Xpressmusic&#58; no songs in Media Player but in Memory</h2>
+                    
+<p>(Nokia 5800 XpressMusic)</p>
+<p>I can't find any songs in Media Library but there are plenty in Sound Files in Memory card (transferred via cable &amp; ovi suite) and plays too. Did it happened because i updated my nokia software to 40.0.005 recently. also refreshing the Media Player doesn't
+ work, it only displays Refreshing process for a long time till the battery is out</p>
+<p>Also can't change Memory in Use of Messages to Memory Card eventhough i select the Memory Card to Phone Memory, it automatically establishes Phone Memory as it's Memory in use.</p>
+<p>&nbsp;</p>
+<p>Please can anyone help.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> fender77---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Make a folder on your memorycard called "music" , and put all your music there. Test with one or two songs first with no subfolders.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chanchan05  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Actually, the music ideally should be in a folder labelled Music, or in the Sound Files&gt;Digital folders.</p>
+<p>&nbsp;</p>
+<p>After adding songs, go to Menu&gt;Music&gt;Music Player&gt;Options&gt;Refresh Library. Music will not appear in the library until it is refreshed.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sunbleyde  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>it still didn't help.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sunbleyde  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<p>how come Refreshing the media library takes so long that it never completes refreshing.</p>
+</blockquote>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chanchan05  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Depends on how many songs do you have and their file sizes.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Audio issues with Windows 10 Pro Technical Preview Build 9926 - Microsoft Community</title>
+<h3> klaus_1823  say:</h3>
+<h2>            Audio issues with Windows 10 Pro Technical Preview Build 9926</h2>
+                    <p>I am trying to get Windows 10 Pro Technical Preview Build 9926 to play sound. I have tried to uninstall the audio drivers and I have re-enabled the Windows audio service ( for some reason when updating it shut off) And I have even Wiped the computer and
+ re-installed Windows 10 Pro Technical Preview Build 9926 and it still is not working for me.
+</p>
+<p>
+</p><p><em>Moved from Windows Other/Unknown Forums.</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>We understand you are facing some issues with Windows 10, but don't worry we will try to assist you.</p>
+<p>
+</p><p>I suggest you to install the&nbsp; audio driver in compatibility mode with older version of Windows and check if it helps.</p>
+<p>
+</p><p><strong>Make older programs compatible with this version of Windows</strong></p>
+<p><a href="http://windows.microsoft.com/en-US/windows-8/older-programs-compatible-version-windows" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-US/windows-8/older-programs-compatible-version-windows</a></p>
+<p>
+</p><p><strong>Note: </strong>This link also applies to Windows 10.</p>
+<p>
+</p><p>Hope this helps. Please get back to us if you need further help with Windows, we will be glad to assist you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davidharperwg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have tried all compatibility for all versions of windows, still says driver not digitally signed&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W &#91;MSFT&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w &#91;msft&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Which driver is it? Can you share the download link? Thanks!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davidharperwg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the help John,</p>
+<p>If I install the HD audio driver it will work but&nbsp;when laptop is restarted it reverts back to the no sound. The link you requested is attached.</p>
+<p>
+</p><p>
+</p><p>http://support.hp.com/us-en/product/HP-Pavilion-dv9900-Entertainment-Notebook-PC-series/3725216/model/3743998/drivers</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W &#91;MSFT&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w &#91;msft&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Perfect, thanks!</p>
+<p>
+</p><p>I believe you're experiencing the issue where, on reboot, Windows Update reinstalls the incorrect driver. Sorry about this, we're working on it.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davidharperwg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I found the Conexant audio driver sp38899&nbsp;on&nbsp; HP's web site and it works fine. then when doing updates windows installs the -Conexant-Audio-Conexant High definition SmartAudio 221, and no sound again.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W &#91;MSFT&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w &#91;msft&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yes, that sounds exactly like the Windows Update issue. A fix is in the works.</p>
+<p>
+</p><p>Thanks!</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>microsoft security essential - Microsoft Community</title>
+<h3> mb1062  say:</h3>
+<h2>            microsoft security essential</h2>
+                    when i try to run a virus scan on microsoft security essential it gives me error code 8007139f
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ahaap" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AH"); this.style="display: inline-block";'
+<h3> ahaap  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>What Operating System?</p>
+<p>Try uninstalling and reinstalling MSE</p>
+<p>&nbsp;</p>
+<p>Suggest you<strong><span> thoroughly</span></strong> review the following:
+</p>
+<p>&nbsp;</p>
+<p><span>Microsoft Security Essentials - Installation Checklist and Frequently Asked Questions</span></p>
+<p>&nbsp;</p>
+<p><a href="http://experts.windows.com/w/experts_wiki/89.aspx" target="_blank" rel="noreferrer nofollow"><span>http://experts.windows.com/w/experts_wiki/89.aspx</span></a></p>
+<p>&nbsp;</p>
+<p>Suggest that you run Appremover from
+<a href="http://www.appremover.com/" target="_blank" rel="noreferrer nofollow">www.appremover.com</a></p>
+<p>When running Appremover:</p>
+<p>&nbsp;</p>
+<p>First, run the Remove Security Applications scan</p>
+<p>&nbsp;</p>
+<p>Second, run the clean Up A Failed Installation scan.</p>
+<p>&nbsp;</p>
+<p>In addition, if your PC is already infected you should attempt to clean it up prior to installing MSE. The following are some tools to help you:</p>
+<p>&nbsp;</p>
+<p><span>You might also try this web site -
+<a href="http://www.bleepingcomputer.com/" target="_blank" rel="noreferrer nofollow">http://www.bleepingcomputer.com</a> - contains details for many of the common infections,
+ often immediately after they began to appear in the wild, and instructions are provided for how to remove the infections using their malware removal guides. They also have forums where you can seek help from people who specialize in malware removal.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>These are other free programs that may help:</span></p>
+<p><span>Malwarebytes Free -
+<a href="http://www.malwarebytes.org/products/malwarebytes_free" target="_blank" rel="noreferrer nofollow">http://www.malwarebytes.org/products/malwarebytes_free</a><span>&nbsp;
+</span>Please note: The final install dialog at<span>&nbsp; </span>provides a pre-checked option to install the Pro trial. To install the free version, you need to uncheck that option.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Superantispyware Free -
+<a href="http://www.superantispyware.com/downloadfile.html?productid=superantispywarefree" target="_blank" rel="noreferrer nofollow">http://www.superantispyware.com/downloadfile.html?productid=superantispywarefree</a></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>TDSSKiller (free) -
+<a href="http://support.kaspersky.com/faq/?qid=208283363" target="_blank" rel="noreferrer nofollow">http://support.kaspersky.com/faq/?qid=208283363</a></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>HitmanPro (free for 30 days) -
+<a href="http://www.surfright.nl/en/hitmanpro" target="_blank" rel="noreferrer nofollow">http://www.surfright.nl/en/hitmanpro</a></span></p>
+<p><span>&nbsp;</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stephen Boots" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stephen boots  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>when i try to run a virus scan on microsoft security essential it gives me error code 8007139f
+</blockquote>
+<p><br />
+I've never seen this error associated with MSE scanning.</p>
+<p>A quick search for the code returns some results that suggest a connectivity issue.</p>
+<p><a href="http://www.bing.com/search?q=8007139f&amp;src=IE-SearchBox&amp;FORM=IE10SR" target="_blank" rel="noreferrer nofollow">http://www.bing.com/search?q=8007139f&amp;src=IE-SearchBox&amp;FORM=IE10SR</a></p>
+<p>Is MSE up to date? Do you have the option selected to check for updates prior to scanning?</p>
+<p>-steve</p>
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t turn on Windows Updates in Task Manager - Microsoft Community</title>
+<h3> paddy mcnaney  say:</h3>
+<h2>            Can&#39;t turn on Windows Updates in Task Manager</h2>
+                    <p>I've been having alot of trouble with Update. When I go into task manager, Update's status will be 'stopped'. When I right-click and click start, within a millisecond it will go straight back to stopped. I right-clicked and clicked 'open services', found
+ it there, right-clicked and clicked start and I got this error message: '0x8007277a: The requested service provider could not be loaded or initialized.'</p>
+<p>
+</p><p>Any help would be greatly appreciated.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JulianClayton" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JU"); this.style="display: inline-block";'
+<h3> julianclayton  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Windows updates are done through 'Settings'.&nbsp; Go to 'All Settings' then 'Update and Security' then 'Windows Updates'.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word documents error with autosave - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Word documents error with autosave</h2>
+                    <p>When working on Word documents this message frequently pops up:</p>
+<p>You cannot save the file whilst it is in use by another process. Try saving the file with a new name.</p>
+<p>
+</p><p>And then:</p>
+<p>
+</p><p>Word is unable to save the AutoRecover file in the location you have specified. Make sure that you have specified a valid location for AutoRecover files in Preferences, and that you have permission to write files to the location you specified.</p>
+<p>
+</p><p>I have resaved countless files under new names to no avail and have&nbsp;quit word, restarted both the app and my computer. My word is up to date and I have space on my computer to save documents.&nbsp;</p>
+<p>
+</p><p>Do you know what could be causing this to happen?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Tim Liu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "TL"); this.style="display: inline-block";'
+<h3> tim liu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Inds12,</p>
+<p>&nbsp;</p>
+<p>15.35 is the insider slow version of Office suite. It’s for users who want to test new features and not stable as the released version. We suggest you use the released version 15.34. If the issue persists with 15.34, we can continue to troubleshoot the issue
+ further. To install the released version, you may firstly <a href="https://support.office.com/en-us/article/Uninstall-Office-2016-for-Mac-eefa1199-5b58-43af-8a3d-b73dc1a8cae3" target="_blank" rel="noreferrer nofollow">
+remove Office suite</a>, and then install 15.34 version with the installer in <a href="https://support.office.com/en-us/article/Update-history-for-Office-2016-for-Mac-700cab62-0d67-4f23-947b-3686cb1a8eb7?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">
+this page</a>.</p>
+<p>&nbsp;</p>
+<p>If you choose to use insider version, we suggest you post a new thread in <strong>
+Office&gt;Office Insider&gt;Mac&gt;Word</strong> category for professional support. This is the specific channel that handles insider version of Office related issues and questions.
+</p>
+<p>&nbsp;</p>
+<p>Thanks for your understanding.</p>
+<p>&nbsp;</p>
+<p>Tim</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>why does typing look dimmer when add to a document using word 2013 - Microsoft Community</title>
+<h3> wd5iat  say:</h3>
+<h2>            why does typing look dimmer when add to a document  using word 2013</h2>
+                    <p>I have a Church list of names and need to edit it every week. &nbsp;when I added a name this time to list, the fonts were dimmer than the other writing. &nbsp;What did I do wrong?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>To help, click somewhere in each type of text (new and old) and press Shift+F1. Check the box on the bottom of the reveal formatting pane that opens to reveal Style source.</p>
+<p>
+</p><p>This will give you much of the information you need. It may be not just a different font but also a different Style. If so, apply the same Style to the new text and see what happens.
+<a href="http://www.addbalance.com/usersguide/styles.htm" target="_blank" rel="noreferrer nofollow">Understanding Styles in Microsoft Word</a>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia E52 asks to go online - Microsoft Community</title>
+<h3> seventhsense---01  say:</h3>
+<h2>            Nokia E52 asks to go online</h2>
+                    
+<p>My nokiae52 with 071.004 firmware. Even with no applications running in the background or active applications the phone keeps periodically (hourly, i guess) asking to go online and asks me to choose an access point on the home screen. Please suggest something
+ to resolve.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gentleman---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Check your email settings. It might be configured to check your mailbox at regular intervals.</p>
+<p>It my also be configured to synchronize with Ovi (contacts, calendar, etc.) at regular intervals.</p>
+<p>If you are still not able to find the culprit, as a last resort do a full backup (with Ovi Suite), do a hard reset and restore everything from the backup except the settings (otherwise your problem might be "restored" as well).</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seventhsense---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have no configured email &amp; mailbox. I have already disabled all the Ove Sync services. The plead remains...<br />
+please help fast<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Macro to change paragraph spacing - Microsoft Community</title>
+<h3> hienle  say:</h3>
+<h2>            Macro to change paragraph spacing</h2>
+                    Hello everyone,&nbsp;
+<div>I just took the MOS WORD 2010 expert, and I met a question I'm just wondering, so I really need to solve this question.&nbsp;</div>
+<div>The question is: "create a macro to change after spacing to 6 pt" and then apply the macro for all style heading 1"</div>
+<div><br />
+</div>
+<div>So , here are my steps to do this question:</div>
+<div>_ Selected any text&nbsp;</div>
+<div>_ Start to record a macro: I was just using "Paragraph dialog box" to change after spacing to 6pt&nbsp;</div>
+<div>_ Use navigate pane to choose each heading 1 and then run macro.</div>
+<div>So, is this true or false?</div>
+<div>Because when I came back home, I did it again, but I just see that, although I just change "after spacing" into 6 pt but the macro recorded all things in the "paragraph dialog box" such as: left, right indent, line spacing, before spacing.., then when
+ I applied this macro to each heading 1, it changed all things, not just "after spacing".&nbsp;</div>
+<div>So how can I record this macro without changing anything except "after spacing" into 6 pt??&nbsp;</div>
+<div>&nbsp;Thank you so much</div>
+<div><br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The macro recorder is not a perfect tool. It is incapable of doing many things that you can do in the vba editor, and it also adds a lot of stuff that is unnecessary. You can delete the stuff you don't need using the VBA editor and end up with something
+ like<br />
+<br />
+With ActiveDocument.Styles("Heading 1").ParagraphFormat<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .SpaceAfter = 6<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+<br />
+Notwithstanding that this was not the question asked, the better way to do this would be simply to modify the paragraph style and you don't need a macro for that.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hienle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you so much for your answer, but it is a question in MOS Word expert test and it asked to use Macro, and I don't know how to answer it correctly. So can you show me the way to do it just with Macro recorder not VBA?
+<div>Thanks in advance&nbsp;</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The macro recorder creates VBA code, albeit, not very efficient code as Graham points out and there are some things that it cannot do.</p>
+<p>&nbsp;</p>
+<p>Looking at your statement of the question:</p>
+<p>&nbsp;</p>
+<p>"create a macro to change after spacing to 6 pt" and then apply the macro for all style heading 1"</p>
+<p>&nbsp;</p>
+<p>I do not see anything that says that it must be done using only the macro recorder.</p>
+<p>&nbsp;</p>
+<p>Graham has given you the VBA code for such a macro.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hienle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, it just what I can remember, not exactly what the question asked. However, I think you're true. I don't remember that it asked to use just only macro recorder, so I think that after I use macro recorder, I can use VBA to edit the macro :D. Thank you
+ so much.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 2010 Win 7 NOT updating - Microsoft Community</title>
+<h3> johnbespoke  say:</h3>
+<h2>            Office 2010 Win 7 NOT updating</h2>
+                    <p>1/ I require ALL updates for Office 2010 subsequent to SP2</p>
+<p>
+</p><p>2/ I have TWO pc's with Win 7 Home Premium (64-bit) and IDENTICAL MS Office Pro. Plus (32-bit) installations, both are (allegedly) fully updated(?).</p>
+<p>
+</p><p>I make the following observations - </p>
+<p>
+</p><p><strong>Pc#1</strong> Control Panel (Category)/System &amp; Security/Windows Update page states on the bottom line: -</p>
+<p>"You receive updates: - For Windows and other products from Microsoft." </p>
+<p>and if I go to Control Panel (Category)/Uninstall programs/View Installed Updates; -
+</p>
+<p>Under MS Pro Plus 2010; I find 77 updates listed - some of which were subsequent to SP2&nbsp;</p>
+<p>
+</p><p><strong>Pc#2</strong> Control Panel (Category)/System &amp; Security/Windows Update page states on the bottom line: -</p>
+<p>"You receive updates: - For Windows only."</p>
+<p>and if I go to Control Panel (Category)/Uninstall programs/View Installed Updates; -
+</p>
+<p>Under MS Pro Plus 2010; I find just ONE update which is Service Pack 2 </p>
+<p>
+</p><p>If I click "Get updates for other MS products" the link obtained does NOT achieve the updates required.</p>
+<p>
+</p><p>I cannot put it plainer than that - it is blatantly obvious that MS Off 2010 is NOT receiving updates on pc#2..</p>
+<p>
+</p><p>I have commenced a similar thread elsewhere but that would seem to have ceased, thank you.</p>
+<p>
+</p><p>Thank you.</p>
+<p>John</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> johnbespoke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>A solution to this problem was achieved by downloading and installing Microsoft Silverlight.</p>
+<p>
+</p><p>The length of time WASTED by ineffective "help-links" was ridiculous - heaven only knows why Silverlight enabled a solution, but it is extremely erroneous of the Windows Update system and both Microsoft and Windows personnel to claim that a system is "fully
+ updated" when it is quite apparent to the experienced user that such is NOT the case.
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>macros - Microsoft Community</title>
+<h3> karen anderson &#40;kanderson&#41;  say:</h3>
+<h2>            macros</h2>
+                    How do I enable macros?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Probably by changing Trust Center settings.</p>
+<p>
+</p><p>Have a look at this article.</p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/Enable-or-disable-macros-in-Office-files-12b036fd-d140-4e74-b45e-16fed1a7e5c6" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Enable-or-disable-macros-in-Office-files-12b036fd-d140-4e74-b45e-16fed1a7e5c6</a></p>
+<p>
+</p><p>
+</p><p>Gord</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I am not getting emails in my inbox&#33; - Microsoft Community</title>
+<h3> annemariez  say:</h3>
+<h2>            I am not getting emails in my inbox&#33;</h2>
+                    Yesterday morning, I stopped getting new emails in my Outlook inbox.&nbsp; I have tried sending test messages from other email accounts but they do not appear in my inbox or any folder, including my junk folder.&nbsp; I can send emails from this account and access
+ my inbox...but no new emails have been going in for over a day.&nbsp; I have&nbsp; not changed any of my email settings recently either.&nbsp; Help please!&nbsp;
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seano_79  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am having exactly the same problem - it is incredibly frustrating. If anyone can help I would be very grateful!!
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> haydengreen  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Same here! I am not receiving emails all day, then the emails come in about the same time after several long hours. Something is definitely not right here. I hope Microsoft will address this issue ASAP!</p>
+<p>
+</p><p>I also tried sending myself an email, it too doesn't get delivered until several hours later.</p>
+<p>
+</p><p>Extremely frustrating here! :(</p>
+<p>
+</p><p>
+</p><p>
+</p><p>Best regards,</p>
+<p>HG</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> annemariez  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Since a few others are having a similar problem, it sounds like it's a server issue (although I keep checking and they say there are no known Outlook issues.)&nbsp; Let's hope they get it fixed soon.&nbsp; I feel both of your pain!&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jhr1959  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I can't forward any emails from my SENT folder. I can't reply to emails. And now I am not getting any new emails into my INBOX. Is there a problem with the server? &nbsp;The status report says there is no problem but I am not able to use Outlook.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evablackwood  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am not getting nor can I send emails. Please help
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evanscott er  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have not received any new Outlook emails since about midnight on Feb. 25, 2014.&nbsp;Today, Feb. 26, I have tried sending myself emails from my other address and nothing has come to the inbox.&nbsp; Hey, this is my main account.&nbsp; My job depends on this account.&nbsp;
+ Microsoft, please read these and fix this.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> annemariez  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi - well, my Outlook inbox just downloaded 116 emails from the past few days.&nbsp; Still no idea what caused the issue but looks like it's fixed (for now).&nbsp;&nbsp; Hope all of your issues get worked out soon too!&nbsp; It's been a stressful few days trying to figure
+ out how to get this fixed and what to do if it couldn't get fixed...
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evanscott er  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Shortly before noon CST, today Feb. 27, my inbox was suddenly caught up with an influx of emails. I am glad it was fixed, but it was easier to tell you guys in this chat format, than to actually get to Outlook tech support and tell Microsoft about the problem.
+ I never did get to an Outlook tech person. But, it's solved for now, yet I remain very cautious now about Outlook's reliability.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hiddenprivate  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am still not getting any emails from outside of OUTLOOK.&nbsp; The worst part is that I am paying for the year of service, and have no idea if it will work, if it does... whether it will stop again, and have no way to reach out to tech support. There is no
+ option for OUTLOOK.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> annemariez  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You are right about that!&nbsp; I actually spent about 1/2 hour on Chat with a Microsoft Office Help Desk employee yesterday, and the woman finally told me I should post my question on here to see if anyone would respond.&nbsp; Great tech support network they have.&nbsp;
+ But at least it's fixed for both of us!&nbsp; Take care!
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Download PDF invoice&#58; &#34;Error Resource not available&#34;. - Microsoft Community</title>
+<h3> margrietthomson  say:</h3>
+<h2>            Download PDF invoice&#58; &#34;Error Resource not available&#34;.</h2>
+                    <p>When trying to download my invoice I receive this message.</p>
+<p>
+</p><p>I would appreciate &nbsp;simple way of obtaining my simple invoice!!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi,</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span>Before we proceed, I would require more information to assist you better.</span></p>
+<p>
+</p><p><span><span>1. From which source are you trying to download the invoice?</span></span></p>
+<p><span><span>2. What is the web browser are you using?</span></span></p>
+<p><span><span>3. Are you trying to download the invoice which is related to Office 365 subscription or any of the Microsoft product?</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span>Please get back to us with necessary information, we’ll be glad to assist you&nbsp;further.
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> margrietthomson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Answers to your questions:</p>
+<p>
+</p><p>1. From the laptop on which the software is installed.</p>
+<p>2. Chrome</p>
+<p>3. Yes that is correct</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi,</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>You may change the browser to Internet Explorer and see if it helps.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span><span>If the issue still persist, you may contact
+</span>Commerce Support as the query is related to Office 365 Subscription invoice
+<span>from the following link for better results.</span><br />
+</span></span><a href="http://commerce.microsoft.com/help" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://commerce.microsoft.com/help</span></a><span>
+</span></p>
+<p>
+</p><p><span>In the help page, under&nbsp;<strong>Getting Help&nbsp;</strong>click on<strong>&nbsp;Contact Support.</strong>&nbsp;Select a&nbsp;</span><strong><span>Product</span></strong><span>,&nbsp;</span><strong><span>Problem</span></strong><span>&nbsp;</span><strong><span>type</span></strong><span>&nbsp;and&nbsp;</span><strong><span>Category</span></strong><span>.&nbsp;
+ Then either click on<strong>&nbsp;Call Me</strong>&nbsp;or&nbsp;<strong>Start chat&nbsp;</strong>for more help on this issue.</span></p>
+<p>
+</p><p><span>If you have further questions related to this, please let us know.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> margrietthomson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>OK, tried Windows Explorer and now get this message:</p>
+<p>'</p>
+"Error
+<p>The browser is currently set to block cookies. Please configure the browser to allow cookies before retrying."</p>
+<p>
+</p><p>I've checked and cookies are already allowed on this browser.</p>
+<p>
+</p><p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> richarxd wiles  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>1.&nbsp; Trying to download from an Email that Microsoft sent me regarding my subscription to Office 365</p>
+<p>
+</p><p>2.&nbsp; I think the web browser is Firefox</p>
+<p>
+</p><p>3.&nbsp; Yes</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>windows phone 8.1 vpn pptp - Microsoft Community</title>
+<h3> sinasina  say:</h3>
+<h2>            windows phone 8.1 vpn pptp</h2>
+                    <p>Hello</p>
+<p>why I can't create a pptp vpn connection in my windows phone 8.1?</p>
+<p>what should I do?</p>
+<p>please guide me</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Sinasina,</p>
+<p><br />
+Thank you for posting in the forum.</p>
+<p>I understand that you are not able to set up pptp VPN settings on your Windows Phone 8.1. Please check this thread with similar subject:</p>
+<p>
+</p><p><a href="http://answers.microsoft.com/en-us/winphone/forum/wp8-wpnetwork/when-will-windows-phone-support-vpn-pptp-ipsec/d7ee4a78-efa3-44ee-9354-a935efd7cd43">http://answers.microsoft.com/en-us/winphone/forum/wp8-wpnetwork/when-will-windows-phone-support-vpn-pptp-ipsec/d7ee4a78-efa3-44ee-9354-a935efd7cd43</a>
+</p>
+<p>
+</p><p>More information regarding that issue you can find here:</p>
+<p>
+</p><p><a href="http://www.windowsphone.com/en-IE/how-to/wp8/basics/windows-phone-8-update-history" target="_blank" rel="noreferrer nofollow">http://www.windowsphone.com/en-IE/how-to/wp8/basics/windows-phone-8-update-history</a>
+</p>
+<p>
+</p><p>Just double check what OS version do you have and check what options for setting up VPN are available for you.
+</p>
+<p><br />
+Thanks for your contribution to the forums!<br />
+Kind Regards,</p>
+<p>Michal TR</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>office 2010 installation error on windows 7. &#34;The installation of - Microsoft Community</title>
+<h3> anil200231  say:</h3>
+<h2>            office 2010 installation error on windows 7. &#34;The installation of this package failed&#34;</h2>
+                    when i install office professional plus 2010 on windows 7 64 bit then an error comes "The installation of this package failed". I tried both the version of office 2010 64 bit &amp; 32bit and i download the trial office package from microsoft website. please
+ give me solution.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="G.J. Oomens" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "GO"); this.style="display: inline-block";'
+<h3> g.j. oomens  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>On Fri, 10 Sep 2010 18:50:01 +0000, anil200231 wrote:</p>
+<blockquote>
+<p>when i install office professional plus 2010 on windows 7 64 bit then an error comes "The installation of this package failed". I tried both the version of office 2010 64 bit &amp; 32bit and i download the trial office package from microsoft website. please
+ give me solution.</p>
+</blockquote>
+<p>Did you uninstall all previous versions of Office and Office related<br />
+applications?<br />
+Otherwise you could perform a clean boot and try to install the Office<br />
+suite once more. If necessary run the set-up as administrator. Right<br />
+click the setup and choose run as administrator..<br />
+For a clean boot see:<br />
+<a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/929135</a></p>
+<hr />
+Gérard
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Using the fileDialog File Picker with Access 2007 Runtime&#59; - Microsoft Community</title>
+<h3> engrattny  say:</h3>
+<h2>            Using the fileDialog File Picker with Access 2007 Runtime&#59;   FilePicker &#59; Acc2007 Runtime references</h2>
+                    
+<p>I am transporting an application from Acc2000 to 2007, and planning on distributions of the application using the Acc2007 Runtime.</p>
+<p>Inside that application, I want to use the fileDialog's File Picker.&nbsp; I notice that its use requires the MS Office Object 12 library, [I note that the help file suggests the '11'].</p>
+<p>I can not determine if that library is part of the runtime package, or if it is a package making up part of my Office Installation.&nbsp; Obviously, if my users don't have the right references [and/or the correct installed programs] they wouldn't be able to use
+ my runtime application as I intend.</p>
+<p>So, First....when I set a reference, am I correct in assuming that the reference is not compiled into the VBA I write, rather, there is hook to an expected outside resource?</p>
+<p>Second, in any case, how can I find out which/what references are actually provided as part of the Acc2007 Runtime distribution and installed on a user's machine?</p>
+<p>Thanks.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tom van Stiphout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "TV"); this.style="display: inline-block";'
+<h3> tom van stiphout  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>On Sun, 23 May 2010 17:05:11 +0000, engrattny wrote:</div>
+<div>&nbsp;</div>
+<div>Welcome to DLL ____. Indeed you cannot depend on Office12 to be</div>
+<div>installed. You would be better off restricting the use of such</div>
+<div>references as well as custom controls as much as possible. Here is an</div>
+<div>alternative for the File/Open dialog, which depends on the Windows API</div>
+<div>only (a pretty sure bet that it will be available :-) ):</div>
+<div>http://www.mvps.org/access/api/api0001.htm</div>
+<div>&nbsp;</div>
+<div>-Tom.</div>
+<div>Microsoft Access MVP</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div>&nbsp;</div>
+<div>&gt;</div>
+<div>&gt;</div>
+<div>&gt;I am transporting an application from Acc2000 to 2007, and planning on distributions of the application using the Acc2007 Runtime.</div>
+<div>&gt;</div>
+<div>&gt;Inside that application, I want to use the fileDialog's File Picker. I notice that its use requires the MS Office Object 12 library, [I note that the help file suggests the '11'].</div>
+<div>&gt;</div>
+<div>&gt;I can not determine if that library is part of the runtime package, or if it is a package making up part of my Office Installation. Obviously, if my users don't have the right references [and/or the correct installed programs] they wouldn't be able to
+ use my runtime application as I intend.</div>
+<div>&gt;</div>
+<div>&gt;So, First....when I set a reference, am I correct in assuming that the reference is not compiled into the VBA I write, rather, there is hook to an expected outside resource?</div>
+<div>&gt;</div>
+<div>&gt;Second, in any case, how can I find out which/what references are actually provided as part of the Acc2007 Runtime distribution and installed on a user's machine?</div>
+<div>&gt;</div>
+<div>&gt;Thanks. </div>
+<div>&nbsp;</div>
+<hr />
+-Tom. Microsoft Access MVP
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Sascha Trowitzsch" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "ST"); this.style="display: inline-block";'
+<h3> sascha trowitzsch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>The needed <em>office library</em> is also installed with the<strong>Runtime 2007</strong> -- no issues here.</div>
+<div>If it were not then one couldn't use customized ribbon as they require a reference to the<em>office library</em> as well for their callbacks. ;-)</div>
+<div>&nbsp;</div>
+<div>Sascha</div>
+<blockquote>
+<div>"engrattny" schrieb im Newsbeitrag 
+news:b7e67482-6b76-4f5d-8dc6-293229b5ffc2...</div>
+<p>I am transporting an application from Acc2000 to 2007, and planning on distributions of the application using the Acc2007 Runtime.</p>
+<p>Inside that application, I want to use the fileDialog's File Picker.&nbsp; I notice that its use requires the MS Office Object 12 library, [I note that the help file suggests the '11'].</p>
+<p>I can not determine if that library is part of the runtime package, or if it is a package making up part of my Office Installation.&nbsp; Obviously, if my users don't have the right references [and/or the correct installed programs] they wouldn't be able to use
+ my runtime application as I intend.</p>
+<p>So, First....when I set a reference, am I correct in assuming that the reference is not compiled into the VBA I write, rather, there is hook to an expected outside resource?</p>
+<p>Second, in any case, how can I find out which/what references are actually provided as part of the Acc2007 Runtime distribution and installed on a user's machine?</p>
+<p>Thanks.</p>
+</blockquote>
+<hr />
+Sascha Trowitzsch
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="saberman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SA"); this.style="display: inline-block";'
+<h3> saberman  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The fileDialog is available even if only the runtime package is installed.&nbsp; What is not available is the typelib which is what you need the MS Office Object 12 library for.</p>
+<p>You can use the following construct to get around this problem:</p>
+<p>#If False Then ' Set to True during development<br />
+&nbsp;&nbsp;&nbsp; Private fdlg As FileDialog<br />
+#Else<br />
+&nbsp;&nbsp;&nbsp; Private fdlg As Object<br />
+&nbsp;&nbsp;&nbsp; Private Const msoFileDialogFilePicker = 3<br />
+&nbsp;&nbsp;&nbsp; Private Const msoFileDialogFolderPicker = 4<br />
+#End If</p>
+<p>During development with a full version of Office installed include the reference to the MS Office Object 12 library and change the #if to #if True.&nbsp; That will allow you to use intellisense and the defined constants.&nbsp; When you are ready to build for release
+ change the #if to #if False and remove the reference to the MS Office Object 12 Libray.&nbsp; Make sure you have all of the constants you are using defined in the #Else section.&nbsp; The code will compile clean and the compiled code will run with just the Runtime package
+ installed.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Sascha Trowitzsch" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "ST"); this.style="display: inline-block";'
+<h3> sascha trowitzsch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<p>What is not available is the typelib which is what you need the MS Office Object 12 library for.</p>
+</blockquote>
+<p>??</p>
+<p>The typelib resides in mso.dll which is installed by ART2007 setup. So the reference is there.</p>
+<p>Why then use conditional compilation?</p>
+<p>Sascha</p>
+<hr />
+Sascha Trowitzsch
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="saberman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SA"); this.style="display: inline-block";'
+<h3> saberman  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>The typelib resides in mso.dll which is installed by ART2007 setup. So the reference is there.<br />
+</blockquote>
+You are correct.&nbsp; I am used to developing systems that have options to use Office Automation if the products are installed and therefore use late binding for anything that is not in the default list of references for the development environment I am working
+ in.&nbsp; It is not necessary in this case.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Acces to Forms data created in a Teams conversation&#63; - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Acces to Forms data created in a Teams conversation&#63;</h2>
+                    <p>Hi!</p>
+<p>In teams, using the Forms bot, I have created a simple inline poll:</p>
+<p>@Forms Do you want to be part of this workshop? Yes, No</p>
+<p>It works well, counting and displaying answers inline in the conversation, but where are the results stored? I want to be able to find who answered yes, but I don't find any linked Excel file or equivalent.</p>
+<p>Thanks,</p>
+<p>Guillaume.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p><em>[Moved from: Office / More Office apps / Windows 10 / Unknown/other]</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Carlos Huang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> carlos huang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Guillaume,</p>
+<p>&nbsp;</p>
+<p>May I know if you means the Forms tab in Teams? If so, you should be able to get the details in the tab. For your reference:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/d91904c9-8dab-4466-8cfd-34deccf23ebb?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/d91904c9-8dab-4466-8cfd-34deccf23ebb?upload=true" /></a><br />
+</p>
+<p>&nbsp;</p>
+<p>If you added a existing form to Teams, you need to go to Forms online to view the response. You can go to portal and click Forms to get it.
+</p>
+<p>&nbsp;</p>
+<p>And if you are not in this situation, could you please describe the detailed scenario and provide some screenshots to us?
+</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Carlos&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>my HTC windows phone 8s has crashed and now won&#39;t turn on - Microsoft Community</title>
+<h3> tracymcafee  say:</h3>
+<h2>            my HTC windows phone 8s has crashed and now won&#39;t turn on</h2>
+                    i just went to check my phone for messages, clicked on the button on top to unlock it and it froze, i tried turning it off then on and now it won't turn back on.. it had a full battery.. its only 3 days old!&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi TracyMcAfee,
+<div>
+<p>&nbsp;</p>
+<p>Thank you for posting in the forum!</p>
+<p>&nbsp;</p>
+<div>Simply press and hold the power button for approximately 10-12 seconds. This should cause your phone to reboot.
+<div><br />
+If not, hold down the power button and volume down button for 10-12 seconds.</div>
+<div>&nbsp;</div>
+<div>
+<p>Hope this helps!</p>
+<p>&nbsp;</p>
+<p>Kind Regards,</p>
+<p>&nbsp;</p>
+<p>Anastassia</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello MicahBimson</p>
+<p>
+</p><p>Leave your phone connected to the charger for a while, then try ho press and hold power button to turn on or off.</p>
+<p>
+</p><p>If that will help I would try to remove some apps to free more memory and see if that will help.</p>
+<p>
+</p><p>Also you can try Hard reset to reinstall system to your phone from the scratch:</p>
+<p><a href="http://www.windowsphone.com/en-GB/how-to/wp8/basics/reset-my-phone" target="_blank" rel="noreferrer nofollow">http://www.windowsphone.com/en-GB/how-to/wp8/basics/reset-my-phone</a></p>
+<p><a href="http://www.windowsphone.com/en-GB/how-to/wp8/basics/back-up-my-stuff" target="_blank" rel="noreferrer nofollow">http://www.windowsphone.com/en-GB/how-to/wp8/basics/back-up-my-stuff</a></p>
+<p>
+</p><p>If issue is more serious, repair center or carrier would be the best option.</p>
+<p>
+</p><p>Regards,</p>
+<p>Maria</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>The HTML5 VIDEO Element fails to work in IE9 - Microsoft Community</title>
+<h3> davejb  say:</h3>
+<h2>            The HTML5 VIDEO Element fails to work in IE9</h2>
+                    I have put together several simple HTML5 pages, in which I have included the VIDEO element. &nbsp;For IE9 I configure this element with an MP4 file source. &nbsp;And to see how other files compare in rendering, I include other VIDEO elements for a WEBM file, and
+ an OGV file - testing the page not only in IE9 but also in Chrome, Safari, Firefox and Opera.
+<div><br />
+</div>
+<div>The result of this when I check the HTML5 page<b> <u>locally on my PC</u></b> in these browsers is the following.</div>
+<div><br />
+</div>
+<div>IE9 shows the MP4 and WEBM file movies normally.</div>
+<div>Chrome shows ALL the video file type movies normally</div>
+<div>Safari show only the MP4 file movie</div>
+<div>Firefox shows the OGV and WEBM file movies</div>
+<div>Opera shows only the OGV file</div>
+<div><br />
+</div>
+<div>When I try and view the same HTML5 page<b><u> on my Website server</u></b> I have the following result.</div>
+<div><br />
+</div>
+<div>IE9 NO movie files show</div>
+<div>Chrome All movies file types show normally</div>
+<div>Safari NO movie files show</div>
+<div>Firefox NO movie files show</div>
+<div>Opera the OGV file shows normally</div>
+<div><br />
+</div>
+<div>This comparison indicates that when I view the HTML5 page<u><b> locally on my PC the correct results happen</b></u> - that is according to the file types that work with the respective browsers.</div>
+<div><br />
+</div>
+<div>When I try and access the HTML5 page from a Webserver <b><u>in a normal Webpage environment, there is a distinct loss of normality</u></b>.</div>
+<div><br />
+</div>
+<div>Because there is a distinct lack of normality in NOT just the IE9 browser, but also in Firefox and Safari, do you think this indicates there is a fault with my Protection Software settings or with the server settings used by my Web Hosting Company?</div>
+<div><br />
+</div>
+<div>Or, is there a specific way of configuring IE9 locally, to accept video from HTML5 pages from the Web?</div>
+<div><br />
+</div>
+<div>I run the Windows 7 Pro 32bit OS. &nbsp;I have Microsoft Security Essentials installed and Malwarebytes (configured to work side by side) for protection.</div>
+<div><br />
+</div>
+<div>I use CuteFTP Pro 8 and Easily Limited as my Hosting company.</div>
+<div><br />
+</div>
+<div>My grateful thanks for any help with this and cheerio for now, DaveJB.</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="DaveJB" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davejb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Robert</p>
+<p>I think I have found a solution.&nbsp; I know my computer is configured with the correct MIME Types for all the needed video format because I did this as one of my first attempts to crack this problem.</p>
+<p>Anyhow, this being so I knew it must be my server that was not working with correct MIME Types.&nbsp; I therefore searched for a configuration process to acheive this and it is quite simple</p>
+<p>&nbsp;</p>
+<p>Create a .htaccess file with the needed information of MIME Types,&nbsp;and place it in the folder on your server containing the files in question (my video files).</p>
+<p>&nbsp;</p>
+<p>The contents of the .htaccess file (in my case) needed to be as follows</p>
+<p>&nbsp;</p>
+<p># Video</p>
+<p>AddType video/mp4 .mp4</p>
+<p>AddType video/webm .webm</p>
+<p>AddType video/ogv .ogv</p>
+<p>AddType video/ogg .ogg</p>
+<p>&nbsp;</p>
+<p>Of course there are miriads of other file types, which can be included in similar ways, some not as simply written as these.</p>
+<p>&nbsp;</p>
+<p>I saved the .htaccess file as an All Files format&nbsp;file&nbsp;in NOTEPAD, named of course .htaccess,&nbsp;and uploaded it the VIDEO folder of my trial Website.</p>
+<p>I opened IE9 with my trial page showing, and there were the videos! It Worked!</p>
+<p>Thank you for your given direction.&nbsp; By my&nbsp;using Fiddler 2 you made clear to me just what the issue was and hence now the solution, because I knew what I had to solve.</p>
+<p>Thank you so&nbsp;much, cheerio my friend, DaveJB.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Gantt Chart circular reference - Microsoft Community</title>
+<h3> nehakamble1  say:</h3>
+<h2>            Gantt Chart circular reference</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>I was working on my Gantt chart with 4 project each having multiple subtasks. I had given it link to different tasks throughout. A day later when I opened my file, I had a circular reference which I don't know about and clicked ok. As it opened my file,
+ my timeline was messed up (the subtasks got mixed with each other) I really needed those dates. how do I recover that file? I asked my IT department to recover the file but it still gives me the same error and I am unable to sort the timeline, please help.&nbsp;</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> john - project  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>NehaKamble1,</p>
+<p>Sorry, I don't quite understand your statement, "... I didn't have the options of link". Are you saying the Advanced tab of the Inserted Project Information window didn't display the "Link to Project" option? If that's the case, then perhaps I mistakenly
+ assumed you had a dynamic master when in fact you may have a static master.</p>
+<p>
+</p><p>If you look at the task IDs at master level, are all the numbers consecutive with no repeats (assuming the file is totally expanded and not sorted or filtered)? If so, then indeed you have a static master (i.e. a snapshot in time of each of the inserted
+ subprojects).</p>
+<p>
+</p><p>What exactly are the steps you use to create your master?</p>
+<p>
+</p><p>For your reference, you should never link to summary lines. If you did, then indeed that is most likely the source of your circular references, as I mentioned in my first response. You might want to take a look at the following Wiki article: https://social.technet.microsoft.com/wiki/contents/articles/29569.ms-project-linking-andor-assigning-resources-to-summary-tasks.aspx</p>
+<p>
+</p><p>So, do you still have an issue? Do you still have a question?</p>
+<p>John</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I export all my contacts from the Bookings App &#40;Microsoft - Microsoft Community</title>
+<h3> luistrujillo1  say:</h3>
+<h2>            How do I export all my contacts from the Bookings App &#40;Microsoft Office&#41;</h2>
+                    <p>Please let me know.&nbsp;</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Huni Shen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "HS"); this.style="display: inline-block";'
+<h3> huni shen msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi LuisTrujillo1,</p>
+<p>&nbsp;</p>
+<p>Based on my tests and research, it is infeasible to export customers from online Booking app. You can only import contacts into Booking app. While I totally understand your concern to have this feature included. It is convenience for us if we can export
+ contacts from Booking app. I suggest you submit your ideas via the following link:</p>
+<p><a href="https://outlook.uservoice.com/forums/314907-microsoft-bookings" target="_blank" rel="noreferrer nofollow">https://outlook.uservoice.com/forums/314907-microsoft-bookings</a></p>
+<p>&nbsp;</p>
+<p>Many features of current programs have been designed and upgraded based on customers’ feedback.</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Huni</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>whitelisting websites - Microsoft Community</title>
+<h3> craig_777  say:</h3>
+<h2>            whitelisting websites</h2>
+                    How do it get websites which delivers flash content approved by Microsoft, whitelisted?
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="David. F" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "DF"); this.style="display: inline-block";'
+<h3> david. f  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The administrators of the website will need to submit it for consideration.
+<div><br />
+<div>If you are refering to your site, see this article:</div>
+<div><a href="http://msdn.microsoft.com/en-us/library/ie/jj193557.aspx" target="_blank" rel="noreferrer nofollow">http://msdn.microsoft.com/en-us/library/ie/jj193557.aspx</a></div>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_10">internet_explorer_10, </a> <br>
+<a href="/search?q=windows_8">windows_8, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

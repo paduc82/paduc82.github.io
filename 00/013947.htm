@@ -1,0 +1,2373 @@
+    <title>Access 2016 - Question about Forms - Microsoft Community</title>
+<h3> melissav_748  say:</h3>
+<h2>            Access 2016 - Question about Forms</h2>
+                    <p>I maintain a database that is primarily used for data entry. &nbsp;There are 250 customers in the database and all of them are assigned a unique Customer ID. &nbsp; There are two forms - Home Page and Data Entry. &nbsp;Each form has a corresponding table and are joined
+ on the Customer ID. &nbsp;I currently have a problem - when the users need to use the Data Entry form, they must enter the Customer ID before entering information because if they don't, their data entry won't be linked to the Customer ID. &nbsp;They have to re-enter
+ the Customer ID every time they create a new record using that form. &nbsp;</p>
+<p>
+</p><p>Here is what I want - when the Customer ID is selected on the Home Page and the user selects Data Entry, the information entered on Data Entry will be automatically linked to the Customer ID that was selected on the Home Page. &nbsp;I want the Customer IDs to
+ be updated with the new information without having to re-enter the number over and over again. &nbsp;Is there any way to do this? &nbsp;And if there is, is there a way to do it without knowing VBA? The person who built the database said it's not possible but he's far
+ from being an expert. &nbsp;</p>
+<p>
+</p><p>Hopefully this makes sense; I can provide more information if needed.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scott McDaniel" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SM"); this.style="display: inline-block";'
+<h3> scott mcdaniel  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You can have the Data Entry form refer back to the Home Page to get the value. You could do this on the Load event of the DataEntry form:</p>
+<p>
+</p><p>Me.CustomerID= Forms("Home Page").CustomerID</p>
+<p>
+</p><p>If they're adding multiple records, you could use the Data Entry form's Before Insert event to write the CustomerID value in the same way. Note the BeforeInsert event occurs when the user types the first character in a New Record. It is NOT triggered if
+ you use code to create a new record, or to enter data in a new record.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You might like to take a look at FormsDemo.zip in my public databases folder at:<br />
+<br />
+<a href="https://onedrive.live.com/?cid=44CC60D7FEA42912&amp;id=44CC60D7FEA42912!169" target="_blank" rel="noreferrer nofollow">https://onedrive.live.com/?cid=44CC60D7FEA42912&amp;id=44CC60D7FEA42912!169</a><br />
+<br />
+Note that if you are using an earlier version of Access you might find that the colour of some form objects such as buttons shows incorrectly and you will need to&nbsp; amend the form design accordingly. &nbsp;<br />
+<br />
+If you have difficulty opening the link copy its text (NB, not the link location) and paste it into your browser's address bar.<br />
+<br />
+This little demo file illustrates three ways to insert data into related tables via forms.&nbsp; One uses subforms on separate pages of a tab control, the other two use separate 'linked' forms like yours.&nbsp; In one case the 'linked' form is opened in dialogue mode,
+ in the other case in synchronized mode.&nbsp; In your case the former is probably more appropriate.<br />
+<br />
+When the related form is opened it is filtered to the current ClientID by means of the WhereCondition argument of the OpenForm method.&nbsp; The current ClientID value is also passed to the related form as the OpenArgs argument of the OpenForm method, e.g.<br />
+<br />
+&nbsp;&nbsp;&nbsp; Const FORMNAME = "frmEvents_2"<br />
+&nbsp;&nbsp;&nbsp; Const MESSAGETEXT = "No current client record."<br />
+&nbsp;&nbsp;&nbsp; Dim strCriteria As String<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; strCriteria = "ClientID = " &amp; Me.ClientID<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; ' be sure a record has been entered<br />
+&nbsp;&nbsp;&nbsp; If Not IsNull(Me.ClientID) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' save current client record<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.Dirty = False<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' open linked form in dialogue mode<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoCmd.OpenForm FORMNAME, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WhereCondition:=strCriteria, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WindowMode:=acDialog, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpenArgs:=(Me.ClientID)<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox MESSAGETEXT, vbExclamation, "Invalid Operation"<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+<br />
+If you wanted the related form to be opened empty for the insertion of new records only then, rather than filtering it by means of the WhereCondtion argument it would be opened at an empty new record by means of the DataMode argument:<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoCmd.OpenForm FORMNAME, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DataMode:=acFormAdd, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WindowMode:=acDialog, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OpenArgs:=(Me.ClientID)<br />
+<br />
+In the related form the value of the ClientID passed to the form is assigned to the form's cboClient combo box's DefaultValue property in the form's Open event procedure.&nbsp; Note that this property is always a string expression, regardless of the data type of
+ the column in question, so should be wrapped in literal quotes characters as below:<br />
+<br />
+&nbsp;&nbsp;&nbsp; If Not IsNull(Me.OpenArgs) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.Event.SetFocus<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Me.cboClient.DefaultValue = """" &amp; Me.OpenArgs &amp; """"<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>It would help to understand the structure of your database. it sounds like the Home page has information about the customer and the Data entry is to add records for a specific customer. If that's the case then a mainform/subform may be better that 2 separate
+ forms. </p>
+<p>
+</p><p>As noted, you can open the data entry form with a default value for the CustomerID. Or you can open a form filtered for that customer.
+</p>
+<p>
+</p><p>It all depends on what the database is modeling. </p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>hi - Microsoft Community</title>
+<h3> freemanedem  say:</h3>
+<h2>            hi</h2>
+                    <strong>please i can't activate my HTC windows 8x. Anytime i try activating it the demand for the activation code of which i have no idea about
+</strong>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=other_windows_mobile_devices">other_windows_mobile_devices, </a> <br>
+<a href="/search?q=microsoft_account">microsoft_account, </a> <br>
+<a href="/search?q=windows_phone_8">windows_phone_8, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to change the folder order in folder view in Outlook 2010 - Microsoft Community</title>
+<h3> burger2go  say:</h3>
+<h2>            How to change the folder order in folder view in Outlook 2010</h2>
+                    <p>Hi All...</p>
+<p>&nbsp;</p>
+<p>have just changed from Outlook 2003 to Outlook 2010.&nbsp; In&nbsp;the folder view (which I always use)&nbsp; The folders used to be somewhat alphabetically arraged with Calendar, Contacts. Deleted, Drafts,&nbsp;all appearing Befor the Inbox.&nbsp; Now everything comes after inbox,
+ which when expanded is a very long list.</p>
+<p>&nbsp;</p>
+<p>To get to these other things before was eay.. they were at the top. now, it means scrolling way down each time, and its a pain.
+</p>
+<p>&nbsp;</p>
+<p>Is there anyway to rearrange the "built" folder to sort alphabetically as they did in Outlook 2003 and prior?
+</p>
+<p>&nbsp;</p>
+<p>Thnak yoiuin advance for any help you can offer. </p>
+<p>&nbsp;</p>
+<p>Cheers!</p>
+<p>Burger2go</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No, you can't change the sort order. Outlook 2010 put the common mail&nbsp;folders at the top of the folder list so they are easier to find.
+</p>
+<p>&nbsp;</p>
+<p>As an FYI, Outlook 2013 does allow you to arrange the folders in any order in the Folder list.
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>outlook data file cannot be configured - Microsoft Community</title>
+<h3> cassie_ad  say:</h3>
+<h2>            outlook data file cannot be configured</h2>
+                    <p>Outlook Data file error message:</p>
+<p>
+</p><p>Your Outlook data file cannot be configured. &nbsp;ost file needs to be recreated but when I go to the control panel and type Mail, nothing is found. &nbsp;Do I need to reinstall Outlook before trying to recreate the ost file ?</p>
+<p>
+</p><p>Outlook version 2016 on Exchange.</p>
+<p>
+</p><p>Thanks for your help.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Outlook will recreate the ost file when it is restarted, you cant create it. 
+<br />
+<br />If the mail applet is not in control panel, what version/build of office are you using? The newer OEM builds dont put the applet in the control panel - you need to use the File, Account Setting menu to Manage Profiles. If Outlook wont open, type or paste this command into the Run command: outlook.exe /manageprofiles       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Transparent picture background printing issues - Microsoft Community</title>
+<h3> gabe dodds  say:</h3>
+<h2>            Transparent picture background printing issues</h2>
+                    <p>I recently switched from an older version of publisher (2007 I believe) to 2013.&nbsp;</p>
+<p>
+</p><p>Certain files that I had included a transparent image. On the screen and in print preview, the transparent background blends in with the rest of the background. However when I print, there is a distinct difference in color and the "box" behind the image
+ which is transparent is noticeably darker than the rest of the background.</p>
+<p>
+</p><p>I have tried changing the transparency, tint, color, and anything else I can think of and it still remains darker than the surroundings. Is there something I am missing?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> gabe dodds  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Ok, it appears there was one thing I didn't try that seems to have worked. I had to go into the Color tab under Printer Properties and change the selection from "Automatic" to "No Color Matching."</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Using match function for multiple rows and columns - Microsoft Community</title>
+<h3> patrick retelle  say:</h3>
+<h2>            Using match function for multiple rows and columns</h2>
+                    I have the following table as a sample:<br />
+<br />
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; D&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; E&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; F&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; G<br />
+1&nbsp;&nbsp; Copper90&nbsp;&nbsp;&nbsp; Copper75&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Copper90&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 85<br />
+2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 95 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 110 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;&nbsp; 105<br />
+3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 90&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 87 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100 &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 97 <br />
+4&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 80&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 78 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 90 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 88<br />
+<br />
+I hope to have a formula in G1 that will take the value in E1 and look for which column contains that value in row 1 range (A1:B1). Then, I thought the match function with match type -1 look for the smallest value in that column (?2:?4) that is = or &gt; than
+ value in F1.&nbsp; Finally, I would like to offset the matching cell by 2 columns to the right and copy and paste this value. In this example G1 = 100. If E1 was Copper75, G1 would be 97. I have tried several formulas with index, lookup, match functions, but have
+ been unsuccessful.&nbsp; I can reconfigure the table if it makes the result I am looking for possible. Any advice would be greatly appreciated.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> haseeb a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Patrick, try this...<br />
+<br />
+=INDEX(A2:D4,MATCH(F1,INDEX(A2:B4,0,MATCH(E1,A1:B1,0)),-1),MATCH(E1,A1:B1,0)+2)<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=office_2010">office_2010, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>upgrading to the release version of win 10 - Microsoft Community</title>
+<h3> bigblubber  say:</h3>
+<h2>            upgrading to the release version of win 10</h2>
+                    <p>I am running win 10 in a virtual machine in virtualbox. The host system is win 8.1 I want to remain in the insider program when win 10 is released</p>
+<p>How will I achieve this on the host system.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> bigblubber  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for responding. I already upgraded my 8.1 system and signed into the insider program so no problems. I just wasn't sure if the insider program would retain my profile on a new upgrade.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Word has Encountered a Problem - Error - PLEASE HELP - Microsoft Community</title>
+<h3> carinamckenzie  say:</h3>
+<h2>            Microsoft Word has Encountered a Problem - Error - PLEASE HELP</h2>
+                    <p>Every time I open a word document I don't even get a chance to create/amend or save doc as this error comes up - 'Please send error to microsoft' and get kicked out the application. &nbsp;I paid for Mac version and been using this for over a year and don't understand
+ why suddenly I am unable to use this software.</p>
+<p>
+</p><p>Please help me troubleshoot this, I can't uninstall and reinstall as no longer have my product key to do this - please help!</p>
+<p>
+</p><p>Please see full content below for info:</p>
+<p>Microsoft Error Reporting log version: 2.0<br />
+<br />
+Error Signature:<br />
+Exception: EXC_BAD_ACCESS<br />
+Date/Time: 2018-06-03 08:38:31 +0000<br />
+Application Name: Microsoft Word<br />
+Application Bundle ID: com.microsoft.Word<br />
+Application Signature: MSWD<br />
+Application Version: 14.7.1.161129<br />
+Crashed Module Name: Microsoft Word<br />
+Crashed Module Version: 14.7.1.161129<br />
+Crashed Module Offset: 0x00278d83<br />
+Blame Module Name: Microsoft Word<br />
+Blame Module Version: 14.7.1.161129<br />
+Blame Module Offset: 0x00278d83<br />
+Application LCID: 1033<br />
+Extra app info: Reg=en Loc=0x0409<br />
+Crashed thread: 0<br />
+<br />
+<br />
+Thread 0 crashed:<br />
+<br />
+# &nbsp;1 &nbsp;0x0034bd83 in __mh_execute_header + 0x00278D83 (Microsoft Word + 0x00278d83)<br />
+# &nbsp;2 &nbsp;0x002e1d05 in __mh_execute_header + 0x0020ED05 (Microsoft Word + 0x0020ed05)<br />
+# &nbsp;3 &nbsp;0x002dc025 in __mh_execute_header + 0x00209025 (Microsoft Word + 0x00209025)<br />
+# &nbsp;4 &nbsp;0x002dbea8 in __mh_execute_header + 0x00208EA8 (Microsoft Word + 0x00208ea8)<br />
+# &nbsp;5 &nbsp;0x002dbe2e in __mh_execute_header + 0x00208E2E (Microsoft Word + 0x00208e2e)<br />
+# &nbsp;6 &nbsp;0x02b6b9c3 in _MsoFDocSumGetBool + 0x0000038E (MicrosoftOffice + 0x000599c3)<br />
+# &nbsp;7 &nbsp;0x02b6e93a in _MsoFCreateNewGenericContainer + 0x00000326 (MicrosoftOffice + 0x0005c93a)<br />
+# &nbsp;8 &nbsp;0x023a42fb in MHILayoutSubView::~MHILayoutSubView() + 0x00001A01 (MicrosoftComponentPlugin + 0x000202fb)<br />
+# &nbsp;9 &nbsp;0x023a4178 in MHILayoutSubView::~MHILayoutSubView() + 0x0000187E (MicrosoftComponentPlugin + 0x00020178)<br />
+# 10 &nbsp;0x023a3be3 in MHILayoutSubView::~MHILayoutSubView() + 0x000012E9 (MicrosoftComponentPlugin + 0x0001fbe3)<br />
+# 11 &nbsp;0x023b40b5 in _McpCreateControlContainer + 0x00000773 (MicrosoftComponentPlugin + 0x000300b5)<br />
+# 12 &nbsp;0x023c6681 in MWindow::HandleActivated(OpaqueEventHandlerCallRef*, OpaqueEventRef*, void*) + 0x0000409D (MicrosoftComponentPlugin + 0x00042681)<br />
+# 13 &nbsp;0x023c63ec in MWindow::HandleActivated(OpaqueEventHandlerCallRef*, OpaqueEventRef*, void*) + 0x00003E08 (MicrosoftComponentPlugin + 0x000423ec)<br />
+# 14 &nbsp;0x023c6325 in MWindow::HandleActivated(OpaqueEventHandlerCallRef*, OpaqueEventRef*, void*) + 0x00003D41 (MicrosoftComponentPlugin + 0x00042325)<br />
+# 15 &nbsp;0x02b737b3 in _MsoUdtypesUserDefType + 0x00000051 (MicrosoftOffice + 0x000617b3)<br />
+# 16 &nbsp;0x00344506 in __mh_execute_header + 0x00271506 (Microsoft Word + 0x00271506)<br />
+# 17 &nbsp;0x00384633 in __mh_execute_header + 0x002B1633 (Microsoft Word + 0x002b1633)<br />
+# 18 &nbsp;0x0037aba7 in __mh_execute_header + 0x002A7BA7 (Microsoft Word + 0x002a7ba7)<br />
+# 19 &nbsp;0x00379c5e in __mh_execute_header + 0x002A6C5E (Microsoft Word + 0x002a6c5e)<br />
+# 20 &nbsp;0x0224d2cd in _MbuSeriouslyEnableTimers + 0x00000162 (mbukernel + 0x000052cd)<br />
+# 21 &nbsp;0x930c2a91 in _IdleTimerVector + 0x0000003A (HIToolbox + 0x001a1a91)<br />
+# 22 &nbsp;0x93954873 in ___CFRUNLOOP_IS_CALLING_OUT_TO_A_TIMER_CALLBACK_FUNCTION__ + 0x00000013 (CoreFoundation + 0x00087873)<br />
+# 23 &nbsp;0x939543e8 in ___CFRunLoopDoTimer + 0x000004C8 (CoreFoundation + 0x000873e8)<br />
+# 24 &nbsp;0x93953e5b in ___CFRunLoopDoTimers + 0x0000018B (CoreFoundation + 0x00086e5b)<br />
+# 25 &nbsp;0x9394ba9b in ___CFRunLoopRun + 0x00000C8B (CoreFoundation + 0x0007ea9b)<br />
+# 26 &nbsp;0x9394aae1 in _CFRunLoopRunSpecific + 0x00000281 (CoreFoundation + 0x0007dae1)<br />
+# 27 &nbsp;0x9394a84a in _CFRunLoopRunInMode + 0x0000007A (CoreFoundation + 0x0007d84a)<br />
+# 28 &nbsp;0x92f4a42b in _RunCurrentEventLoopInMode + 0x00000141 (HIToolbox + 0x0002942b)<br />
+# 29 &nbsp;0x92f4a152 in _ReceiveNextEventCommon + 0x00000309 (HIToolbox + 0x00029152)<br />
+# 30 &nbsp;0x930c65e6 in _ReceiveNextEvent + 0x00000044 (HIToolbox + 0x001a55e6)<br />
+# 31 &nbsp;0x023c92cc in _McpRunApplicationEventLoop + 0x00000094 (MicrosoftComponentPlugin + 0x000452cc)<br />
+# 32 &nbsp;0x000d5f51 in __mh_execute_header + 0x00002F51 (Microsoft Word + 0x00002f51)<br />
+# 33 &nbsp;0x04e62dc5 in __WlmMain + 0x00000061 (WLMKernel + 0x00003dc5)<br />
+# 34 &nbsp;0x000d52c5 in __mh_execute_header + 0x000022C5 (Microsoft Word + 0x000022c5)<br />
+# 35 &nbsp;0x000d5276 in __mh_execute_header + 0x00002276 (Microsoft Word + 0x00002276)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0xfffffffb &nbsp;ebx: 0xbff29c0c &nbsp;ecx: 0x023bac5c &nbsp;edx:0xffffffff<br />
+&nbsp;edi: 0x01fa7ef8 &nbsp;esi: 0xffffffff &nbsp;ebp: 0xbff29bb8 &nbsp;esp:0xbff29b90<br />
+&nbsp; ss: 0x00000023 &nbsp;eip: 0x0034bd83 &nbsp; cs: 0x0000001b &nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023 &nbsp; fs: 0x00000000 &nbsp; gs: 0x0000000f &nbsp;eflags:0x00010297<br />
+<br />
+<br />
+Thread 1:<br />
+<br />
+# &nbsp;1 &nbsp;0xa77026ee in ___workq_kernreturn + 0x0000000A (libsystem_kernel.dylib + 0x0001d6ee)<br />
+# &nbsp;2 &nbsp;0xa782fa6a in _start_wqthread + 0x00000022 (libsystem_pthread.dylib + 0x00002a6a)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00100170 &nbsp;ebx: 0x00000000 &nbsp;ecx: 0xb08c0f6c &nbsp;edx:0xa77026ee<br />
+&nbsp;edi: 0xa782fa9e &nbsp;esi: 0xb08c1000 &nbsp;ebp: 0xb08c0fc8 &nbsp;esp:0xb08c0f6c<br />
+&nbsp; ss: 0x00000023 &nbsp;eip: 0xa77026ee &nbsp; cs: 0x0000000b &nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023 &nbsp; fs: 0x00000023 &nbsp; gs: 0x0000000f &nbsp;eflags:0x00000246<br />
+<br />
+<br />
+Thread 2:<br />
+<br />
+# &nbsp;1 &nbsp;0xa7702126 in ___semwait_signal + 0x0000000A (libsystem_kernel.dylib + 0x0001d126)<br />
+# &nbsp;2 &nbsp;0xa766ec51 in _sleep$UNIX2003 + 0x00000029 (libsystem_c.dylib + 0x00077c51)<br />
+# &nbsp;3 &nbsp;0x02899992 in _MerpCreateSession + 0x00000B3F (merp + 0x00003992)<br />
+# &nbsp;4 &nbsp;0x0289905e in _MerpCreateSession + 0x0000020B (merp + 0x0000305e)<br />
+# &nbsp;5 &nbsp;0x02898fe9 in _MerpCreateSession + 0x00000196 (merp + 0x00002fe9)<br />
+# &nbsp;6 &nbsp;0x0289a586 in _MerpCreateSession + 0x00001733 (merp + 0x00004586)<br />
+# &nbsp;7 &nbsp;0xa783050d in __pthread_body + 0x0000015B (libsystem_pthread.dylib + 0x0000350d)<br />
+# &nbsp;8 &nbsp;0xa78303b2 in __pthread_body + 0x00000000 (libsystem_pthread.dylib + 0x000033b2)<br />
+# &nbsp;9 &nbsp;0xa782fa8e in _thread_start + 0x00000022 (libsystem_pthread.dylib + 0x00002a8e)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x0000014e &nbsp;ebx: 0xb0942ac0 &nbsp;ecx: 0xb0942a5c &nbsp;edx:0xa7702126<br />
+&nbsp;edi: 0xa766ed48 &nbsp;esi: 0x00000000 &nbsp;ebp: 0xb0942aa8 &nbsp;esp:0xb0942a5c<br />
+&nbsp; ss: 0x00000023 &nbsp;eip: 0xa7702126 &nbsp; cs: 0x0000000b &nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023 &nbsp; fs: 0x00000023 &nbsp; gs: 0x0000000f &nbsp;eflags:0x00000202<br />
+<br />
+<br />
+Thread 3:<br />
+<br />
+# &nbsp;1 &nbsp;0xa77026ee in ___workq_kernreturn + 0x0000000A (libsystem_kernel.dylib + 0x0001d6ee)<br />
+# &nbsp;2 &nbsp;0xa782fa6a in _start_wqthread + 0x00000022 (libsystem_pthread.dylib + 0x00002a6a)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00100170 &nbsp;ebx: 0x00000001 &nbsp;ecx: 0xb0ac873c &nbsp;edx:0xa77026ee<br />
+&nbsp;edi: 0x00000000 &nbsp;esi: 0x00000000 &nbsp;ebp: 0xb0ac8798 &nbsp;esp:0xb0ac873c<br />
+&nbsp; ss: 0x00000023 &nbsp;eip: 0xa77026ee &nbsp; cs: 0x0000000b &nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023 &nbsp; fs: 0x00000023 &nbsp; gs: 0x0000000f &nbsp;eflags:0x00000246<br />
+<br />
+<br />
+Loaded modules:<br />
+<br />
+0: Microsoft Word (14.7.1.161129 Reg=en Loc=0x0409: /Applications/Microsoft Office 2011/Microsoft Word.app/Contents/MacOS/Microsoft Word<br />
+1: mbukernel (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/mbukernel.framework/Versions/14/mbukernel<br />
+2: MicrosoftDDCS (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftDDCS.framework/Versions/14/MicrosoftDDCS<br />
+3: MicrosoftSetupUI (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftSetupUI.framework/Versions/14/MicrosoftSetupUI<br />
+4: MicrosoftComponentPlugin (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftComponentPlugin.framework/Versions/14/MicrosoftComponentPlugin<br />
+5: Netlib (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/Netlib.framework/Versions/14/Netlib<br />
+6: MicrosoftOLE (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftOLE.framework/Versions/14/MicrosoftOLE<br />
+7: MicrosoftOLEAutomation (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftOLEAutomation.framework/Versions/14/MicrosoftOLEAutomation<br />
+8: merp (2.2.4.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/merp.framework/Versions/14/merp<br />
+9: MSXML (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MSXML.framework/Versions/14/MSXML<br />
+10: MicrosoftOffice (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftOffice.framework/Versions/14/MicrosoftOffice<br />
+11: OfficeArt (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/OfficeArt.framework/Versions/14/OfficeArt<br />
+12: MicrosoftOleo (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftOleo.framework/Versions/14/MicrosoftOleo<br />
+13: MicrosoftMathFont (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftMathFont.framework/Versions/14/MicrosoftMathFont<br />
+14: MicrosoftChartPlugin (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftChartPlugin.framework/Versions/14/MicrosoftChartPlugin<br />
+15: MicrosoftPTLS (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftPTLS.framework/Versions/14/MicrosoftPTLS<br />
+16: MsgrLibClient (8.0.0.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MsgrLibClient.framework/Versions/14/MsgrLibClient<br />
+17: MBURibbon (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MBURibbon.framework/Versions/14/MBURibbon<br />
+18: MViewLib (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MViewLib.framework/Versions/14/MViewLib<br />
+19: WLMUser (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WLMUser.framework/Versions/14/WLMUser<br />
+20: WLMGraphicsDevice (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WLMGraphicsDevice.framework/Versions/14/WLMGraphicsDevice<br />
+21: WLMKernel (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WLMKernel.framework/Versions/14/WLMKernel<br />
+22: Gfx (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/Gfx.framework/Versions/14/Gfx<br />
+23: SmartArt (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/SmartArt.framework/Versions/14/SmartArt<br />
+24: MicrosoftCloudServices (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftCloudServices.framework/Versions/14/MicrosoftCloudServices<br />
+25: mbustrings (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/mbustrings.framework/Versions/14/mbustrings<br />
+26: mbulocale (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/mbulocale.framework/Versions/14/mbulocale<br />
+27: wlmstrings (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/wlmstrings.framework/Versions/14/wlmstrings<br />
+28: CocoaUI (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/CocoaUI.framework/Versions/14/CocoaUI<br />
+29: MicrosoftOfficeDRM (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftOfficeDRM.framework/Versions/14/MicrosoftOfficeDRM<br />
+30: ThreadPool (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/ThreadPool.framework/Versions/14/ThreadPool<br />
+31: MicrosoftMenuLibrary (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftMenuLibrary.framework/Versions/14/MicrosoftMenuLibrary<br />
+32: StdUrlMoniker (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/StdUrlMoniker.framework/Versions/14/StdUrlMoniker<br />
+33: Uniscribe (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/Uniscribe.framework/Versions/14/Uniscribe<br />
+34: mbuinstrument (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/mbuinstrument.framework/Versions/14/mbuinstrument<br />
+35: WinCrypto (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WinCrypto.framework/Versions/14/WinCrypto<br />
+36: mbupgx.dylib: /Applications/Microsoft Office 2011/Office/MicrosoftSetupUI.framework/Libraries/mbupgx.dylib<br />
+37: molc (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/molc.framework/Versions/14/molc<br />
+38: mbunamedstrings (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/mbunamedstrings.framework/Versions/14/mbunamedstrings<br />
+39: CocoaTooltipParser (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/CocoaTooltipParser.framework/Versions/14/CocoaTooltipParser<br />
+40: DocEx (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/DocEx.framework/Versions/14/DocEx<br />
+41: WinHttp (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WinHttp.framework/Versions/14/WinHttp<br />
+42: MicrosoftCredui (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftCredui.framework/Versions/14/MicrosoftCredui<br />
+43: WinAPIUI (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/WinAPIUI.framework/Versions/14/WinAPIUI<br />
+44: MicrosoftCSI (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftCSI.framework/Versions/14/MicrosoftCSI<br />
+45: MetEx (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MetEx.framework/Versions/14/MetEx<br />
+46: MicrosoftFBA (14.7.1.161129 Reg=(null) Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftFBA.framework/Versions/14/MicrosoftFBA<br />
+47: XPG (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/XPG.framework/Versions/14/XPG<br />
+48: MicrosoftFS (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftFS.framework/Versions/14/MicrosoftFS<br />
+49: MicrosoftWlmFile (14.7.1.161129 Reg=en-US Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftWlmFile.framework/Versions/14/MicrosoftWlmFile<br />
+50: MicrosoftWebServices (14.7.1.161129 Reg=en-US Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftWebServices.framework/Versions/14/MicrosoftWebServices<br />
+51: Oimg (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/Oimg.framework/Versions/14/Oimg<br />
+52: AppleIntelBDWGraphicsGLDriver (10.3.0 Reg=English Loc=0x0000: /System/Library/Extensions/AppleIntelBDWGraphicsGLDriver.bundle/Contents/MacOS/AppleIntelBDWGraphicsGLDriver<br />
+53: libTraditionalChineseConverter.dylib: /System/Library/CoreServices/Encodings/libTraditionalChineseConverter.dylib<br />
+54: libSimplifiedChineseConverter.dylib: /System/Library/CoreServices/Encodings/libSimplifiedChineseConverter.dylib<br />
+55: RawCamera (1017.2.2 Reg=English Loc=0x0000: /System/Library/CoreServices/RawCamera.bundle/Contents/MacOS/RawCamera<br />
+56: Speller (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/Shared Applications/Proofing Tools/English Speller.proofingtool/Contents/MacOS/Speller<br />
+57: MicrosoftProofing (14.7.1.161129 Reg=en Loc=0x0000: /Applications/Microsoft Office 2011/Office/MicrosoftProofing.framework/Versions/14/MicrosoftProofing<br />
+58: EnglishGrammar (14.7.1.161129 Reg=English Loc=0x0000: /Applications/Microsoft Office 2011/Office/Shared Applications/Proofing Tools/EnglishGrammar.proofingtool/Contents/MacOS/EnglishGrammar<br />
+59: AGL (AGL-3.3.1 Reg=English Loc=0x0000: /System/Library/Frameworks/AGL.framework/Versions/A/AGL<br />
+60: AVFoundation (1530.2 Reg=English Loc=0x0000: /System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation<br />
+61: AVFAudio ( Reg=en Loc=0x0000: /System/Library/Frameworks/AVFoundation.framework/Versions/A/Frameworks/AVFAudio.framework/Versions/A/AVFAudio<br />
+62: Accelerate (Accelerate 1.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate<br />
+63: libCGInterfaces.dylib: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/Libraries/libCGInterfaces.dylib<br />
+64: vImage ( Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/vImage<br />
+65: libBLAS.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib<br />
+66: libBNNS.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBNNS.dylib<br />
+67: libLAPACK.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib<br />
+68: libLinearAlgebra.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLinearAlgebra.dylib<br />
+69: libSparseBLAS.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libSparseBLAS.dylib<br />
+70: libvDSP.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib<br />
+71: libvMisc.dylib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvMisc.dylib<br />
+72: vecLib (vecLib 3.11 Reg=English Loc=0x0000: /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/vecLib<br />
+73: AddressBook (1808.6 Reg=English Loc=0x0000: /System/Library/Frameworks/AddressBook.framework/Versions/A/AddressBook<br />
+74: AppKit (1561.20.106 Reg=English Loc=0x0000: /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit<br />
+75: ApplicationServices (50 Reg=English Loc=0x0000: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices<br />
+76: ATS: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/ATS<br />
+77: ATSHI.dylib: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/ATSHI.dylib<br />
+78: libFontParser.dylib: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libFontParser.dylib<br />
+79: libFontRegistry.dylib: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libFontRegistry.dylib<br />
+80: libTrueTypeScaler.dylib: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libTrueTypeScaler.dylib<br />
+81: libType1Scaler.dylib: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libType1Scaler.dylib<br />
+82: ColorSyncLegacy (1 Reg=en Loc=0x0000: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ColorSyncLegacy.framework/Versions/A/ColorSyncLegacy<br />
+83: HIServices: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/HIServices<br />
+84: LangAnalysis (1.7.0 Reg=English Loc=0x0000: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/LangAnalysis.framework/Versions/A/LangAnalysis<br />
+85: PrintCore (503 Reg=English Loc=0x0000: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/PrintCore.framework/Versions/A/PrintCore<br />
+86: QD: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/QD.framework/Versions/A/QD<br />
+87: SpeechSynthesis (7.4.1 Reg=English Loc=0x0000: /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/SpeechSynthesis.framework/Versions/A/SpeechSynthesis<br />
+88: AudioToolbox (1.14 Reg=English Loc=0x0000: /System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox<br />
+89: AudioUnit (1.14 Reg=English Loc=0x0000: /System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit<br />
+90: CFNetwork (893.13.1 Reg=English Loc=0x0000: /System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork<br />
+91: Carbon (158 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Carbon<br />
+92: CarbonSound (4.2 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/CarbonSound.framework/Versions/A/CarbonSound<br />
+93: CommonPanels (98 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/CommonPanels.framework/Versions/A/CommonPanels<br />
+94: HIToolbox: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox<br />
+95: HTMLRendering (1.1.4 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HTMLRendering.framework/Versions/A/HTMLRendering<br />
+96: Help (64 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Help.framework/Versions/A/Help<br />
+97: ImageCapture (9.0 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/ImageCapture.framework/Versions/A/ImageCapture<br />
+98: Ink (220 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Ink.framework/Versions/A/Ink<br />
+99: NavigationServices (227 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/NavigationServices.framework/Versions/A/NavigationServices<br />
+100: OpenScripting: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/OpenScripting.framework/Versions/A/OpenScripting<br />
+101: Print (267 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Print.framework/Versions/A/Print<br />
+102: SecurityHI (55006 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/SecurityHI.framework/Versions/A/SecurityHI<br />
+103: SpeechRecognition (6.0.3 Reg=English Loc=0x0000: /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/SpeechRecognition.framework/Versions/A/SpeechRecognition<br />
+104: Cocoa (22 Reg=English Loc=0x0000: /System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa<br />
+105: ColorSync (546 Reg=English Loc=0x0000: /System/Library/Frameworks/ColorSync.framework/Versions/A/ColorSync<br />
+106: CoreAudio (4.3.0 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio<br />
+107: CoreBluetooth (1 Reg=en Loc=0x0000: /System/Library/Frameworks/CoreBluetooth.framework/Versions/A/CoreBluetooth<br />
+108: CoreData (849.2 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreData.framework/Versions/A/CoreData<br />
+109: CoreDisplay (81.7 Reg=en Loc=0x0000: /System/Library/Frameworks/CoreDisplay.framework/Versions/A/CoreDisplay<br />
+110: CoreFoundation (1451 Reg=en_US Loc=0x0000: /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation<br />
+111: CoreGraphics (1129.5 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics<br />
+112: CoreImage (579.2.9 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreImage.framework/Versions/A/CoreImage<br />
+113: CoreMedia (2270.12.1 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia<br />
+114: CoreMediaIO (4993 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreMediaIO.framework/Versions/A/CoreMediaIO<br />
+115: CoreServices (822.19 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices<br />
+116: AE (735.1 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/AE.framework/Versions/A/AE<br />
+117: CarbonCore (1178.2 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/CarbonCore<br />
+118: DictionaryServices (284 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/DictionaryServices.framework/Versions/A/DictionaryServices<br />
+119: FSEvents (1239 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/FSEvents<br />
+120: LaunchServices (822.19 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/LaunchServices<br />
+121: Metadata (1191.2.6 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Metadata<br />
+122: OSServices (822.19 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/OSServices.framework/Versions/A/OSServices<br />
+123: SearchKit (1.4.0 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/SearchKit.framework/Versions/A/SearchKit<br />
+124: SharedFileList (71.4 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/SharedFileList.framework/Versions/A/SharedFileList<br />
+125: CoreText: /System/Library/Frameworks/CoreText.framework/Versions/A/CoreText<br />
+126: CoreVideo (279.2 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo<br />
+127: CoreWLAN (1339 Reg=English Loc=0x0000: /System/Library/Frameworks/CoreWLAN.framework/Versions/A/CoreWLAN<br />
+128: DirectoryService (207 Reg=English Loc=0x0000: /System/Library/Frameworks/DirectoryService.framework/Versions/A/DirectoryService<br />
+129: DiscRecording (9030.4.5 Reg=English Loc=0x0000: /System/Library/Frameworks/DiscRecording.framework/Versions/A/DiscRecording<br />
+130: DiskArbitration (2.7 Reg=English Loc=0x0000: /System/Library/Frameworks/DiskArbitration.framework/Versions/A/DiskArbitration<br />
+131: Foundation (1451 Reg=en_US Loc=0x0000: /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation<br />
+132: GSS (2.0 Reg=English Loc=0x0000: /System/Library/Frameworks/GSS.framework/Versions/A/GSS<br />
+133: IOBluetooth (6.0.2f2 Reg=English Loc=0x0000: /System/Library/Frameworks/IOBluetooth.framework/Versions/A/IOBluetooth<br />
+134: IOKit: /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit<br />
+135: IOSurface (209.2.2 Reg=English Loc=0x0000: /System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface<br />
+136: ImageCaptureCore (7.0 Reg=English Loc=0x0000: /System/Library/Frameworks/ImageCaptureCore.framework/Versions/A/ImageCaptureCore<br />
+137: ImageIO (1713 Reg=English Loc=0x0000: /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO<br />
+138: libGIF.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libGIF.dylib<br />
+139: libJP2.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJP2.dylib<br />
+140: libJPEG.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJPEG.dylib<br />
+141: libPng.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libPng.dylib<br />
+142: libRadiance.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libRadiance.dylib<br />
+143: libTIFF.dylib: /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libTIFF.dylib<br />
+144: JavaScriptCore (13604.5.6 Reg=English Loc=0x0000: /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/JavaScriptCore<br />
+145: Kerberos (1 Reg=English Loc=0x0000: /System/Library/Frameworks/Kerberos.framework/Versions/A/Kerberos<br />
+146: LDAP (194.5 Reg=English Loc=0x0000: /System/Library/Frameworks/LDAP.framework/Versions/A/LDAP<br />
+147: MediaAccessibility (114 Reg=English Loc=0x0000: /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/MediaAccessibility<br />
+148: MediaToolbox (2270.12.1 Reg=English Loc=0x0000: /System/Library/Frameworks/MediaToolbox.framework/Versions/A/MediaToolbox<br />
+149: Metal (124.7 Reg=English Loc=0x0000: /System/Library/Frameworks/Metal.framework/Versions/A/Metal<br />
+150: NetFS (4.0 Reg=English Loc=0x0000: /System/Library/Frameworks/NetFS.framework/Versions/A/NetFS<br />
+151: libcldcpuengine.dylib: /System/Library/Frameworks/OpenCL.framework/Versions/A/Libraries/libcldcpuengine.dylib<br />
+152: OpenCL (2.8.12 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL<br />
+153: CFOpenDirectory (207 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenDirectory.framework/Versions/A/Frameworks/CFOpenDirectory.framework/Versions/A/CFOpenDirectory<br />
+154: OpenDirectory (207 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenDirectory.framework/Versions/A/OpenDirectory<br />
+155: libCVMSPluginSupport.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCVMSPluginSupport.dylib<br />
+156: libCoreFSCache.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCoreFSCache.dylib<br />
+157: libCoreVMClient.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCoreVMClient.dylib<br />
+158: libGFXShared.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGFXShared.dylib<br />
+159: libGL.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib<br />
+160: libGLImage.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLImage.dylib<br />
+161: libGLProgrammability.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLProgrammability.dylib<br />
+162: libGLU.dylib: /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLU.dylib<br />
+163: OpenGL (16.4.2 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL<br />
+164: GLEngine (16.4.2 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenGL.framework/Versions/A/Resources/GLEngine.bundle/GLEngine<br />
+165: GLRendererFloat (16.4.2 Reg=English Loc=0x0000: /System/Library/Frameworks/OpenGL.framework/Versions/A/Resources/GLRendererFloat.bundle/GLRendererFloat<br />
+166: QTKit (3014 Reg=English Loc=0x0000: /System/Library/Frameworks/QTKit.framework/Versions/A/QTKit<br />
+167: ImageKit (1040 Reg=English Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/ImageKit.framework/Versions/A/ImageKit<br />
+168: PDFKit (677.4 Reg=en Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/PDFKit.framework/Versions/A/PDFKit<br />
+169: QuartzComposer (364 Reg=English Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuartzComposer.framework/Versions/A/QuartzComposer<br />
+170: QuartzFilters (1.10.0 Reg=English Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuartzFilters.framework/Versions/A/QuartzFilters<br />
+171: QuickLookUI (743.7 Reg=English Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuickLookUI.framework/Versions/A/QuickLookUI<br />
+172: Quartz (21 Reg=English Loc=0x0000: /System/Library/Frameworks/Quartz.framework/Versions/A/Quartz<br />
+173: QuartzCore (584.8.102 Reg=English Loc=0x0000: /System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore<br />
+174: QuickLook (743.7 Reg=English Loc=0x0000: /System/Library/Frameworks/QuickLook.framework/Versions/A/QuickLook<br />
+175: QuickTime (3014 Reg=English Loc=0x0000: /System/Library/Frameworks/QuickTime.framework/Versions/A/QuickTime<br />
+176: SafariServices (13604.5.6 Reg=English Loc=0x0000: /System/Library/Frameworks/SafariServices.framework/Versions/A/SafariServices<br />
+177: Security (58286.41.2 Reg=English Loc=0x0000: /System/Library/Frameworks/Security.framework/Versions/A/Security<br />
+178: SecurityFoundation (55185.30.4 Reg=English Loc=0x0000: /System/Library/Frameworks/SecurityFoundation.framework/Versions/A/SecurityFoundation<br />
+179: SecurityInterface (55109.30.2 Reg=English Loc=0x0000: /System/Library/Frameworks/SecurityInterface.framework/Versions/A/SecurityInterface<br />
+180: ServiceManagement (1 Reg=English Loc=0x0000: /System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement<br />
+181: SystemConfiguration (1.17 Reg=English Loc=0x0000: /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration<br />
+182: VideoToolbox (2270.12.1 Reg=English Loc=0x0000: /System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox<br />
+183: WebCore (13604.5.6 Reg=English Loc=0x0000: /System/Library/Frameworks/WebKit.framework/Versions/A/Frameworks/WebCore.framework/Versions/A/WebCore<br />
+184: WebKitLegacy (13604.5.6 Reg=English Loc=0x0000: /System/Library/Frameworks/WebKit.framework/Versions/A/Frameworks/WebKitLegacy.framework/Versions/A/WebKitLegacy<br />
+185: WebKit (13604.5.6 Reg=English Loc=0x0000: /System/Library/Frameworks/WebKit.framework/Versions/A/WebKit<br />
+186: APFS (1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/APFS.framework/Versions/A/APFS<br />
+187: Apple80211 (1345 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/Apple80211.framework/Versions/A/Apple80211<br />
+188: AppleFSCompression (1.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/AppleFSCompression.framework/Versions/A/AppleFSCompression<br />
+189: AppleJPEG (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/AppleJPEG.framework/Versions/A/AppleJPEG<br />
+190: ApplePushService (4.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ApplePushService.framework/Versions/A/ApplePushService<br />
+191: AppleSRP (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/AppleSRP.framework/Versions/A/AppleSRP<br />
+192: AppleSystemInfo (3.1.5 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/AppleSystemInfo.framework/Versions/A/AppleSystemInfo<br />
+193: AppleVA (5.0.39 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/AppleVA.framework/Versions/A/AppleVA<br />
+194: BackgroundTaskManagement (57.1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/BackgroundTaskManagement.framework/Versions/A/BackgroundTaskManagement<br />
+195: Backup (1.9.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/Backup.framework/Versions/A/Backup<br />
+196: CalendarAgentLink (250 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CalendarAgentLink.framework/Versions/A/CalendarAgentLink<br />
+197: CommonAuth (2.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CommonAuth.framework/Versions/A/CommonAuth<br />
+198: CommonUtilities (900 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CommonUtilities.framework/Versions/A/CommonUtilities<br />
+199: ContactsFoundation ( Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ContactsFoundation.framework/Versions/A/ContactsFoundation<br />
+200: ContactsPersistence (2330.3 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ContactsPersistence.framework/Versions/A/ContactsPersistence<br />
+201: CoreAUC (249.0.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreAUC.framework/Versions/A/CoreAUC<br />
+202: CoreAVCHD (5900.4.1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreAVCHD.framework/Versions/A/CoreAVCHD<br />
+203: CoreDaemon (1.3 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreDaemon.framework/Versions/B/CoreDaemon<br />
+204: CoreEmoji (69.3 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/CoreEmoji.framework/Versions/A/CoreEmoji<br />
+205: CoreMediaAuthoring (956 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreMediaAuthoring.framework/Versions/A/CoreMediaAuthoring<br />
+206: CorePDF (414 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CorePDF.framework/Versions/A/CorePDF<br />
+207: CorePhoneNumbers (1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/CorePhoneNumbers.framework/Versions/A/CorePhoneNumbers<br />
+208: CoreServicesInternal (309.1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreServicesInternal.framework/Versions/A/CoreServicesInternal<br />
+209: CoreSymbolication (63075 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreSymbolication.framework/Versions/A/CoreSymbolication<br />
+210: CoreUI (492.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/CoreUI<br />
+211: CoreUtils (530.60 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/CoreUtils.framework/Versions/A/CoreUtils<br />
+212: CoreWiFi (1339 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CoreWiFi.framework/Versions/A/CoreWiFi<br />
+213: CrashReporterSupport (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/CrashReporterSupport.framework/Versions/A/CrashReporterSupport<br />
+214: DFRFoundation (191.1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/DFRFoundation.framework/Versions/A/DFRFoundation<br />
+215: DataDetectorsCore (590.3 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DataDetectorsCore.framework/Versions/A/DataDetectorsCore<br />
+216: DebugSymbols (141 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DebugSymbols.framework/Versions/A/DebugSymbols<br />
+217: DesktopServicesPriv (1.12.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DesktopServicesPriv.framework/Versions/A/DesktopServicesPriv<br />
+218: DiskImages (480.30.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DiskImages.framework/Versions/A/DiskImages<br />
+219: DiskManagement (1339 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DiskManagement.framework/Versions/A/DiskManagement<br />
+220: DisplayServices (380 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/DisplayServices.framework/Versions/A/DisplayServices<br />
+221: EFILogin (2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/EFILogin.framework/Versions/A/EFILogin<br />
+222: FaceCore (3.3.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/FaceCore.framework/Versions/A/FaceCore<br />
+223: libGPUSupportMercury.dylib: /System/Library/PrivateFrameworks/GPUSupport.framework/Versions/A/Libraries/libGPUSupportMercury.dylib<br />
+224: GenerationalStorage (285 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/GenerationalStorage<br />
+225: Heimdal (2.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/Heimdal.framework/Versions/A/Heimdal<br />
+226: IOAccelerator (376.6 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/IOAccelerator.framework/Versions/A/IOAccelerator<br />
+227: IOPresentment (32.1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/IOPresentment.framework/Versions/A/IOPresentment<br />
+228: IconServices (97.4 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/IconServices.framework/Versions/A/IconServices<br />
+229: IntlPreferences (227 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/IntlPreferences.framework/Versions/A/IntlPreferences<br />
+230: LanguageModeling (159.3.1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/LanguageModeling.framework/Versions/A/LanguageModeling<br />
+231: Lexicon (33.2 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/Lexicon.framework/Versions/A/Lexicon<br />
+232: LinguisticData (238.3 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/LinguisticData.framework/Versions/A/LinguisticData<br />
+233: LoginUICore (4.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/LoginUIKit.framework/Versions/A/Frameworks/LoginUICore.framework/Versions/A/LoginUICore<br />
+234: MediaKit (871 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/MediaKit.framework/Versions/A/MediaKit<br />
+235: MultitouchSupport (1204.13 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/MultitouchSupport.framework/Versions/A/MultitouchSupport<br />
+236: NetAuth (6.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/NetAuth.framework/Versions/A/NetAuth<br />
+237: PerformanceAnalysis (183.1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/PerformanceAnalysis.framework/Versions/A/PerformanceAnalysis<br />
+238: PhoneNumbers (1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/PhoneNumbers.framework/Versions/A/PhoneNumbers<br />
+239: ProtectedCloudStorage (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ProtectedCloudStorage.framework/Versions/A/ProtectedCloudStorage<br />
+240: ProtocolBuffer (259 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ProtocolBuffer.framework/Versions/A/ProtocolBuffer<br />
+241: QuickLookThumbnailing (1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/QuickLookThumbnailing.framework/Versions/A/QuickLookThumbnailing<br />
+242: RemoteViewServices (125 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/RemoteViewServices.framework/Versions/A/RemoteViewServices<br />
+243: Sharing (972.14 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/Sharing.framework/Versions/A/Sharing<br />
+244: SignpostNotification (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/SignpostNotification.framework/Versions/A/SignpostNotification<br />
+245: SkyLight: /System/Library/PrivateFrameworks/SkyLight.framework/Versions/A/SkyLight<br />
+246: SpeechRecognitionCore (4.0.13 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/SpeechRecognitionCore.framework/Versions/A/SpeechRecognitionCore<br />
+247: Symbolication (63079.1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/Symbolication.framework/Versions/A/Symbolication<br />
+248: SystemAdministration (1.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/SystemAdministration.framework/Versions/A/SystemAdministration<br />
+249: TCC (1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC<br />
+250: TextureIO (3.7 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/TextureIO.framework/Versions/A/TextureIO<br />
+251: TrustEvaluationAgent (31 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/TrustEvaluationAgent.framework/Versions/A/TrustEvaluationAgent<br />
+252: UIFoundation (546.1.1 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/UIFoundation.framework/Versions/A/UIFoundation<br />
+253: ViewBridge (343.2 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/ViewBridge.framework/Versions/A/ViewBridge<br />
+254: loginsupport (1 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/login.framework/Versions/A/Frameworks/loginsupport.framework/Versions/A/loginsupport<br />
+255: login (3.0 Reg=English Loc=0x0000: /System/Library/PrivateFrameworks/login.framework/Versions/A/login<br />
+256: vCard (2330.3 Reg=en Loc=0x0000: /System/Library/PrivateFrameworks/vCard.framework/Versions/A/vCard<br />
+257: libclosured.dylib: /usr/lib/closure/libclosured.dylib<br />
+258: libCRFSuite.dylib: /usr/lib/libCRFSuite.dylib<br />
+259: libChineseTokenizer.dylib: /usr/lib/libChineseTokenizer.dylib<br />
+260: libCoreStorage.dylib: /usr/lib/libCoreStorage.dylib<br />
+261: libDiagnosticMessagesClient.dylib: /usr/lib/libDiagnosticMessagesClient.dylib<br />
+262: libFosl_dynamic.dylib: /usr/lib/libFosl_dynamic.dylib<br />
+263: libOpenScriptingUtil.dylib: /usr/lib/libOpenScriptingUtil.dylib<br />
+264: libScreenReader.dylib: /usr/lib/libScreenReader.dylib<br />
+265: libSystem.B.dylib: /usr/lib/libSystem.B.dylib<br />
+266: libapple_nghttp2.dylib: /usr/lib/libapple_nghttp2.dylib<br />
+267: libarchive.2.dylib: /usr/lib/libarchive.2.dylib<br />
+268: libate.dylib: /usr/lib/libate.dylib<br />
+269: libauto.dylib: /usr/lib/libauto.dylib<br />
+270: libbsm.0.dylib: /usr/lib/libbsm.0.dylib<br />
+271: libbz2.1.0.dylib: /usr/lib/libbz2.1.0.dylib<br />
+272: libc++.1.dylib: /usr/lib/libc++.1.dylib<br />
+273: libc++abi.dylib: /usr/lib/libc++abi.dylib<br />
+274: libcmph.dylib: /usr/lib/libcmph.dylib<br />
+275: libcompression.dylib: /usr/lib/libcompression.dylib<br />
+276: libcoretls.dylib: /usr/lib/libcoretls.dylib<br />
+277: libcoretls_cfhelpers.dylib: /usr/lib/libcoretls_cfhelpers.dylib<br />
+278: libcrypto.0.9.7.dylib: /usr/lib/libcrypto.0.9.7.dylib<br />
+279: libcrypto.35.dylib: /usr/lib/libcrypto.35.dylib<br />
+280: libcsfde.dylib: /usr/lib/libcsfde.dylib<br />
+281: libcups.2.dylib: /usr/lib/libcups.2.dylib<br />
+282: libcurl.4.dylib: /usr/lib/libcurl.4.dylib<br />
+283: libenergytrace.dylib: /usr/lib/libenergytrace.dylib<br />
+284: libheimdal-asn1.dylib: /usr/lib/libheimdal-asn1.dylib<br />
+285: libiconv.2.dylib: /usr/lib/libiconv.2.dylib<br />
+286: libicucore.A.dylib: /usr/lib/libicucore.A.dylib<br />
+287: liblangid.dylib: /usr/lib/liblangid.dylib<br />
+288: liblzma.5.dylib: /usr/lib/liblzma.5.dylib<br />
+289: libmarisa.dylib: /usr/lib/libmarisa.dylib<br />
+290: libmecabra.dylib: /usr/lib/libmecabra.dylib<br />
+291: libnetwork.dylib: /usr/lib/libnetwork.dylib<br />
+292: libobjc.A.dylib: /usr/lib/libobjc.A.dylib<br />
+293: libodfde.dylib: /usr/lib/libodfde.dylib<br />
+294: libpam.2.dylib: /usr/lib/libpam.2.dylib<br />
+295: libpcap.A.dylib: /usr/lib/libpcap.A.dylib<br />
+296: libresolv.9.dylib: /usr/lib/libresolv.9.dylib<br />
+297: libsasl2.2.dylib: /usr/lib/libsasl2.2.dylib<br />
+298: libsqlite3.dylib: /usr/lib/libsqlite3.dylib<br />
+299: libssl.35.dylib: /usr/lib/libssl.35.dylib<br />
+300: libstdc++.6.0.9.dylib: /usr/lib/libstdc++.6.0.9.dylib<br />
+301: libusrtcp.dylib: /usr/lib/libusrtcp.dylib<br />
+302: libutil.dylib: /usr/lib/libutil.dylib<br />
+303: libxar.1.dylib: /usr/lib/libxar.1.dylib<br />
+304: libxml2.2.dylib: /usr/lib/libxml2.2.dylib<br />
+305: libxslt.1.dylib: /usr/lib/libxslt.1.dylib<br />
+306: libz.1.dylib: /usr/lib/libz.1.dylib<br />
+307: libcache.dylib: /usr/lib/system/libcache.dylib<br />
+308: libcommonCrypto.dylib: /usr/lib/system/libcommonCrypto.dylib<br />
+309: libcompiler_rt.dylib: /usr/lib/system/libcompiler_rt.dylib<br />
+310: libcopyfile.dylib: /usr/lib/system/libcopyfile.dylib<br />
+311: libcorecrypto.dylib: /usr/lib/system/libcorecrypto.dylib<br />
+312: libdispatch.dylib: /usr/lib/system/libdispatch.dylib<br />
+313: libdyld.dylib: /usr/lib/system/libdyld.dylib<br />
+314: libkeymgr.dylib: /usr/lib/system/libkeymgr.dylib<br />
+315: libkxld.dylib: /usr/lib/system/libkxld.dylib<br />
+316: liblaunch.dylib: /usr/lib/system/liblaunch.dylib<br />
+317: libmacho.dylib: /usr/lib/system/libmacho.dylib<br />
+318: libquarantine.dylib: /usr/lib/system/libquarantine.dylib<br />
+319: libremovefile.dylib: /usr/lib/system/libremovefile.dylib<br />
+320: libsystem_asl.dylib: /usr/lib/system/libsystem_asl.dylib<br />
+321: libsystem_blocks.dylib: /usr/lib/system/libsystem_blocks.dylib<br />
+322: libsystem_c.dylib: /usr/lib/system/libsystem_c.dylib<br />
+323: libsystem_configuration.dylib: /usr/lib/system/libsystem_configuration.dylib<br />
+324: libsystem_coreservices.dylib: /usr/lib/system/libsystem_coreservices.dylib<br />
+325: libsystem_darwin.dylib: /usr/lib/system/libsystem_darwin.dylib<br />
+326: libsystem_dnssd.dylib: /usr/lib/system/libsystem_dnssd.dylib<br />
+327: libsystem_info.dylib: /usr/lib/system/libsystem_info.dylib<br />
+328: libsystem_kernel.dylib: /usr/lib/system/libsystem_kernel.dylib<br />
+329: libsystem_m.dylib: /usr/lib/system/libsystem_m.dylib<br />
+330: libsystem_malloc.dylib: /usr/lib/system/libsystem_malloc.dylib<br />
+331: libsystem_network.dylib: /usr/lib/system/libsystem_network.dylib<br />
+332: libsystem_networkextension.dylib: /usr/lib/system/libsystem_networkextension.dylib<br />
+333: libsystem_notify.dylib: /usr/lib/system/libsystem_notify.dylib<br />
+334: libsystem_platform.dylib: /usr/lib/system/libsystem_platform.dylib<br />
+335: libsystem_pthread.dylib: /usr/lib/system/libsystem_pthread.dylib<br />
+336: libsystem_sandbox.dylib: /usr/lib/system/libsystem_sandbox.dylib<br />
+337: libsystem_secinit.dylib: /usr/lib/system/libsystem_secinit.dylib<br />
+338: libsystem_symptoms.dylib: /usr/lib/system/libsystem_symptoms.dylib<br />
+339: libsystem_trace.dylib: /usr/lib/system/libsystem_trace.dylib<br />
+340: libunwind.dylib: /usr/lib/system/libunwind.dylib<br />
+341: libxpc.dylib: /usr/lib/system/libxpc.dylib<br />
+342: libCyrillicConverter.dylib: /System/Library/CoreServices/Encodings/libCyrillicConverter.dylib<br />
+343: libJapaneseConverter.dylib: /System/Library/CoreServices/Encodings/libJapaneseConverter.dylib<br />
+344: libKoreanConverter.dylib: /System/Library/CoreServices/Encodings/libKoreanConverter.dylib<br />
+345: libLatin2Converter.dylib: /System/Library/CoreServices/Encodings/libLatin2Converter.dylib<br />
+<br />
+Operating System Information<br />
+Operating System: Mac OS X 10.13.3 (Build 17D47)<br />
+CPU: Unknown (hw.cputype = 7, hw.cpusubtype == 8), Number: 4, Speed: 2147 MHz<br />
+gestaltPhysicalRAMSizeInMegabytes err = 0, result = 8192 MB<br />
+gestaltSystemVersion err = 0, result = 0x1093<br />
+Screen: 1280 x 800, depth = 32, ltbr = 0, 0, 800, 1280<br />
+<br />
+Microsoft Application Information:<br />
+Error Reporting UUID: D1996324-9A71-431C-9BE0-B1347004****<br />
+Time from launch: 0 hours, 0 minutes, 28 seconds<br />
+Total errors on this client: 12<br />
+</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>One possible cause: Your installation of Office 2011 is not fully updated. Version 14.7.7 is the final update for that release of Mac Office which you can download by using the link below:</p>
+<p>
+<a href="https://www.google.com/url?sa=t&amp;rct=j&amp;q=&amp;esrc=s&amp;source=web&amp;cd=1&amp;ved=0ahUKEwjz48S9w7fbAhURx1kKHWsqCTUQFggqMAA&amp;url=https%3A%2F%2Fwww.microsoft.com%2Fen-us%2Fdownload%2Fdetails.aspx%3Fid%3D55942&amp;usg=AOvVaw3RJzRCa89jiStQq1RiQto8" target="_blank" rel="noreferrer nofollow">Download
+ Microsoft Office for Mac 2011 14.7.7 Update from Official ...</a>
+</p><p>
+</p><p>Restart your Mac after installing the update.</p>
+<p>
+</p><p>Please note that Office 2011 is discontinued &amp; all support was withdrawn some time ago. Although it will continue to run on your present version of macOS &amp; earlier, future releases from Apple may cause incompatibilities which cannot be resolved. Also, it's
+ common knowledge that 32-bit software will not be supported by the next major release of macOS. In short, if you continue to upgrade macOS you'll also need to upgrade the software you use.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you turn &#34;cookies&#34; on&#63; Facebook says it needs - Microsoft Community</title>
+<h3> rberry3242  say:</h3>
+<h2>            How do you turn &#34;cookies&#34; on&#63;  Facebook says it needs cookies turned on.</h2>
+                    How do you turn "Cookies" on?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="deadmanwalking86" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "DE"); this.style="display: inline-block";'
+<h3> deadmanwalking86  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            rberry3242,<br />
+<br />
+Follow these steps tu turn cookies ON:<br />
+<br />
+1. Open Internet Explorer.<br />
+2. Select "Tools" from the Menu Bar (Press 'Alt' if you do notsee the Menu Bar)<br />
+3. Select "Internet Options".<br />
+4. Select ''Privacy'' tab<br />
+5. Drag the slider to the level you want.<br />
+<br />
+Depending on the level of the slider the choices available are:<br />
+<br />
+Block all cookies<br />
+High<br />
+Medium high<br />
+Medium<br />
+Low<br />
+Allow all cookies.<br />
+<br />
+You can read the description for each of the above settings.<br />
+<br />
+Do not use "Allow all cookies"&nbsp;unless you are using 100% trusted web sites.<br />
+<br />
+Hope this helps! <br />
+<br />
+Cheers!!
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>E72 problem&#58; unable to send text messages - Microsoft Community</title>
+<h3> d_t_a  say:</h3>
+<h2>            E72 problem&#58; unable to send text messages</h2>
+                    
+<p>My E72-1 just developed this annoying and hard-to-fix problem:</p>
+<p>&nbsp;</p>
+<p>It can't send SMS messages anymore. I hadn't noticed it at first, was wondering why the persons I sent messages didn't replied when I responded to their messages. Then happened to check my phones Outbox, and 6 text messages are stuck in there for several
+ hours already.</p>
+<p>&nbsp;</p>
+<p>Just to test the phone further (to check if it might be a SIM card problem), I put this SIM card on another phone, and I was able to send messages on that phone.</p>
+<p>&nbsp;</p>
+<p>I also placed another SIM card on the E72 and tested sending a message -- the message sending gets stuck at the Outbox and never sends.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Receiving SMS messages appears to work fine. Also, calling out (voice calls) and receiving calls work.</p>
+<p>&nbsp;</p>
+<p>other notes:&nbsp; in settings:&nbsp;"Phone Memory"&nbsp; (instead of memory card) is used&nbsp;for&nbsp;text messages,&nbsp;configured to have up to&nbsp;999 messages.&nbsp; Currently, have around 600 SMS messages in the Inbox and maybe 150 text messages in the Sent folder.&nbsp;&nbsp; Let's says that's
+ only around 800 messages (not yet 999 messages).</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>~~~~~~</p>
+<p>&nbsp;</p>
+<p>What I tried:</p>
+<p>&nbsp;</p>
+<p>I changed the setting from "phone memory" to "memory card", but still unable to send messages. (I reverted it back to phone memory since that's where my messages are residing.)</p>
+<p>&nbsp;</p>
+<p>I did a soft reset *#7780#&nbsp; which reset the E72's settings. Tried again to send SMS message -- it still fails.</p>
+<p>&nbsp;</p>
+<p>I decided to do a hard reset, so I did a full backup using Ovi Suite first.</p>
+<p>&nbsp;</p>
+<p>Then I did the hard reset *#7370# -- and it did solve the problem (able to send messages again), unfortunately, I would need to reinstall all the applications, contacts and restore the messages I saved.</p>
+<p>&nbsp;</p>
+<p>I tried restoring the backup (it was pretty big at 2.3Gb), but it's taking a very very long time (nearly an hour)&nbsp;and it seems to fail near the end of the restoration.&nbsp; The backing up of the phone took awhile (maybe 20 minutes or so) since it backedup probably
+ the whole memory card too. (I should probably have deleted&nbsp; a few unneeded big files from the memory card&nbsp;before I did the backup since it appears that Ovi Suite is also backing up those big files).</p>
+<p>&nbsp;</p>
+<p>Right now, I'm doing the restoration a second time (a few hours since I first tried that and it sort of failed).&nbsp; During the restoration which ended with failure, it seems that when I tried sending SMS messages, it fails again. (ie. if I restore the backup,
+ the problem is also restored) -- I'll check this again later if this is indeed the case.</p>
+<p>&nbsp;</p>
+<p>I still had around 130Mb free space left in the C: phone memory and the 4Gb microSDHD memory card had around 900Mb free space when I started the backing up in the first place.&nbsp; (mentioning these in case these might be related to the problem.)</p>
+<p>&nbsp;</p>
+<p>~~~~~</p>
+<p>&nbsp;</p>
+<p>my questions: <strong>any idea what's causing the unable to send SMS message problem?</strong></p>
+<p>&nbsp;</p>
+<p>another thing: does restoring backups really take an extremely long time?&nbsp;(I haven't tried the restoration function before, though I did a backup maybe 2 months ago)&nbsp; Does the phone get in a sort of "stuck" or "hanging" mode during the latter part of the
+ restoration procedure?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> d_t_a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Update: finished restoring the second time. At the end of the very long restoration (almost an hour), it says unable to restore some files but they are copied back to the hard disk (actually those are the 2 big files I don't really need anyway -- a DivX
+ AVI file I loaded on the memory card to test the DivX Player I installed several weeks back.. anyway this is not related to the issue).</p>
+<p>&nbsp;</p>
+<p>(I noticed that&nbsp;quite a number of applications also weren't restored after the "Restore" too)</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>After the restoration, I tried sending SMS messages again -- and they always fail again</strong>.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>So, is there some way I can do the hard reset again but restore the contacts and messages and applications, without restoring the "unable to send SMS message" problem?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> xbin---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Have you tried restoring the contacts only and see if that works. If it does, make a new backup and then restore the messages only and see if it works ok.</p>
+<p>&nbsp;</p>
+<p>I had this problem with a different phone and it was a problem at the service providers end.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> d_t_a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<hr />
+xbin wrote:<br />
+<p>Have you tried restoring the contacts only and see if that works. If it does, make a new backup and then restore the messages only and see if it works ok.</p>
+<p>&nbsp;</p>
+<p>I had this problem with a different phone and it was a problem at the service providers end.</p>
+<hr />
+</blockquote>
+<p>Hi xbin, thanks for your suggestion, but I don't think I understand it correctly.</p>
+<p>&nbsp;</p>
+<p>So far, what solves the "unable to send message" problem is a "soft reset / format" *#7370# of the cellphone.&nbsp;</p>
+<p>&nbsp;</p>
+<p>The "factory settings reset" *#7780# doesn't fix my "unable to send text message" problem.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>For now, I've done the *#7370# and tested that I"m once more able to send text messages. But I need to restore all my contacts / messages / etc. applications on the cellphone so I did a restore of the cellphone (from the last full backup I made prior to
+ doing the *#7370#.&nbsp; But this also restored the "unable to send text message" problem.&nbsp; :-(</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>~~~~~</p>
+<p>&nbsp;</p>
+<p>Perhaps I would need to do is : do not do a "full backup" of the cellphone but instead do it in parts.&nbsp; So that would mean: make a backup of "contacts" only, then another backup of "messages" only, then another&nbsp;backup of only "calendar", etc.</p>
+<p>&nbsp;</p>
+<p>Then perhaps do another *#7370# format/reset, do another restore (restoring&nbsp; the backups piecemeal, test the "send text message" if it works. And check which one causes the "unable to send message" problem.&nbsp; That would isolate which&nbsp;module is causing the
+ problem, meaning I shouldn't restore that portion (perhaps will need to restore it some other way, like recreating new "contacts" the manual way&nbsp;if "restoring" contacts was the cause of the problem.</p>
+<p>&nbsp;</p>
+<p>One reason I haven't done the above is because the backing-up is taking a long time (specifically, the "phone-model specific backup" takes a very long time (5-10 minutes).</p>
+<p>Isn't there a way of restoring only portions of the "full backup"?&nbsp; Also, after a *#7370# reset, it takes an amount of time to "preparing memory card"...</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>(and after a&nbsp;*#7370# reset, many of my apps need to be reinstalled since they disappear -- eg. Google Maps, Nokia Conversation,&nbsp;jBakTaskman, X-Plore, Ovi Maps 3.03, TTPod, cCalcPro, etc. about a dozen apps in all were gone&nbsp;when I did my *#7370# + restore
+ of the full-backup above.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> d_t_a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Ok, an update: by elimination, I've isolated that restoring the Settings from the previous backup will cause my phone to have the "unable to send message".</p>
+<p>&nbsp;</p>
+<p>Restoring all the others (Contacts, Messages, Calendar &amp; Notes, Bookmarks, User files) didn't restore the "unable to send SMS message" problem. But restoring the Settings will restore the problem.</p>
+<p>&nbsp;</p>
+<p>So I finally settled at *#7370# (format reset) the E72, then restored all the backup except the Settings. This did result in most of the applications needing to be reinstalled or reconfigured.</p>
+<p>&nbsp;</p>
+<p>I wonder what exact setting could have caused this problem...?</p>
+<p>&nbsp;</p>
+<p>More info: The last&nbsp;situation before&nbsp;my cellphone&nbsp;got this problem was when I was texting several text&nbsp;messages when my phone ran out of load credits. But after loading credits to my phone, all messages&nbsp;get stuck and won't send. Even changing the SIM card
+ to one with credits (mentioned earlier above) didn't solve the problem.&nbsp; Another thing I noticed is there was a flashing mailbox icon, which I finally figured was a message got into the SIM card (I wonder why it didn't go to the phone memory) -- after deleting
+ that new message in the SIM card, no more flashing mailbox icon, but still the "unable to send SMS" problem (mentioned in detail above).</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> xbin---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Sorry I couldn't answer earlier but you have done exactly what I had in mind. Is it sorted now?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> d_t_a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<hr />
+xbin wrote:<br />
+<p>Sorry I couldn't answer earlier but you have done exactly what I had in mind. Is it sorted now?</p>
+<hr />
+</blockquote>
+<p>&nbsp;</p>
+<p>pardon didn't quite follow your previous instructions.. But thanks for the suggestion anyway, since it means that this type of problem does occur with the cellphone.</p>
+<p>&nbsp;</p>
+<p>Yup, problem is sorted now, not exactly what I would like though (since I had to spend many many hours to isolate which component was causing the problem and not sure why the problem appeared in the first place).</p>
+<p>&nbsp;</p>
+<p>I got the chance to test out the Backup and Restore functions of Nokia PC Suite though (must have done that 5 times -- hard resetting the phone, restoring the backups, etc.), finding out that quite a number of apps don't get fully restored even with the
+ full backup function&nbsp;(and the apps&nbsp;need to be reinstalled since they're gone, even when I installed them on the memory card prior to the&nbsp;backup / reset / restore).</p>
+<p>&nbsp;</p>
+<p>My phone is able to send SMS messages once more. (I wonder if my previous installation of Nokia Conversation and/or Free-iSMS v1.03 might have a hand making this problem appear. although I've installed both apps for a month or so already)</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> xbin---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Great :smileyhappy:</p>
+<p>I was trying to minimize the amount of backup/restores but making sure you could get back to any stage of the long winded process but anyway you got there and know a bit more.</p>
+<p>&nbsp;</p>
+<p>Saving the settings always takes an age for some reason especially when apps are on the card. I always put major in phone memory as they seem to restore ok. What you coud do is put the card in a reader and back the whole thing up to pc manually and restore
+ it that way but hope you don't have to do it again.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jbeats  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>My phone has the identical problem and I really can't be bothered to restore everything. Did anyone ever get to the bottom of this? It's pretty useless and very annoying.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jamieke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>it just happend to me, i couldn't send any msg yesterday after i have sent several msg. and i try changing everything setting i ve changed these few days, it didn't work at all.</p>
+<p>so i found this discussion, and i did exactly what you guys say, do a *#7730# and only restore contacts, msg, etc except the setting, then it is all fine now,</p>
+<p>just wondering is that the problem of every E72??what caused this?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mayaph  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>i am experiencing the same - using e72 here in the Philippines. my messages get stuck in the outbox.&nbsp;</p>
+<p>&nbsp;</p>
+<p>it is barely 3 months old.</p>
+<p>&nbsp;</p>
+<p>it is sooo annoying.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Message notifications - Microsoft Community</title>
+<h3> lramc  say:</h3>
+<h2>            Message notifications</h2>
+                    <p>I use skype on my iphone 6 and recently it has stopped notifying me when i get a new message.</p>
+<p>I am using skype for iphone version 8.10.1</p>
+<p>I have not changed any notification settings. I checked the settings and they are all on.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jannine_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/ed0ac9b7-aefa-4578-b8be-38e4d2bb172b" title="lramc">
+<p>
+</p><p>You may follow troubleshooting steps below:</p>
+<p>
+</p><div>
+<ul>
+<li>Tap and hold the Skype icon &gt; tap Delete.</li><li>Restart device afterwards.</li><li>Download Skype again from the App Store.</li><li>Check notification settings from the Skype app and device notification.</li><li>Let someone message you on Skype.</li></ul>
+<p>
+</p><p>If the above information work, please do not hesitate to reply to this post. </p>
+<p>
+</p><p>Thank you!</p>
+<p>
+</p></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_ios">skype_for_ios, </a> <br>
+<a href="/search?q=messaging">messaging, </a> <br>
+<a href="/search?q=instant_messaging">instant_messaging, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Stop code 0xc000021a - Microsoft Community</title>
+<h3> lyndelgillespie  say:</h3>
+<h2>            Stop code 0xc000021a</h2>
+                    I have a computer that has an stop code error 0xc000021a that has a restart running and restarts again and again. I can't get into the computer to do anything. How can I fix or at least get in to run a complete system restore.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Version of Windows?</p>
+<p>From another PC, create a <strong><a href="https://www.microsoft.com/en-us/software-download/windows10" target="_blank" rel="noreferrer nofollow">USB installation media</a></strong>, boot from it and instead of "Install" click "Repair".</p>
+<p>Follow instructions and run the troubleshooter</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=repair_and_recovery">repair_and_recovery, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>just want to copy the Name of sender WITHOUT the email address - Microsoft Community</title>
+<h3> darwin_0802  say:</h3>
+<h2>            just want to copy the Name of sender WITHOUT the email address</h2>
+                    For Outlook365, while I copy the name of sender, the format of content pasted on Excel is "contact name &lt;email address&gt;" (e.g. Peter Chan &lt;*** Email address is removed for privacy ***&gt;), I just want to copy and paste the name without
+ address, please help. Thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The following Outlook macro will copy the sender name from a selected message to the clipboard.</p>
+<p>
+</p><p>Option Explicit<br />
+<br />
+Sub GetSender()<br />
+Dim olMsg As MailItem<br />
+&nbsp;&nbsp;&nbsp; On Error GoTo err_Handler<br />
+&nbsp;&nbsp;&nbsp; Set olMsg = ActiveExplorer.Selection.Item(1)<br />
+&nbsp;&nbsp;&nbsp; CopyAsText olMsg.SenderName<br />
+&nbsp;&nbsp;&nbsp; MsgBox olMsg.SenderName &amp; vbCr &amp; "copied to clipboard"<br />
+lbl_Exit:<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+err_Handler:<br />
+&nbsp;&nbsp;&nbsp; MsgBox "Sender name not copied. Did you select a message first?"<br />
+&nbsp;&nbsp;&nbsp; Err.Clear<br />
+&nbsp;&nbsp;&nbsp; GoTo lbl_Exit<br />
+End Sub<br />
+<br />
+Private Sub CopyAsText(strText)<br />
+Dim dFname As DataObject<br />
+Dim fFname As String<br />
+&nbsp;&nbsp;&nbsp; Set dFname = New DataObject<br />
+&nbsp;&nbsp;&nbsp; fFname = strText<br />
+&nbsp;&nbsp;&nbsp; dFname.SetText fFname<br />
+&nbsp;&nbsp;&nbsp; dFname.PutInClipboard<br />
+lbl_Exit:<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+End Sub<br />
+<br />
+<br />
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Word cannot load this add on program&#34; - Microsoft Community</title>
+<h3> john a b  say:</h3>
+<h2>            &#34;Word cannot load this add on program&#34;</h2>
+                    Whenever I try to retrieve a document using Word on my Mac I get the above message. Not sure why, I ignore it and if I open another or the same document, it does NOT appear a second time.&nbsp;&nbsp; Any clue.&nbsp;&nbsp; I am using Word for Mac 2011 with all updates in place.&nbsp;&nbsp;
+ Thanks<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Does this only occur when Word starts? (e.g., Word is not running, then you open a document by clicking on a document name in the finder).
+<div><br />
+<div>Whatever the case, see if any Addins are listed in Word's Tools-&gt;Templates and Addins... dialog box. If there are any, you may be able to disable them one by one to see which is causing the problem.</div>
+<div><br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john a b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry for the delay and thanks for getting back.&nbsp; I tried your suggestion.&nbsp;&nbsp; This error (if you call it an error) starts at the time I try to open a document in finder or most recent.&nbsp;&nbsp; It seems to only happen once "right at the start".&nbsp;&nbsp; I looked into
+ the Word's Tools-&gt;Templates and Addins... dialog box as suggested.&nbsp;&nbsp; It opens with only the Normal.dotm listed at the top.&nbsp;&nbsp; As I do very little with these items, I am making an assumption that this is the default.&nbsp;&nbsp; I am open to suggestions and short of removing
+ the entire program and starting new I have no other clue.&nbsp;&nbsp; It is only a minor problem, but one I am sure with a little bit of detective work can be solved.&nbsp;&nbsp; Thanks again and perhaps you have some more ideas.<br />
+<br />
+JAB<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John McGhie" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> john mcghie  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi John:
+<div><br />
+<div>This has nothing to do with the program. &nbsp;There is a link in the document you are opening that is calling an external file that won't load. &nbsp;Even if you completely wiped and re-installed Office, the problem would persist, because it is in one of your documents.</div>
+<div><br />
+<div>The reason it won't load is usually because it was&nbsp;written&nbsp;for the PC not the Mac. &nbsp;Sometimes, it won't load because it's not there!</div>
+<div><br />
+<div>The trick is to find it, then either remove the link or correct the add-in to be a Mac version.</div>
+<div><br />
+<div>Peter sent you to Tools&gt;Templates and Add-ins. &nbsp;You said it opens with only "Normal.dotm" shown at the top. &nbsp;OK, now what is listed in the SECOND box in that dialog, "Global templates and add-ins"? &nbsp;That's more likely to be where the trouble is...</div>
+<div><br />
+<div>However, from the behaviour (faults on the first document but not on subsequent documents) this add-in is being loaded at Application Start. &nbsp;Which means it is more likely to be a Word Global Add-in. &nbsp;And if it's one of those, it is time to be mildly concerned.
+ &nbsp;It is probably an add-in for something like EndNote that is outdated and won't load. &nbsp;But it "might" be a sneaky little PC virus that fortunately won't load on a Mac.</div>
+<div><br />
+<div>First, you need to visit&nbsp;/Applications/Microsoft Office 2011/Office/Startup/Word and see if there is anything in that folder. &nbsp;If there is, ask yourself what it is: if you don't know, move it to the trash and empty the trash!</div>
+<div><br />
+<div>If there was something in that folder, re-start the computer and see if it is OK now. &nbsp;If not:</div>
+<div><br />
+<div>Close all documents. &nbsp;Then Open one of the documents that produces the error message. &nbsp;Now, go to Tools&gt;&nbsp;Templates&nbsp;and Add-ins while displaying just that document. &nbsp;Have a look in the Document Template Field, and in the Global Add-ins box, and see if anything
+ has changed.</div>
+<div><br />
+<div>If there is anything other than Normal.dotm displayed this time, we need to track it down and throw it out. &nbsp;Come back and we'll talk you through this, Spotlight won't help much here.</div>
+<div><br />
+<div>If all of the above fails, quit all Microsoft applications, then go to:</div>
+<div>/Users/&lt;your name&gt;/Library/Application Support/Microsoft/Office/User Templates</div>
+<div><br />
+<div>You will need to hold down the Option key in Finder, then from the Finder's Go menu choose Library, to get into your Library folder.</div>
+<div><br />
+<div>Delete EVERYTHING in the User Templates folder. &nbsp;Word will create new ones when it restarts.</div>
+<div><br />
+<div>That last is a scorched earth solution that will blow away some of your custom settings. &nbsp;Which you can then re-create.</div>
+<div><br />
+<div>OK, there's a small possibility that the problem is not hiding anywhere we have been so far. &nbsp;If it is, then it's time to become rather more concerned, because it is then quite likely to be a virus. &nbsp;Which means that it will happily put itself back in,
+ every time you delete it.</div>
+<div><br />
+<div>In which case: Don't Panic! &nbsp;We'll help you nail it, but we'll have to be a little more cunning.</div>
+<div><br />
+<div>If you were to start down that path, you would first need to install a commercial-grade Anti-Malware solution for the Mac. Personally, I use Sophos&nbsp;<a href="http://www.sophos.com/en-us/" target="_blank" rel="noreferrer nofollow">http://www.sophos.com/en-us/</a></div>
+<div><br />
+<div>Their freeware Mac version is delightfully low-impact, set-and-forget. &nbsp;But neither I nor my non-existant family go to any naughty or doubtful websites! &nbsp;For something a bit more industrial-strength, there is Intego&nbsp;<a href="http://www.intego.com/" target="_blank" rel="noreferrer nofollow">http://www.intego.com/</a></div>
+<div><br />
+<div>Personally, I found Intego to be a bit too much of a good thing. &nbsp;It takes quite a bit of power to run it, and it's a bit intrusive about renewing your subscription. But it is probably the gold standard for Mac security.</div>
+<div><br />
+<div>Now that the "Macs don't need AV" myth has been shattered, there are quite a few other products&nbsp;appearing&nbsp;that I have not tried.</div>
+<div><br />
+<div>Whichever one you choose, you need to allow it to run a "Full Scan" of all your disks before we go any further. &nbsp;To take this hunt further, we need to KNOW it cannot be a virus :-) &nbsp;Then come back here and we'll talk you through the really unlikely hiding
+ places.</div>
+<div><br />
+<div>Hope this helps</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john a b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello and thank you for your carefully worded answer.&nbsp; Sadly, I am still at the point from which I started, but I will share with you the steps I have taken.&nbsp;&nbsp; Using your suggestions, I tried the following:<br />
+<br />
+Peter sent you to Tools&gt;Templates and Add-ins. &nbsp;You said it opens with only "Normal.dotm" shown at the top. &nbsp;OK, now what is listed in the SECOND box in that dialog, "Global templates and add-ins"? &nbsp;That's more likely to be where the trouble is...&nbsp;
+<b>[the second BOX is empty]</b><br />
+<br />
+But it "might" be a sneaky little PC virus that fortunately won't load on a Mac. <b>
+[I will check for a virus using one of your suggested programs and give you an update later]</b><br />
+<br />
+First, you need to visit&nbsp;/Applications/Microsoft Office 2011/Office/Startup/Word and see if there is anything in that folder. &nbsp;If there is, ask yourself what it is: if you don't know, move it to the trash and empty the trash!&nbsp;
+<b>[ of the three folders present, the Office folder was EMPTY]</b><br />
+As your next suggestion was not required, I did not need to check the global add in box, but it was still empty.<br />
+<br />
+The next area I did not complete.&nbsp;&nbsp; Need some more help.&nbsp;&nbsp; While I am a pretty good MAC user, I am using V 10.8.2 and I do recall performing the library 'trick' once before, I could not PULL it off this time around.&nbsp;&nbsp; I went to the main drive, users and my
+ account.&nbsp;&nbsp; I tried your steps, but did not see all of the things you mentioned.&nbsp;&nbsp;&nbsp; I have a screen shot which I can share.&nbsp; Perhaps you can share more information.&nbsp; Please let me know via my personal email at *** Email address is removed for privacy ***.<br />
+<br />
+I have downloaded the Sophos program and will run that after I send off this message.&nbsp;&nbsp; I hope to hear from you again and I appreciate all of your help.&nbsp;&nbsp; Thanks<br />
+<br />
+John B<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Append query - Microsoft Community</title>
+<h3> kevinrxz  say:</h3>
+<h2>            Append query</h2>
+                    <p>Hello, I have a db for tracking revisions to products we manufacture.<br />
+I have (3) tables (RevisionsTable; RelatedTable; ComponentsTable) and (2) forms (RevisonsForm; RelatedForm (Related is a subform on Revisions)).<br />
+RelatedTable is for storing a record for components based on how they relate to the main-form (RevisionsTable) revision record ("New/Add/Increase quantity"; Obsolete/Remove/Decrease quantity; Other Related SKU's").<br />
+RelatedTable has a lookup field (New/Obsolete/Other).</p>
+<p>
+</p><p>The users are inputing the data manually but I would like to change it so that the data fields are populated based on what is typed in the [SKU] field, using data from ComponentsTable; I think this would be an append query?<br />
+The user would then be able to change the fields if neccessary.<br />
+Alternativey I could have a button that runs the append query with criteria ( [SKU?] ).<br />
+I DO want to store the data from the Components table in the Related table - over time the details of the components might change and we need to know what they were at the time of the specific revisions.</p>
+<p>
+</p><p>I have been experimenting and here is where I am having my problems.<br />
+My sub-form is in datasheet view and when the user tabbed or clicked to the next field or record (saving sub-form record?), it added the primary key of the main form (Revisions) record to the sub-form (Related) record.<br />
+I have created an append query that "auto-fills" data in the Related table using data from the Components table.<br />
+The only way I could see to get the append query into my form was with a button control on the main form.<br />
+It works, but it does not include the Revisions pk from the main form record.<br />
+RelatedTable has default values for almost every field but when appending, the fields that are not part of the query, are blank.<br />
+I can't figure out a way for it to display the lookup field (New/Obsolete/Other).<br />
+Once the query has run I can't see the chage until I click refresh all on the home tab; in playing around with macros I can refresh, but not refesh all?</p>
+<p><br />
+Any ideas?<br />
+Thanks in advance</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            1.&nbsp; Trimming a string of space characters returns a zero-length string not a Null, so when you apply the Nz function to the column it will always return a zero-length string.&nbsp; You can cover both bases with:<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Me.LONGDESCRIPTION = IIf(Nz(ctrl.Column(2),"") ="", "-",ctrl.Column(2) )<br />
+&nbsp;&nbsp;&nbsp;&nbsp; Me.DRAWINGNUMBER = IIf(Nz((ctrl.Column(3),"") ="", "NA",ctrl.Column(3) )<br />
+<br />
+2.&nbsp; The button has a On Click event property to which the macro is assigned by the wizard.&nbsp; It appears that the
+<em>combo box's </em>AfterUpdate event procedure is being implicitly called by whatever the macro is doing.&nbsp; Changing the code in the combo box's AfterUpdate event procedure as I described should avoid the error.
+<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Following on from Tom's analogy with the unit price of a product, you might like to take a look at InvoicePDF.zip in my public databases folder at:<br />
+<br />
+<a href="https://onedrive.live.com/?cid=44CC60D7FEA42912&amp;id=44CC60D7FEA42912!169" target="_blank" rel="noreferrer nofollow">https://onedrive.live.com/?cid=44CC60D7FEA42912&amp;id=44CC60D7FEA42912!169</a><br />
+<br />
+Note that if you are using an earlier version of Access you might find that the colour of some form objects such as buttons shows incorrectly and you will need to&nbsp; amend the form design accordingly. &nbsp;<br />
+<br />
+If you have difficulty opening the link copy its text (NB, not the link location) and paste it into your browser's address bar.<br />
+<br />
+In the this little demo file, in the AfterUpdate event procedure of the ProductID combo box in the invoice details subform in the main invoice form the following code assigns the current unit price and tax rate of the selected product to the relevant columns
+ in the subform's underlying table with:<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim ctrl As Control<br />
+<br />
+&nbsp;&nbsp;&nbsp; Set ctrl = Me.ActiveControl<br />
+<br />
+&nbsp;&nbsp;&nbsp; Me.UnitPrice = ctrl.Column(1)<br />
+&nbsp;&nbsp;&nbsp; Me.TaxRate = ctrl.Column(2)<br />
+<br />
+In this case the values are from hidden columns in the combo box's RowSource.<br />
+<br />
+In the parent form the customer's address data, which again is not time-independently determined by CustomerID, is similarly assigned to columns in the Invoices table with:<br />
+<br />
+&nbsp;&nbsp;&nbsp; ' insert current address data as invoice address data<br />
+&nbsp;&nbsp;&nbsp; Me.AddressLine1 = Me.CurrentAddressLine1<br />
+&nbsp;&nbsp;&nbsp; Me.AddressLine2 = Me.CurrentAddressLine2<br />
+&nbsp;&nbsp;&nbsp; Me.cboCity = Me.CurrentCityID<br />
+&nbsp;&nbsp;&nbsp; Me.PostCode = Me.CurrentPostCode<br />
+&nbsp;&nbsp;&nbsp; Me.Email = Me.CurrentEmail<br />
+<br />
+In this case the values are obtained from the form's RecordSource which is a query which includes the Customers and Cities table in addition to the Invoices table.<br />
+<br />
+For an example where an append query is used to insert data into another table see the Treatments demo in the same OneDrive folder.&nbsp; In the Patient Treatments form the code behind the Create Treatment Programme button is as follows:<br />
+<br />
+&nbsp;&nbsp;&nbsp; On Error GoTo Err_Handler<br />
+&nbsp;&nbsp;&nbsp; Const MESSAGETEXT_1 = _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Please select a patient and treatment, and enter a start date first."<br />
+&nbsp;&nbsp;&nbsp; Const MESSAGETEXT_2 = _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "A treatment programme already exists.&nbsp; Do you want to replace this?"<br />
+&nbsp;&nbsp;&nbsp; Dim strCriteria As String<br />
+&nbsp;&nbsp;&nbsp; Dim ctrl As Control<br />
+&nbsp;&nbsp;&nbsp; Dim strSQL As String<br />
+<br />
+&nbsp;&nbsp;&nbsp; ' ensure all necessary data has been entered<br />
+&nbsp;&nbsp;&nbsp; For Each ctrl In Me.Controls<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If ctrl.Tag = "LockMe" And IsNull(ctrl) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox MESSAGETEXT_1, vbExclamation, "Invalid Operation"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit Sub<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next ctrl<br />
+<br />
+&nbsp;&nbsp;&nbsp; ' does a treatment programme for this patient/treatment/start date<br />
+&nbsp;&nbsp;&nbsp; ' already exist?<br />
+&nbsp;&nbsp;&nbsp; strCriteria = "PatientID = " &amp; Me.PatientID &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; " And TreatmentID = " &amp; Me.TreatmentID &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; " And StartDate = #" &amp; Format(Me.StartDate, "yyyy-mm-dd") &amp; "#"<br />
+<br />
+&nbsp;&nbsp;&nbsp; If Not IsNull(DLookup("PatientID", "PatientTreatmentProgramme", strCriteria)) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If MsgBox(MESSAGETEXT_2, vbQuestion + vbYesNo, "Confirm") = vbNo Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit Sub<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strSQL = "DELETE * FROM PatientTreatmentProgramme WHERE " &amp; strCriteria<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CurrentDb.Execute strSQL, dbFailOnError<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+<br />
+&nbsp;&nbsp;&nbsp; ' ensure current record is saved, then execute 'append'<br />
+&nbsp;&nbsp;&nbsp; ' query to insert rows into PatientTreatmentProgramme table<br />
+&nbsp;&nbsp;&nbsp; Me.Dirty = False<br />
+&nbsp;&nbsp;&nbsp; DoCmd.SetWarnings False<br />
+&nbsp;&nbsp;&nbsp; DoCmd.OpenQuery "qryAppendPatientProgramme"<br />
+<br />
+&nbsp;&nbsp;&nbsp; ' requery subform to show new rows<br />
+&nbsp;&nbsp;&nbsp; Me.sfcPatientTreatmentProgramme.Requery<br />
+<br />
+Exit_Here:<br />
+&nbsp;&nbsp;&nbsp; DoCmd.SetWarnings True<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+<br />
+Err_Handler:<br />
+&nbsp;&nbsp;&nbsp; MsgBox Err.Description, vbExclamation, "Error"<br />
+&nbsp;&nbsp;&nbsp; Resume Exit_Here<br />
+<br />
+The append query is as follows:<br />
+<br />
+PARAMETERS [Forms]![frmPatientTreatments]![PatientID] LONG, </p>
+<p>[Forms]![frmpatientTreatments]![TreatmentID] LONG, <br />
+[Forms]![frmpatientTreatments]![Startdate] DATETIME;<br />
+INSERT INTO PatientTreatmentProgramme ( PatientID, TreatmentID, ProcedureID, DateScheduled, StartDate )<br />
+SELECT PatientTreatments.PatientID, TreatmentSchedule.TreatmentID, TreatmentSchedule.ProcedureID,
+</p>
+<p>[StartDate]+[Interval], PatientTreatments.StartDate<br />
+FROM TreatmentSchedule INNER JOIN PatientTreatments <br />
+ON TreatmentSchedule.TreatmentID=PatientTreatments.TreatmentID<br />
+WHERE PatientTreatments.PatientID=Forms!frmPatientTreatments!PatientID <br />
+AND TreatmentSchedule.TreatmentID=Forms!frmpatientTreatments!TreatmentID <br />
+AND PatientTreatments.StartDate=Forms!frmpatientTreatments!Startdate;<br />
+</p>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to change my primary email of Skype&#63;&#63; - Microsoft Community</title>
+<h3> alfredtsui2003  say:</h3>
+<h2>            How to change my primary email of Skype&#63;&#63;</h2>
+                    <p>I used to use hotmail as my primary email address, few years ago my hotmail got hacked and locked until now, i cannot login to it.</p>
+<p>After that, i remember my skype account is using that email address for the primary email address, i cannot change it now.</p>
+<p>Is there any method to change the primary address to my new email address so that i can change my password...</p>
+<p>
+</p><p>Thank you very much,</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> elbab  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Try Click on your profile picture. Scroll down to the contact details and click edit button on the right. Click the email address you wish to change and edit it. Then click the green SAVE button at the bottom of the page.       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_account_and_paid_services">&#40;archived&#41;_account_and_paid_services, </a> <br>
+<a href="/search?q=account_setup_and_maintenance">account_setup_and_maintenance, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>bluetooth - Microsoft Community</title>
+<h3> juanitaeldridge  say:</h3>
+<h2>            bluetooth</h2>
+                    <p>I have connected a JBL bluetooth speaker to my HP PC running Windows 7/11 but can not get a connection to IE Help please.</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aera rua  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Juanita, </p>
+<p>
+</p><p>
+</p><p>Connecting any Bluetooth device to your PC should not affect any other types of connection. To better assist you, please answer the following questions:</p>
+<p>
+</p><ul>
+<li>Are you referring to your Internet connection? </li><li>Are you getting an error message? If yes, kindly attached the screenshot on your reply.</li><li>Does this issue occur on other browser as well?</li><li>When you disconnect your Bluetooth device, are you getting a connection in IE?</li></ul>
+<p>
+</p><p>As an initial troubleshooting, we recommend that you follow the troubleshooting steps on this
+<a href="https://support.microsoft.com/en-us/help/15287/windows-why-can-not-get-connected" target="_blank" rel="noreferrer nofollow">
+link</a>. Following the steps on that article will help us isolate the issue. </p>
+<p>
+</p><p>We’ll keep an eye out for your response.</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Feedback hub language in start - Microsoft Community</title>
+<h3> scooter2478  say:</h3>
+<h2>            Feedback hub language in start</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>&nbsp; &nbsp; I'm having an issue where only the feedback hub is displaying in Chinese language. I tried changing the language to English in the control panel but that didn't work. Everything else in the programs list on the start menu is in English. I scanned for
+ malware and viruses with no results. It seemed to have done this after the latest Windows 10 update (Feature update to Windows 10 Creators Update version 1703). I'm not sure what category this goes under so I will choose "Start". Thanks in advance if anyone
+ can help.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/cc407b2d-1677-44de-be67-5dafdd4d338b" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/cc407b2d-1677-44de-be67-5dafdd4d338b" /></a></p>
+<p>
+</p><p>***Post moved by the moderator to the appropriate forum category.***&nbsp; <br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> darian tab  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>This issue may have something to do with the settings. Since you've mentioned that you have already changed the language to English, we recommend restoring the default settings by following these steps:</p>
+<p>
+</p><ol>
+<li>Click <strong>Start</strong>.</li><li>Type <strong>Control Panel</strong> and hit <strong>Enter</strong>.</li><li>Type <strong>Language </strong>in the search box.</li><li>Click <strong>Language </strong>and choose<strong> Advance settings</strong>.</li><li>Scroll down and click on <strong>Restore defaults</strong>.</li><li>Click <strong>Save</strong>.</li><li>Restart your computer.</li></ol>
+<p>
+</p><p>Do let us know if you need any other assistance.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=apps_on_insider_preview">apps_on_insider_preview, </a> <br>
+<a href="/search?q=other_apps">other_apps, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Dog&#58; Causing severe anxiety - Microsoft Community</title>
+<h3> franklee5  say:</h3>
+<h2>            Dog&#58; Causing severe anxiety</h2>
+                    <p>Hello</p>
+<p>Harvey, our 2 year old collie, becomes extremely anxious and disturbed, barking and darting about, as soon as we start to Skype with a USA friend. It's been suggested he may be hearing high frequency 'white noise' (that we are not aware of).</p>
+<p>Some suggest that there may be some way of modifying (lowering) the troublesome frequency.</p>
+<p>Please advise.</p>
+<p>
+</p><p>Thank you</p>
+<p>FrankLee5. 11 January 2019</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi there,
+<br />
+<br />If something is emitting a frequency, it is your audio device. I would highly suggest trying to use headphones when making the call and seeing if Harvey stops reacting in this way.
+<br />
+<br />I hope it will help!       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> franklee5  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for responding Dan_Y</p>
+<p>
+</p><p>Interesting.</p>
+<p>On the last occasion both ends (UK - USA) turned their laptop volumes to zero and spoke by LL phone. Harvey was a little better though still excitedly dashing around.</p>
+<p>Prior to the last two Skype video conversations Harvey had been indifferent when we Skyped. There has been no hardware/software changes to account for his dramatic change of behaviour.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No worries, FrankLeeS. Please do come back if you have exhausted the 'headphones' option and Harvey isn't feeling better during calls.       
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=everything_else">everything_else, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Disabling Endnote Add In- Word 2010 - Microsoft Community</title>
+<h3> pen  say:</h3>
+<h2>            Disabling Endnote Add In- Word 2010</h2>
+                    
+<p>Hi All</p>
+<p>Word 2010 keeps hanging up and I strongly suspect it will be the Endnote add in.&nbsp; Office Diagnostics is GONE so how do I disable the add in.&nbsp; I am just going through a continuos loop where word tries to open it hangs tries to open hangs.&nbsp;</p>
+<p>Thanks</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="G.J. Oomens" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "GO"); this.style="display: inline-block";'
+<h3> g.j. oomens  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>On Wed, 16 Jun 2010 21:24:24 +0000, Pen wrote:</p>
+<blockquote>
+<p>Thanks for that but unfortunately that is when it decides to freeze.&nbsp; I also tried the repair feature in the add/install programs but that hasn't worked either.&nbsp;</p>
+</blockquote>
+<p>See for some general troubleshooting:<br />
+<a href="http://support.microsoft.com/kb/921541" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/921541</a></p>
+<hr />
+Gérard
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do i use a writing tablet to mark on documents - Microsoft Community</title>
+<h3> randyrion  say:</h3>
+<h2>            How do i use a writing tablet to mark on documents</h2>
+                    I just bought a writing tablet and have seen teachers write on documents while in word. Everything I have read gives examples of how to set this up with windows but nothing about how to set it up on a mac. Any help would be greatly appreciated.&nbsp;
+<div><br />
+</div>
+<div>Randy</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What you're referring to is not a feature of Microsoft Office - PC or Mac. It's a matter of driver software for the device itself, which apparently provides an Office plug-in for Windows. I'd suspect you need to consult your tablet's user guide or contact
+ the mfr's support for the device to see if a Mac-compatible software package is available.<br />
+<br />
+Regards,<br />
+Bob J.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Downloads - Microsoft Community</title>
+<h3> ernsvan zyl  say:</h3>
+<h2>            Downloads</h2>
+                    A lot of apps, specially those for security cameras can only be downloaded to Apple or Android phones and not to Windows phones. Is there a app that I can download to make android downloads?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>Is there a app that I can download to make android downloads?
+</blockquote>
+<p>no. android apps run on android phones.</p>
+<p>you need to speak to your security camera manufacturer to ask them to make a windows app.</p>
+<p />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=900-series">900-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can I download Microsoft Office using the Serial Number&#63; - Microsoft Community</title>
+<h3> aaruto10  say:</h3>
+<h2>            Can I download Microsoft Office using the Serial Number&#63;</h2>
+                    I had refreshed my laptop when no applications were opening and I forgot to write down the product key. However, I did find the bill pertaining to the purchase of the laptop with Microsoft Office. I only have the Serial number and REF code. Also, Microsoft
+ was installed when I obtain it so I do not have a CD. Therefore, I was wondering if I could get Microsoft using either one of these codes.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you replying.</span></p>
+<p>
+</p><p><span>Since Office came pre-installed on the computer and you have the bill pertaining to the purchase of the laptop with Microsoft Office, I suggest you to contact&nbsp;device manufacturer and get office installed.</span></p>
+<p>
+</p><p><span>If you have any questions related to Office, feel free to contact us. We are happy to help you.</span></p>
+<p>
+</p><p><span>Thank you.</span></p>
+<p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Phone Recovery Tool 2.1.1 - Could not connect to the server - Microsoft Community</title>
+<h3> nz365guy  say:</h3>
+<h2>            Windows Phone Recovery Tool 2.1.1 - Could not connect to the server</h2>
+                    <p>I installed the windows 10 preview on my Nokia 930 and found that it is not stable enough.</p>
+<p>
+</p><p>I went to role back to windows </p>
+<table>
+<tbody>
+<tr>
+<td colspan="1" rowspan="1">Denim</td>
+<td colspan="1" rowspan="1">8.10.14219.341</td>
+<td colspan="1" rowspan="1">02540.00019.14484.37008</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;The problem is that the Windows Phone Recovery Tool 2.1.1 can not connect to the server to download the file.</p>
+<p>
+</p><p>Screenshots as follows:</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/d5c5041f-d670-484e-abd7-95f8ccb04859" /></p>
+<p>Any ideas to manually download the package or find out of the download server is down. (also I turned off my firewall to make sure that was not the problem)</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi&nbsp;<a href="http://answers.microsoft.com/en-us/profile/141d9ce8-6f7d-4c99-9303-db1e7275cee9" title="nzCRMguy">nzCRMguy</a></p>
+<p>
+</p><p>Most probably the server is down because other user has also posted the same <span style="text-decoration-line: underline">
+<em><strong><a href="http://answers.microsoft.com/en-us/mobiledevices/forum/mdlumia-mdupdate/windows-phone-recovery-tool-do-not-conect-to-the/cdf67b3e-663c-4a97-8610-eeef803e0cc3">HERE</a></strong></em></span></p>
+<p>Can't do anything but to try again after some time.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="nz365guy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "NZ"); this.style="display: inline-block";'
+<h3> nz365guy  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes you are correct.&nbsp; It is working now and downloading the correct file.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=900-series">900-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cell custom formatting on excel in Android version - Microsoft Community</title>
+<h3> abdullah2085  say:</h3>
+<h2>            Cell custom formatting on excel in Android version</h2>
+                    <p>&nbsp;please give me correct answer how to cell format in custom formatting in Android phone give me only this questions answer another answering would not want</p>
+<p>
+</p><p>
+</p><p><em>Original Title: Sell custom formatting on excel in Android version</em></p>
+<p>
+</p><p><em>***Subject edited for clarity by the moderator.***</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paolo mag  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Abdullah,<br />
+<br />
+To format a cell using your Excel on your Android phone, we suggest that you visit this
+<a href="https://support.office.com/en-us/article/Video-Edit-a-spreadsheet-using-an-Android-phone-dce82d15-9417-47a5-b8ea-89040d93a7ec" target="_blank" rel="noreferrer nofollow">
+link</a>. From there, you'll see a video of the guide on how to do it.<br />
+<br />
+For Excel on Android guide, we suggest that check this <a href="https://support.office.com/en-us/article/Excel-for-Android-touch-guide-aef977da-6adf-4724-b054-8ca4bb1d7afb" target="_blank" rel="noreferrer nofollow">
+article</a>. From there, you'll see other useful tips on how to use the app on your Android phone.<br />
+<br />
+Let us know if this information was helpful to you.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Melowin Mar" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "MM"); this.style="display: inline-block";'
+<h3> melowin mar  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello Abdullah,</p>
+<p>
+</p><p>
+</p><div>
+<p><span><span>This thread has been inactive for a while now, and we would like to follow up on the status of your issue with formatting on Excel. If the solution provided by
+</span></span><a href="https://answers.microsoft.com/en-us/profile/230acd3e-d92c-4838-bf0b-d92d7edab944" title="Paolo Mag"><strong>Paolo Mag
+</strong></a><span><span>resolved the issue, please let the community know by marking his post as an answer.&nbsp;</span></span><span>&nbsp;</span></p>
+<div>
+<p><span>&nbsp;</span></p>
+<div>
+<p><span><span>Feel free to reply to this post if you need further assistance.</span></span></p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rustic haggisfed  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The video link did not answer&nbsp;<span>Abdullah's question at all. I share&nbsp;</span><span>Abdullah's frustrating on this question.&nbsp;</span><span>Custom
+ formatting is not about selecting a pre-defined format from a pull down list. It is to specify a format that is NOT on the predefined list.</span></p>
+<p>
+</p><p>On my laptop Excel I can define the format for a date in a cell e.g. 21st October 2017, to be shown as "ddd dd/mm/yy" (Sat 21/10/17), "dd/mm ddd" (21/10 Sat) or just as "dddd" (Saturday). These are custom formats because they are not on the list of prescribed
+ formats on the menu.</p>
+<p>
+</p><p>HOW DO I DO THIS IN ANDROID VERSION OF EXCEL?</p>
+<p>
+</p><p>Please only provide an answer, link or video if you understand the question and the answer tells us how do do this. I already know how to open an Excel file on a bus.</p>
+<p>
+</p><p>Or, if you understand the question, to tell us it is not possible in the Android version.</p>
+<p><br />
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

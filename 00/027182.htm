@@ -1,0 +1,2678 @@
+    <title>TransferSpreadsheet trips on punctuation and table names - Microsoft Community</title>
+<h3> paul domaskis  say:</h3>
+<h2>            TransferSpreadsheet trips on punctuation and table names</h2>
+                    <p>I am trying to import data from Excel to Access, I'm invoking the following from a VBA subroutine in Access:<br />
+<br />
+&nbsp;&nbsp; stTname="tOpsByFilter"<br />
+&nbsp;&nbsp; stFname="FDSmap.xlsm"<br />
+&nbsp;&nbsp; DoCmd.TransferSpreadsheet _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TransferType:= acLink, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SpreadsheetType:= acSpreadsheetTypeExcel12Xml, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TableName:= stTname, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FileName:= stDatPathPrefix &amp; stFname, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HasFieldNames:= True, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Range:="OpsByFilter!$D$2:$AJ$457"<br />
+<br />
+From experimentation, it doesn't seem to matter whether I adorn the sheet name with single quotes or not.&nbsp; The import process seems to trip on the exclamation mark.&nbsp; The error message says that the object 'OpsByFilter$$D$2:$AJ$457' doesn't exist, and I noticed
+ that the exclamation mark is replaced by an extra dollar sign.&nbsp; If I remove the dollar signs in the range address, then the import proceeds.<br />
+<br />
+The import process also seems to trip on single quotes.&nbsp; I renamed the worksheet to contain spaces (and that's the way I want to keep it to remain faithful to how the workbook was provided to me), and used the TransferSpreadsheet argument<br />
+<br />
+&nbsp;&nbsp; Range:="'Ops by Filter'!D2:AJ457"<br />
+<br />
+This time, it complains that the object "Ops by Filter'$D2:AJ457' doesn't exist.&nbsp; Notice the unbalanced double quote, the fact that the exclamation mark has been replaced by a dollar sign, and the ending single quote.&nbsp; Removing the quotes doesn't help.<br />
+<br />
+The substitution of characters in the error messages seem to indicate buggy code for TransferSpreadsheet.<br />
+<br />
+I can use the single quotes and the dollar sign if I create a range name for it at the scope of the Workbook, then use that for the Range argument above.&nbsp; This is highly nonideal.&nbsp; As an alternative, I would like to turn the whole range of interest into a table
+ and refer to the table name. For some reason, however, TransferSpreadsheet doesn't recognize the table name, even though it shows up in the Name Manager.<br />
+<br />
+After all this reverse engineering of TransferSpreadsheet's functional behaviour, I have two questions:<br />
+<br />
+&nbsp;&nbsp; * /Can/ it be made to recognize table names?<br />
+<br />
+&nbsp;&nbsp; * Does anyone else experience the above tripping on punctuation when range names are not used?<br />
+<br />
+With regard to the latter, I recall years ago that I literally spent days characterizing the behaviour of TransferSpreadsheet, but never got a satisfactory "model" of sane behaviour.&nbsp; I had to do a lot of manual work to create many simple spreadsheets for import.</p>
+<p>
+</p><p>In case it's not common knowledge, I prefer table names to range names because the boundaries self adjust based on insertion/append/deletion operations done entire rows or columns at a time.&nbsp; I tried to change the range name definition from 'Ops by Filter'!$D$2:$AJ$457
+ to 'Ops by Filter'!$D:$AJ so at least I don't have to worry about the height.&nbsp; Unfortunately, the import TransferSpreadsheet reads all the empty rows beneath my table as actual records.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Dirk Goldgar" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "DG"); this.style="display: inline-block";'
+<h3> dirk goldgar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Where are you getting the exclamation-point syntax from for your Range argument?&nbsp; Normally, TransferSpreadsheet uses a $ sign in that argument to distinguish a worksheet name from the range-address.&nbsp; That's why you can't specify absolute cell addresses using
+ the "$D$2:$AJ$457" syntax, but this should work to link those cells using relative addresses from the named worksheet:</p>
+<p>
+</p><p>&nbsp;&nbsp;&nbsp; DoCmd.TransferSpreadsheet _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TransferType:= acLink, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SpreadsheetType:= acSpreadsheetTypeExcel12Xml, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TableName:= stTname, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FileName:= stDatPathPrefix &amp; stFname, _<br />
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; HasFieldNames:= True, _<br />
+&nbsp; &nbsp; &nbsp;&nbsp; Range:="Ops By Filter$D2:AJ457"</p>
+<p>
+</p><p>If the cells in question were identified by a named range in the workbook, you could just refer to the range name:</p>
+<p>
+</p><p>&nbsp;&nbsp;&nbsp; DoCmd.TransferSpreadsheet _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' ...</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Range:="MyNamedRange"</p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Tom van Stiphout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "TV"); this.style="display: inline-block";'
+<h3> tom van stiphout  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Your TransferType is acLink.<br />
+</p>
+<p>However, changing that does not make it work, but dropping the $-signs does.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>photos blunder&#33; - Microsoft Community</title>
+<h3> adi20892  say:</h3>
+<h2>            photos blunder&#33;</h2>
+                    I'm having a severe problem with my nokia Lumia 720, n that is when I watch any photo from the gallery, as soon as I zoom inside a certain photo I want, surprisingly it gives me a new image!<br />
+Give me solution regarding this!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> 1lylumian  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Try soft resetting your phone, it's an inbuilt troubleshooter and fixes the OS issues most of the times.</p>
+<p>&nbsp;</p>
+<p>Just press and hold both the volume keys and power buttons together for 10-15 secs until the phone gets restated by itself.</p>
+<p>Hope this fixes it for you‚ò∫</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>issue with workflows in a SharePoint online sub site - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            issue with workflows in a SharePoint online sub site</h2>
+                    <p>Hi,<br />
+</p>
+<p>I am having a issue with workflows in a SharePoint online sub site. we have a workflow to be triggered on item creation but workflow is not starting.<br />
+</p>
+<p>we have the same scenario for some other list too but none of the workflows are working.<br />
+<br />
+i have tried to start them manually and getting "Something went wrong. To try again, reload the page and then start the workflow" error.<br />
+</p>
+<p>workflows are working fine in other sub sites.&nbsp;<br />
+<br />
+if you have the solution could you please guide us.<br />
+<br />
+<br />
+Thanks in advance.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rena Yu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "RY"); this.style="display: inline-block";'
+<h3> rena yu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Payidi,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thanks for your updates. </span></p>
+<p><span>Can you help to confirm whether the issue only happens to Nintex workflow? You can create a simple SharePoint Online approve workflow or SharePoint Designer workflow. Check whether they can work.
+</span></p>
+<p><span>If the issue only happens to Nixtex workflow, as this is the 3<sup>rd</sup> party workflow program, we suggest you post the issue to the Nintex for dedicated help.
+</span></p>
+<p><span>If the issue happens even to SharePoint Online workflow or SharePoint Designer workflow, please provide us the error screenshot again for our investigation.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thanks,</span></p>
+<p><span>Rena</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=sharepoint">sharepoint, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I can not create a New Folder - Microsoft Community</title>
+<h3> jefferymoss2  say:</h3>
+<h2>            I can not create a New Folder</h2>
+                    <p>Case number for this concern 1461927784.</p>
+<p>
+</p><p>I can not create a New Folder anywhere. If I am on Windows Desktop or In Explorer and Right Click the mouse, the "File" shows up... to Create a New File, but when I click on File nothing happens, the computer locks up for a couple minutes and the box closes.</p>
+<p>I an a Windows Insider Program member and get routine Windows 10 Pro updates</p>
+<p>This issue of not being able to create a New Folder anywhere is not new. I have been getting around the problem by copying a folder, pasting, deleting the files in the copy folder and renaming the folder.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Case numbers mean nothing here as this is not Microsoft but just users trying to help others and to test the beta releases.</p>
+<p>When I right click I find New and it says Folder not File.</p>
+<p>What build are you using?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jefferymoss2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I can not create a New Folder anywhere. If I am on Windows Desktop or In Explorer and Right Click the mouse, the "File" shows up... to Create a New File, but when I click on File nothing happens, the computer locks up for a couple minutes and the box closes.</p>
+<p>
+</p><p>Windows 10 Pro, Build: Version 1809 - OS Build - 17763.316</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jefferymoss2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This issue of not being able to create a New Folder anywhere is not new. I have been getting around the problem by copying a folder, pasting, deleting the files in the copy folder and renaming the folder.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>When I right click the desktop and click on New this is what I get and I see Folder not file;</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/9aec2bb8-901b-49b3-bd8a-26abd816dee2?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/9aec2bb8-901b-49b3-bd8a-26abd816dee2?upload=true" /></a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jefferymoss2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Creating a New Folder on Windows Desktop now works at Random times. Sometimes it works and sometimes when I Right Click the mouse, the "File" shows up "Ghosted"... and when I click on "File" nothing happens, the computer locks up for a couple minutes and
+ the box closes.</p>
+<p>
+</p><p>But EVERYTIME in File Explorer when I Right Click the mouse, the "File" shows up "Ghosted"... and when I click on "File" nothing happens, the computer locks up for a couple minutes and the box closes.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> j377  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Have you tried using the keyboard shortcut Shift+Ctrl+N to create a new folder?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jefferymoss2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>No, I had not tried it, I forgot about that shortcut... I can create a New Folder&nbsp;in File Explorer&nbsp;when I use the keyboard shortcut Shift+Ctrl+N --- So that is another workaround and quicker,&nbsp;instead of getting around the problem by copying a folder, pasting,
+ deleting the files in the copy folder and renaming the folder. </p>
+<p>
+</p><p>BUT still&nbsp; in File Explorer when I Right Click the mouse, the "File" shows up "Ghosted"... and when I click on "File" nothing happens, the computer locks up for a couple minutes and the box closes. Does anyone know in Windows 10 Pro, why Right Click the
+ mouse to create a New Folder&nbsp;in File Explorer&nbsp;does not work?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Trevor J Lawrence" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "TJ"); this.style="display: inline-block";'
+<h3> trevor j lawrence  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm still puzzled as to what you mean by "File".&nbsp; As you can see in the screenshot lacrumb showed, there is no actual word "File".&nbsp; Do you mean any of the listed set of file types such as "Text Document"?&nbsp; Or are you seeing a completely different right click
+ menu than the rest of us?</p>
+<p>
+</p><p>Do you have any programs installed that modify the standard right click menu?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> j377  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Nice to know that part works.&nbsp;&nbsp;</p>
+<p>
+</p><p>Often times when right clicking in Explorer or on the Desktop presents issues, is when there are some incompatible or corrupt Shell Extensions.&nbsp; A freeware program by NirSoft called ShellExView has been useful to me for cleaning out unused extensions, especially
+ in the New... submenu.&nbsp; You can use the application to view what is being loaded behind the scenes when you right-click in Explorer.&nbsp; Maybe you'll find something that you don't recognize or can't explain.&nbsp;&nbsp;</p>
+<p>
+</p><p>The website also has some explanation on how to use ShellExView.</p>
+<p><a href="http://www.nirsoft.net/utils/shexview.html" target="_blank" rel="noreferrer nofollow">http://www.nirsoft.net/utils/shexview.html</a></p>
+<p>
+</p><p>Their ShellMenuView may also be helpful.</p>
+<p><a href="http://www.nirsoft.net/utils/shell_menu_view.html" target="_blank" rel="noreferrer nofollow">http://www.nirsoft.net/utils/shell_menu_view.html</a></p>
+<p>
+</p><p>
+</p><p>The above links are not Microsoft links.&nbsp;&nbsp;</p>
+<p>I have downloaded from that exact site myself.&nbsp;</p>
+<p>It's up to you if you want to try their applications.&nbsp;&nbsp;</p>
+<p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jefferymoss2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Sorry... I meant... BUT still&nbsp; in File Explorer when I Right Click the mouse, the "<span style="text-decoration-line: underline">New</span>" shows up "Ghosted"... and when I click on "<span style="text-decoration-line: underline">New</span>"&nbsp; nothing happens (the menu
+ should expand to show "Folder" and other options, but&nbsp;the computer locks up for a couple minutes and the box closes.
+</p>
+<p>Does anyone know in Windows 10 Pro, why Right Click the mouse to create a New Folder&nbsp;in File Explorer&nbsp;does not work?</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=files,_folders,_and_online_storage">files,_folders,_and_online_storage, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Add New Record with Combo Box choice - Microsoft Community</title>
+<h3> ruthcc2  say:</h3>
+<h2>            Add New Record with Combo Box choice</h2>
+                    <p>I have a table of Students and a table of Infractions (such as Chewing Gum In Class).<span>&nbsp;
+</span>Both tables are related to an Incidents table to record each instance.<span>&nbsp;
+</span>The infractions are worth 1, 2, or 3 points, depending on the infraction.<span>&nbsp;
+</span><br />
+</p>
+<p>When a teacher wants to enter a new Infraction for a Student, they first need to know how many infraction points the student already has.<span>&nbsp;
+</span>I have created a form (based on a query) where a teacher can choose a Student from a combo box and a calculation shows how many points the Student has.<span>&nbsp;
+</span>If the Student has less than 10 points, the teacher clicks a button that runs a macro to add a new record on a different form based on the Incidents table.<span>&nbsp;
+<br />
+</span></p>
+<p><span style="font-style: italic">How can I set it up so that the Student‚Äôs name from the first form displays on the second form for the new record?</span><span><span style="font-style: italic">&nbsp;</span>
+</span>The Where Condition box in the macro doesn‚Äôt work because I don‚Äôt want to filter all the records that match the name, I want to create a new record with the student‚Äôs name already filled in.&nbsp; Or should I set it up differently?<br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Dirk Goldgar" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "DG"); this.style="display: inline-block";'
+<h3> dirk goldgar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>I have a table of Students and a table of Infractions (such as Chewing Gum In Class).<span>&nbsp;
+</span>Both tables are related to an Incidents table to record each instance.<span>&nbsp;
+</span>The infractions are worth 1, 2, or 3 points, depending on the infraction.<span>&nbsp;
+</span><br />
+</p>
+<p>When a teacher wants to enter a new Infraction for a Student, they first need to know how many infraction points the student already has.<span>&nbsp;
+</span>I have created a form (based on a query) where a teacher can choose a Student from a combo box and a calculation shows how many points the Student has.<span>&nbsp;
+</span>If the Student has less than 10 points, the teacher clicks a button that runs a macro to add a new record on a different form based on the Incidents table.<span>&nbsp;
+<br />
+</span></p>
+<p><span style="font-style: italic">How can I set it up so that the Student‚Äôs name from the first form displays on the second form for the new record?</span><span><span style="font-style: italic">&nbsp;</span>
+</span>The Where Condition box in the macro doesn‚Äôt work because I don‚Äôt want to filter all the records that match the name, I want to create a new record with the student‚Äôs name already filled in.&nbsp; Or should I set it up differently?<br />
+</p>
+</blockquote>
+<p><br />
+I can think of two ways to approach this:</p>
+<p>1. Add a record to the Incidents table, get the primary key of that record, and then open the second form filtered to show only the record with that ID.</p>
+<p>... or ...</p>
+<p>2. Open the second form to a new record, then set the Student ID or Student Name on that record to the current student on the first form.&nbsp; In this case the record hasn't yet been saved, which allows the teacher to back out an spare the student if they want
+ to.</p>
+<p>Either approach should work fine.</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Unknown error 0x80040154&#34; error message in Outlook 2010 - Microsoft Community</title>
+<h3> gs5  say:</h3>
+<h2>            &#34;Unknown error 0x80040154&#34; error message in Outlook 2010</h2>
+                    Receiving "Unknown error 0x80040154" error message in Outlook 2010 with send/receive
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> guruprasad ra  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p><span>Try repairing office and check if this helps:</span></p>
+<p><span>Click on Start &gt; Control Panel &gt; Programs and Features &gt; Office 2010 &gt; change &gt; Repair</span></p>
+<p><span>If issue persists create a new profile:</span></p>
+<p><a href="http://support.microsoft.com/kb/829918" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/829918</span></a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>excel always open maximized. - Microsoft Community</title>
+<h3> lflf2052  say:</h3>
+<h2>            excel always open maximized.</h2>
+                    <p>Microsoft excel 2016 always open maximized.</p>
+<p>
+</p><p>i changed the size and close it, I just keep maximized whenever i open.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="BobGreenblatt" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "BO"); this.style="display: inline-block";'
+<h3> bobgreenblatt  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Change the size of what? Excel saves the size of the file's window with the file (workbook). So when reopening the file, it will open in the last saved window size. You can't change the default size of Excel's window unless you make a workbook template.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ginkas  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>This used to be the expected Excel behaviour (when you open a file, Excel preserves previous size and position), but currently this is not true on my machine:</p>
+<ul>
+<li>OSX v10.11</li><li>Excel v15.22 (160506)</li></ul>
+<p>
+</p><p>This is really annoying. Any suggestion about that?</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Preview 9860&#58; Network and Firewall issues - Microsoft Community</title>
+<h3> mucfuddle  say:</h3>
+<h2>            Preview 9860&#58; Network and Firewall issues</h2>
+                    <p>
+</p><p>After Preview 9860 installed (nice and easy, thank you for that.) I started Firefox and was surprised to be asked by the firewall&nbsp;if&nbsp;Firefox was allowed to access the network?&nbsp; All went well when I said yes but Solitaire and Mine Sweeper crash at start up,
+ apparently because they can't access the Xbox Server?&nbsp; Skype won't run because it can't contact the server. OneDrive works fine, Other network linked Apps are running without problems&nbsp;and none of my browsers have had problems since the first firewall request.</p>
+<p>
+</p><p>Not withstanding that this preview is a painful step back from the earlier release and&nbsp;to quote&nbsp;another post&nbsp;&nbsp;"Even worse than Windows 8.0".&nbsp;
+</p>
+<p>
+</p><p>Does anyone have any information about possible Network or Firewall problems.&nbsp;(Some solutions would also be appreciated.)</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Mucfuddle, i dont have a resolution to this spacific issue, however your using an old build (last build was 9879), A brand new build will be released to insiders in a week or less, you should update at that time, this problem could be resolved in the new
+ build</p>
+<p>
+</p><p>Update link</p>
+<a href="https://insider.windows.com/" target="_blank" rel="noreferrer nofollow">https://insider.windows.com/</a>
+<p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=web_and_networks">web_and_networks, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>download the publisher for excel add-in ,but can not display this - Microsoft Community</title>
+<h3> 2466816684  say:</h3>
+<h2>            download the publisher for excel add-in ,but can not display this add-in in excel</h2>
+                    download the publisher for excel add-in ,but can not display this add-in in excel , show gray&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ariel acu  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,<br />
+<br />
+For us to better assist you, we need to identify first as to why you can't add Publisher for Excel add-in to Excel 2013. Have you tried reinstalling the add-in to your computer to check if you will be able to apply it to the Excel app?<br />
+<br />
+In the meantime, we recommend that you follow the steps on how to add Excel add-ins on this
+<em><strong><a href="https://support.office.com/en-us/article/add-or-remove-add-ins-in-excel-0af570c4-5cf3-4fa9-9b88-403625a0b460" target="_blank" rel="noreferrer nofollow">link</a></strong></em>.<br />
+<br />
+We look forward to your reply.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to re-install Office 365 on a computer that has been reset to - Microsoft Community</title>
+<h3> deborahjhoward  say:</h3>
+<h2>            How to re-install Office 365 on a computer that has been reset to factory settings, and upgraded due to a hard drive issue</h2>
+                    I had an issue with a hard drive failure which forced my to recover the computer back to factpru specs.&nbsp; That meant back to Win&nbsp;7.&nbsp; I upgraded to Win 10 Creator with all applied maintenance.&nbsp; Now, I need to reload Office 365, but I do not want to use up
+ another license in doing so.&nbsp; What is the best way to accomplish reloading Office 365 on a "rebuilt" computer which&nbsp;it had been loaded onto before?&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Kris Ver" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "KV"); this.style="display: inline-block";'
+<h3> kris ver  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Deborah,</p>
+<p>
+</p><p>We appreciate your effort in providing us details about your issue. To reinstall Office 365,
+<span>sign in at<span>&nbsp;</span></span><a href="https://www.office.com/signin" target="_blank" rel="noreferrer nofollow">https://www.office.com/signin</a><span><span>&nbsp;</span>with the same Microsoft account you originally associated with your Office product when you first
+ installed it.<span> <br />
+</span></span></p>
+<p>
+</p><p>For more information on how to install or reinstall Office 365, kindly check this
+<a href="http://support.office.com/en-us/article/Download-and-install-or-reinstall-Office-365-or-Office-2016-on-a-PC-or-Mac-4414eaaf-0478-48be-9c42-23adc4716658?wt.mc_id=O365_Cons_TS_Link&amp;ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">
+link</a>.</p>
+<p>
+</p><p>Let us know how it goes.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia asha 305 software update - Microsoft Community</title>
+<h3> mudasir38  say:</h3>
+<h2>            Nokia asha 305 software update</h2>
+                    When will be the new software updated for nokia asha 305?<br />
+we need it plz do s0mething to rectify the bunch of problems in nokia 305 so we can have a self belief on nokia like bef0re.<br />
+thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vinnus---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Plz plz plz update the software of asha 305
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chazer---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>good news to every body who are awaiting for a update of nokia asha 305 finally nokia released a update v05.92 dated 26-10-2012. However at present the handset can only be updated with gprs from mobile using settings&gt;phone&gt;device updates&gt;downl.phone sw.
+ the update will be available soon in pc suit so i suggest you to wait for a week or 2 weeks to avail in pc suite.it is recommended to backup first if you r updating using phone. i updated my mobile on 28/11/2012 and feeled teh following improvements made after
+ update.</p>
+<p>&nbsp;</p>
+<p>1.you tube online streaming fixed(now you can watch youtube videos directly without downloading)</p>
+<p>2.red theme for mobile as shown in advertisement</p>
+<p>3.improved battery backup</p>
+<p>&nbsp;</p>
+<p>but still there are some error which can be corrected by nokia</p>
+<p>&nbsp;</p>
+<p>1.no copy paste option in message(copy paste option is &nbsp;very common in nokia phones but not available in this mobile)&nbsp;</p>
+<p>2.network selection error in sim 2 when sim 1 is selected to manual(not often but sometimes rarely)</p>
+<p>3.add facebook to social so that we can upload photos to web</p>
+<p>4.memory problem(memory low problem is not that panic when compared to c2-03 but stil a problem is always a problem)</p>
+<p>&nbsp;</p>
+<p>these are the problems in my view if any suggestions please help nokia to solve our problems by releasing a new update post ur feeling freely and solve your problems through updates</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhi555---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>after updating the software whats app is compdible with asha 305 and &nbsp;is internet is working properly in asha 305</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhi555---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>i want ask another quesion that after updating software it is remain s40 or it is update to s60.it is for aha 305</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> singhnsk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Software updates are only meant to bring improvements and bug fixes. Asha devices only run on s40 and it will remain s40 after the update.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhi555---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>after updating the software whats app is compdible with asha 305 and &nbsp;is internet is working properly in asha 305</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> singhnsk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No whatsapp is not compatible with any of dual SIM asha phones. So don't expect any software update to solve this.<br />
+There can be some improvements in internet browsing. Nokia browser shows to be updated. Other than that, the updates cover bugs and improves the functionality rather than bringing something new.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aleisha11  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="tiny_chef" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "TI"); this.style="display: inline-block";'
+<h3> tiny_chef  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> srikar9  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i updating my asha305 it require some memory.so, i deleted what can i deleted and it also ask's some memory but i can't delete other apps and documents(because it's inbuilt that are notifications app,facebook,twitter,orkut,social) what can i do for this
+ problem.pz ..plz tell me.
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot sign into Groove Music or Create an XBox GamerTag - Microsoft Community</title>
+<h3> paul685298davis  say:</h3>
+<h2>            Cannot sign into Groove Music or Create an XBox GamerTag</h2>
+                    I've upgraded to Windows 10 today after a bit of faffing around. Everything appears to be OK, except that I cannot sign into the Groove Music App. All I get is "Can't sign in" followed by a dialogue box telling me that I'm to "Please try again, if the
+ problem continues,&nbsp;visit www.Xbox.com/support to check for guidance", and giving me an error code "0xc00d11cd (0x8000000e)". I also cannot create an Xbox gamer tag. With this though, I get through the first bit (It knows who I am), it then asks me to set up
+ my GamerTag. I very quickly get " We were unable to sign you into Xbox Live", followed by There is a problem with your account, To fix it go to Xbox.com and sign in". However When I go to XBox.com, the login will not complete there either, I end up with a
+ white screen. I've checked my Windows Live account and all seem to be good, I've even verified my details. Any Ideas?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you for posting your query on Microsoft Community.
+</span></p>
+<p>
+</p><p><span>Refer
+ if this helps:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>
+</p><p><a href="http://answers.microsoft.com/en-us/windows/forum/games_windows_10/for-help-with-gaming-issues/9851613d-15f2-4e5d-992c-febd3d5d9221?tm=1438143787542">http://answers.microsoft.com/en-us/windows/forum/games_windows_10/for-help-with-gaming-issues/9851613d-15f2-4e5d-992c-febd3d5d9221?tm=1438143787542</a></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">Hope this information was helpful and do let us know if you need further assistance. We will be glad to assist.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul685298davis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yep, been there, can't do that as I'm unable to create a Gamer Tag, am unable to sign into Xbox (Live or App), and am unable to see any way of actually posting something without logging in, which I cant do. I can see some relevant posts, but the answers
+ tell me to do things that I've already tried.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul685298davis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Just to clarify, I don't have an Xbox, never have, so I've never logged into Xbox before. But since Groove music is now tied to Xbox I have no choice but to try and resolve this. I'm not really a gamer, but I do listen to music. Oh and selecting the Support
+ link on the Xbox site takes me to Xbox France!&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul685298davis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Right then, I've finally found the solution. I simply have to be an American. Just for the hell of it whilst trying to get a gamer tag yet again, I chose "English USA" instead of "English UK", hey presto I'm in. I simply had to change my billing country
+ after finishing up on Xbox. Don't know why I didn't think of it before! Xbox and Groove music all signed in.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sipho mateke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have been having the exact same problem. I couldn't sign in to Groove music or Xbox. So I went to the create xbox profile website say I agree and then it brings up a blank page. I looked up help which links to the xbox website but I need an xbox account
+ to view it! I tried changing the region to United States and it did not help. Where did you choose English USA? I have been trying to do this for days. Could you explain in detail how you fixed it?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul685298davis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>I have been having the exact same problem. I couldn't sign in to Groove music or Xbox. So I went to the create xbox profile website say I agree and then it brings up a blank page. I looked up help which links to the xbox website
+ but I need an xbox account to view it! I tried changing the region to United States and it did not help. Where did you choose English USA? I have been trying to do this for days. Could you explain in detail how you fixed it?
+</blockquote>
+<p>Open Microsoft Edge, in the address bar type xbox.com/en-gb/signin, hit enter. for me, I always ended up after logging in, on a French Xbox page, I changed the language to English United Kingdom&nbsp;(bottom left), then as the region selection was usually blank,
+ and again for me it worked, click support (bottom left above language), for me the screen changed miraculously to present a region selection drop down list. This is where I turned American, the last time I did this I selected English United States, instead
+ of English United Kingdom. For me it worked. All I had to do after that to bring me back on track (after setting up my gamertag, and proving that the logons worked) was to change my billing country in my&nbsp;Microsoft Live account to reflect the correct location.
+ Job Done................................................for me!!!!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sipho mateke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you! This worked but now I need a parental email which is a microsoft account (I have to be 18). So I have entered their email but it says "You'll need a microsoft account to join Xbox" But it is a microsoft account. But that's another problem. Thanks
+ for the help!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul685298davis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>Thank you! This worked but now I need a parental email which is a microsoft account (I have to be 18). So I have entered their email but it says "You'll need a microsoft account to join Xbox" But it is a microsoft account. But that's another problem. Thanks
+ for the help!</p>
+</blockquote>
+<p>Glad to help. To Microsoft Support, that's two people with exactly the same problem, using exactly the same fix. You might want to look at case number 1298738652 a bit more closely.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=security,_privacy,_and_accounts">security,_privacy,_and_accounts, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 Update in Microsoft Lumia 535 Dual sim - Microsoft Community</title>
+<h3> ashisharekar  say:</h3>
+<h2>            Windows 10 Update in Microsoft Lumia 535 Dual sim</h2>
+                    <p>Hi</p>
+<p>I am having Microsoft Lumia 535 Dual Sim hand set (latest version is 8.1 update).&nbsp; I have installed windows adviser and recommended&nbsp;to update win 10.&nbsp; During update I am getting the error&nbsp; code 801882d2.&nbsp;&nbsp;I have done hard and soft reset&nbsp;but not able to down
+ load the updates.&nbsp; Even I have&nbsp;done hard reset and tried to update&nbsp;windows without login to Microsoft.</p>
+<p>
+</p><p>Regards,</p>
+<p>Ashish&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello, <a href="https://answers.microsoft.com/en-us/profile/bb868620-32b8-4a39-9204-0757d69a3a71" title="AshishArekar">
+AshishArekar.</a></p>
+<p>
+</p><p>Thank you for posting your query on Microsoft Community.</p>
+<p>
+</p><p>Try enabling your phone to download on <strong>sleep mode</strong>. Go to <strong>
+WiFi Advanced Settings</strong>&gt;enable <strong>WiFi when phone goes to sleep</strong> then proceed downloading the update again.</p>
+<p>
+</p><p>Please let us know how it goes.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ashisharekar  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Got Same Error</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="ŸÖÿ≠ŸÖŸàÿØÿ®ÿ±Ÿàÿ≥ŸÑŸâ" role="img">
+<h3> ˘Ö¯≠˘Ö˘à¯Ø¯®¯±˘à¯≥˘Ñ˘â  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Microsoft Lumia 535 Dual SIM
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="ŸÖÿ≠ŸÖŸàÿØÿ®ÿ±Ÿàÿ≥ŸÑŸâ" role="img">
+<h3> ˘Ö¯≠˘Ö˘à¯Ø¯®¯±˘à¯≥˘Ñ˘â  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>Microsoft Lumia 535 Dual SIM
+</blockquote>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vickiehatfield8517  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have a Windows Lumia 535. I did a hard reset but can't get past the protection recovery key. My phone has been hacked numerous times and I don't remember putting this on there.&nbsp; Is there any way of getting past this because of my being hacked?&nbsp;&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>
+<p>
+</p><blockquote>
+<p>Hi</p>
+<p>I am having Microsoft Lumia 535 Dual Sim hand set (latest version is 8.1 update).&nbsp; I have installed windows adviser and recommended&nbsp;to update win 10.&nbsp; During update I am getting the error&nbsp; code 801882d2.&nbsp;&nbsp;I have done hard and soft reset&nbsp;but not able to down
+ load the updates.&nbsp; Even I have&nbsp;done hard reset and tried to update&nbsp;windows without login to Microsoft.</p>
+<p>
+</p><p>Regards,</p>
+<p>Ashish&nbsp;</p>
+</blockquote>
+<p>
+</p></blockquote>
+<p>
+</p><p>@RazaullahRazu,</p>
+<p>
+</p><p>Please do not use the abuse filter to post a request for help or the Reply with Quote feature which is spamming the forum.</p>
+<p>
+</p><p>If you do see Abuse in the forum then by all means use the Filter to Report it. You can see the Community Guidelines
+<a href="https://answers.microsoft.com/en-us/page/faq#faqCodeConduct">
+here</a>. If you see violations to these guidelines Click Report Abuse and let us know. Remember our youngest members are 13 years old and we try to keep this a Clean and Safe Environment for these members.</p>
+<p>
+</p><p>If you have a Question post it in your own words.</p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>animated email notifier for outlook 2007 - Microsoft Community</title>
+<h3> christinej2012  say:</h3>
+<h2>            animated email notifier for outlook 2007</h2>
+                    <p>Looking for a free animated email notifier for outlook 2007 similar to incredimail.</p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Anula D&#39;Souza" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> anula d&#39;souza  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>Unfortunately, Microsoft do not have a free email notifier however you may try to download it from third party providers and check if ti helps.
+<div><strong>Note</strong>: You may have to try them on your own as Microsoft does not support such add-ons</div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Email broken on 8.1&#63; - Microsoft Community</title>
+<h3> walterr_austin  say:</h3>
+<h2>            Windows Email broken on 8.1&#63;</h2>
+                    <p>I have a recurring Outlook PST file corruption issue that SCANPST can not fix.</p>
+<p>
+</p><p>Computer: New Dell Insperon Laptop loaded with Windows 8</p>
+<p>
+</p><p>OS: Windows 8.1 (the 8.1 upgrade notification occurred one day, I thought it was a "normal" windows upgrade, made the mistake of loading it. It has now caused my Microsift CRM and this issue to be unsupported by Microsoft, I'm totally out of luck)</p>
+<p>64-bit OS x64 based processor, CORE i3 processor, etc.</p>
+<p>
+</p><p>Program: Office 2013 Home &amp; Business 2013, Version 15.0.4569.1508</p>
+<p>Specifically OUTLOOK</p>
+<p>
+</p><p>Issue: about once per month I get the dreaded "cannot open PST file" error.</p>
+<p>I run the scanpst tool and it cannot fix the file. &nbsp; I show the results from the log below....</p>
+<p>
+</p><p>I believe this occurs whenever Outlook does not properly close the file. &nbsp;I make sure I close Outlook properly, but somtimes it leaves a grey "outlook closing" in the system tray, and I find a system warning from Outlook:"During launch an existing non-responsive
+ instance of Outlook was closed."</p>
+<p>
+</p><p>So the file is corrupt, I have to try to go back to my last Carbonite backup, and manually rebuild the file (try and open, import, etc.). My company uses a POP email provider, they will not change, not an option. &nbsp;My only real solid source to make sure I
+ have all my email is my iPad. it keeps the mail and is rock solid.</p>
+<p>
+</p><p>This is getting old. &nbsp;I am convinced that Outlook in Office 2013 is not stable on Windows 8.1. It is just broken.</p>
+<p>
+</p><p>I also have other system errors that make no sense to me like "The performance counter name string value in the registry is not formatted correctly. The malformed string is 8282. The first DWORD in the Data section contains the index value to the malformed
+ string while the second and third DWORDs in the Data section contain the last valid index values." &nbsp;and "</p>
+<p>The machine-default permission settings do not grant Local Activation permission for the COM Server application with CLSID&nbsp;<br />
+{C2F03A33-21F5-47FA-B4BB-156362A2F239}<br />
+&nbsp;and APPID", but I digress. This is all just typical Microsoft stuff, and tech support can not help me here....</p>
+<p>
+</p><p>So, is anyone else having the same issue?</p>
+<p>
+</p><p>I've worked with Dell support, they ran complete hardware diagnostics, told me:"the computer is fine, our only option is to restore back to original as it was shipped, then you can reload...." &nbsp;really not a good option.</p>
+<p>I've worked with Microsoft support, they tell me:"<span>As we able to provide you information regarding Windows 8.1 and Internet Explorer 11 are currently not compatible with CRM 2013&nbsp;and as per our discussion I will be proceeding with the closure of this
+ case by EOB as unsupported."</span></p>
+<p>
+</p><p>
+</p><p>Other background:</p>
+<p>I originally reported an error that was caused by using Outlook CRM plugin, it totally breaks the system, but when I worked with Microsoft Tech Support, they kindly informed me that I was hosed, they don't support the use of Microsoft Dynamics CRM with Microsoft
+ Windows 8.1, and that because I accepted the 8.1 upgrade release, I cannot downgrade...... So I removed the Outlook CRM link.</p>
+<p>
+</p><p>From the log:</p>
+<p>
+</p><p>Microsoft (R) Inbox Repair Tool<br />
+¬© 2012 Microsoft Corporation. &nbsp;All rights reserved.<br />
+<br />
+Version 15.0.4551.1003<br />
+<br />
+<br />
+**Beginning NDB recovery<br />
+<br />
+&nbsp; **Attempting to open database<br />
+<br />
+&nbsp; **Attempting to validate header<br />
+<br />
+&nbsp; **Attempting to validate AMap<br />
+<br />
+&nbsp; **Attempting to validate BBT<br />
+<br />
+&nbsp; **Attempting to validate NBT<br />
+<br />
+&nbsp; **Attempting to validate BBT refcounts<br />
+<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (330)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (334)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (6A0)<br />
+&nbsp; &nbsp; ??BBT entry (DD28) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (E0F4) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (F3E8) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (FB18) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (FBDC) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (FF3C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1029C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (102FC) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1042C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (104F0) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1084C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (10920) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (10AC8) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (10D90) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (11238) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (112FC) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (11304) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (114E0) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (11984) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (11C48) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (11F04) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (12270) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (125C8) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (12690) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (127DC) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (13C94)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (14008)<br />
+&nbsp; &nbsp; ??BBT entry (15B28) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B2C) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B30) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B38) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B3C) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B40) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B44) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (15B58) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (16E6C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (16EEC) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (16EFC)<br />
+&nbsp; &nbsp; ??BBT entry (16F04) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (16FCA) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (16FD0) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1709E) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (170A4) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1716E) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (17174) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (17188)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1718E)<br />
+&nbsp; &nbsp; ??BBT entry (1856C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (185E8) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (18D48) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1917C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (19180) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (191AC)<br />
+&nbsp; &nbsp; ??BBT entry (191F0) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1929C) has different refcount in RBT (3 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FC2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FC4)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FC8)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FCC)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FD0)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FD4)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (19FE0)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1B11C)<br />
+&nbsp; &nbsp; ??BBT entry (1BE54) has different refcount in RBT (6 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C642)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C644)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C64E)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C712)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C720)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C742)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C7A6)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1C9F2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CA22)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CA24)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CA3A)<br />
+&nbsp; &nbsp; ??BBT entry (1CA94) has different refcount in RBT (4 vs 2)<br />
+&nbsp; &nbsp; ??BBT entry (1CAA0) has different refcount in RBT (4 vs 2)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CB66)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CB68)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CB72)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CC56)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CC58)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CC6E)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CCC0)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CCC4)<br />
+&nbsp; &nbsp; ??Couldn't find BBT entry in the RBT (1CCCA)<br />
+<br />
+&nbsp; **Attempting to validate header NID high-water marks<br />
+<br />
+**Beginning PST/OST recovery<br />
+<br />
+&nbsp; **Attempting to recover all top-level objects<br />
+<br />
+&nbsp; &nbsp; **Store created by build: 15.4551<br />
+<br />
+&nbsp; **Attempting to walk all folders<br />
+<br />
+&nbsp; &nbsp; &nbsp; !!Contents Table for 8062, row doesn't match sub-object:<br />
+&nbsp; &nbsp; &nbsp; &nbsp; irow = 231, RowID = 203C64<br />
+<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D4<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D3<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D2<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D1<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D0<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CF<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CE<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CD<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CC<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CB<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = CA<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C9<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C8<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C7<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C6<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C5<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C4<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C3<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C2<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C1<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C0<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BF<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BE<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BD<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BC<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BB<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = BA<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B9<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B8<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B7<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B6<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B5<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B4<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B3<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B2<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B1<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B0<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AF<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AE<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AD<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AC<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AB<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = AA<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A9<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A8<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A7<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A6<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A5<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A4<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A3<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A2<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A1<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A0<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 99<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 98<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 97<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 96<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 95<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 94<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 93<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 92<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 91<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 90<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 89<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 88<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 87<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 86<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 85<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 84<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 83<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 82<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 81<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 80<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 79<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 78<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 77<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 76<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 75<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 74<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 73<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 72<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 71<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 70<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 69<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 68<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 67<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 66<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 65<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 64<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 63<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 62<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 61<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 60<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 59<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 58<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 57<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 56<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 55<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 54<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 53<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 52<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 51<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 50<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 49<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 48<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 47<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 46<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 45<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 44<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 43<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 42<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 41<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 40<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 39<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 38<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 37<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 36<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 35<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 34<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 33<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 32<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 31<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 30<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 29<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 28<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 27<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 26<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 25<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 24<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 23<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 22<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 21<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 20<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 19<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 18<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 17<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 16<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 15<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 14<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 13<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 12<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 11<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 10<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = F<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = E<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = D<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = C<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = B<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = A<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 9<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 8<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 7<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 6<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 5<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 4<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 3<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 2<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 1<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 0<br />
+&nbsp; &nbsp; &nbsp; !!Contents Table for 8082, row doesn't match sub-object:<br />
+&nbsp; &nbsp; &nbsp; &nbsp; irow = 247, RowID = 203C44<br />
+<br />
+&nbsp; &nbsp; &nbsp; !!Contents Table for 8082, row doesn't match sub-object:<br />
+&nbsp; &nbsp; &nbsp; &nbsp; irow = 245, RowID = 203C04<br />
+<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Failed to add row to the FLT, RowID = 0<br />
+&nbsp; **Attempting to locate any orphaned folders/messages<br />
+<br />
+&nbsp; **Performing final HMP validation<br />
+<br />
+&nbsp; **Attempting to check top-level objects for consistency<br />
+<br />
+&nbsp; &nbsp; &nbsp; ??Deleting SDO<br />
+<br />
+&nbsp; **Updating folder hierarchy<br />
+<br />
+**Attempting to fix original file<br />
+<br />
+&nbsp; **Attempting to copy back BBT<br />
+<br />
+&nbsp; **Attempting to copy back NBT</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p><span>Issue: Outlook - Problem receiving email ‚Äì no errors shown in application</span></p>
+<p><span>Symptom ‚Äì launch outlook, during send &amp; receive at bottom of screen it shows progress, similar to:</span></p>
+<p><span>‚ÄúDownloading message 1 of 8, 8b of 264KB‚Äù and if I let it continue it will take hours, but seems to slowly progress (note: during the 5 minutes composing this message it is now up to 1.48KB)</span></p>
+<p><span>I cancel the send receive, close outlook, try again, same result.</span></p>
+<p><span>I cancel send receive, close Outlook, reboot computer, and retry.&nbsp;&nbsp;</span></p>
+<p><span>It works! It communicates so fast it is just a quick blip on the screen for all 8 messages.</span></p>
+<p><span>Background: Check internet connectivity with browser, OK, speed is OK.</span></p>
+<p><span>Mail provider is POP Bluetie.com, works OK through web browser interface. 7 other people in office are using the same provider with no issues.</span></p>
+<p><span>Check event log, see the following:</span></p>
+<p><span>LiveComm (7796) C:\Users\Walter\AppData\Local\Packages\microsoft.windowscommunicationsapps_8wekyb3d8bbwe\LocalState\LiveComm\3de2e1b587b64659\120712-0049\: A request to read from the file "C:\Users\Walter\AppData\Local\Packages\microsoft.windowscommunicationsapps_8wekyb3d8bbwe\LocalState\LiveComm\3de2e1b587b64659\120712-0049\DBStore\livecomm.edb"
+ at offset 1556480 (0x000000000017c000) for 8192 (0x00002000) bytes succeeded, but took an abnormally long time (17 seconds) to be serviced by the OS.</span></p>
+<p>
+</p><p>Other items in Application Log:&nbsp; Outlook Error:</p>
+<p><span>Outlook disabled the following add-in(s):</span></p>
+<p>
+</p><p><span>ProgID: crmaddin.Addin</span></p>
+<p><span>GUID: {C1373C70-EE95-4D30-840E-5265694DE612}</span></p>
+<p><span>Name: Microsoft Dynamics CRM</span></p>
+<p><span>Description: Microsoft Dynamics CRM is a multi-lingual customer relationship management application that provides sales, service, and marketing capabilities.</span></p>
+<p><span>Load Behavior: 3</span></p>
+<p><span>HKLM: 1</span></p>
+<p><span>Location: c:\program files (x86)\microsoft dynamics crm\client\bin\crmaddin.dll</span></p>
+<p><span>Threshold Time (Milliseconds): 1000</span></p>
+<p><span>Time Taken (Milliseconds): 1109</span></p>
+<p><span>Disable Reason: This add-in caused Outlook to start slowly.</span></p>
+<p><span>Policy Exception (Allow List): 0</span></p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Elemantal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "EL"); this.style="display: inline-block";'
+<h3> elemantal  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Looks like a problem with a big outlook data file? So how big is the file?</p>
+<p>
+</p><p>Did you try a new data file as default and see if the performance is better or not?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> walterr_austin  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Looks like a problem with a big outlook data file? So how big is the file?</p>
+<p>
+</p><p>Did you try a new data file as default and see if the performance is better or not?</p>
+</blockquote>
+<p>My data file is 676,313 KB. &nbsp;It has about a year's worth of email. &nbsp;I've compressed it.</p>
+<p>
+</p><p>I don't think that it makes sense that the file is the issue.</p>
+<p />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Help&#33; Word isn&#39;t opening on my MacBook Pro anymore&#33; - Microsoft Community</title>
+<h3> sjc260  say:</h3>
+<h2>            Help&#33; Word isn&#39;t opening on my MacBook Pro anymore&#33;</h2>
+                    Word just quits every time I open..&nbsp; <br />
+My Mac is completely up to date.. does anybody have any advice?<br />
+<br />
+<br />
+Microsoft Error Reporting log version: 2.0<br />
+<br />
+Error Signature:<br />
+Exception: EXC_BAD_ACCESS<br />
+Date/Time: 2012-09-02 13:02:25 +0000<br />
+Application Name: Microsoft Word<br />
+Application Bundle ID: com.microsoft.Word<br />
+Application Signature: MSWD<br />
+Application Version: 14.0.0.100825<br />
+Crashed Module Name: unknown<br />
+Crashed Module Version: unknown<br />
+Crashed Module Offset: unknown<br />
+Blame Module Name: unknown<br />
+Blame Module Version: unknown<br />
+Blame Module Offset: unknown<br />
+Application LCID: 1033<br />
+Extra app info: Reg=en Loc=0x0409 <br />
+Crashed thread: 0<br />
+<br />
+<br />
+Thread 0 crashed:<br />
+<br />
+#&nbsp; 1&nbsp; 0x000bd2e7 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x000bc970 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x000bc437 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 4&nbsp; 0x000bc1e5 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 5&nbsp; 0x000bb0eb in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 6&nbsp; 0x04c740db in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 7&nbsp; 0x000babf5 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 8&nbsp; 0x000baba6 in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00000002&nbsp; ebx: 0x000bc621&nbsp; ecx: 0x00000002&nbsp; edx:0xbff48890<br />
+&nbsp;edi: 0x00000001&nbsp; esi: 0xbff48690&nbsp; ebp: 0xbff48528&nbsp; esp:0xbff48524<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x000bd2e7&nbsp;&nbsp; cs: 0x0000001b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000000&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00010296<br />
+<br />
+<br />
+Thread 1:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934bb9ae in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x978b27fd in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x0000016b&nbsp; ebx: 0xb0080700&nbsp; ecx: 0xb00805ac&nbsp; edx:0x934bb9ae<br />
+&nbsp;edi: 0x00000000&nbsp; esi: 0x978b28f5&nbsp; ebp: 0xb0080718&nbsp; esp:0xb00805ac<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934bb9ae&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000246<br />
+<br />
+<br />
+Thread 2:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934bb0ee in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x94d33e19 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x94d1bcca in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00100170&nbsp; ebx: 0x94d33c67&nbsp; ecx: 0xb0102f6c&nbsp; edx:0x934bb0ee<br />
+&nbsp;edi: 0xb0103000&nbsp; esi: 0xb0103000&nbsp; ebp: 0xb0102f88&nbsp; esp:0xb0102f6c<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934bb0ee&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000282<br />
+<br />
+<br />
+Thread 3:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934bb0ee in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x94d33e19 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x94d1bcca in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00100170&nbsp; ebx: 0x94d33c67&nbsp; ecx: 0xb0184f6c&nbsp; edx:0x934bb0ee<br />
+&nbsp;edi: 0xb0185000&nbsp; esi: 0xb0185000&nbsp; ebp: 0xb0184f88&nbsp; esp:0xb0184f6c<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934bb0ee&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000282<br />
+<br />
+<br />
+Thread 4:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934bb0ee in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x94d33e19 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x94d1bcca in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x00100170&nbsp; ebx: 0x94d33c67&nbsp; ecx: 0xb0206f6c&nbsp; edx:0x934bb0ee<br />
+&nbsp;edi: 0xb0207000&nbsp; esi: 0xb0207000&nbsp; ebp: 0xb0206f88&nbsp; esp:0xb0206f6c<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934bb0ee&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000282<br />
+<br />
+<br />
+Thread 5:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934b88e6 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x94dc26ce in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x0274c252 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 4&nbsp; 0x0274b920 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 5&nbsp; 0x0274b8ab in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 6&nbsp; 0x0274ce46 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 7&nbsp; 0x94d31557 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 8&nbsp; 0x94d1bcee in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0xffffffa6&nbsp; ebx: 0x00000000&nbsp; ecx: 0xb0288a7c&nbsp; edx:0x934b88e6<br />
+&nbsp;edi: 0x000008ae&nbsp; esi: 0x6e8a437a&nbsp; ebp: 0xb0288ac8&nbsp; esp:0xb0288a7c<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934b88e6&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000246<br />
+<br />
+<br />
+Thread 6:<br />
+<br />
+#&nbsp; 1&nbsp; 0x934bac72 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 2&nbsp; 0x98726805 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 3&nbsp; 0x02267085 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 4&nbsp; 0x98725318 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 5&nbsp; 0x9872529b in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 6&nbsp; 0x94d31557 in&nbsp; ( + 0x00000000)<br />
+#&nbsp; 7&nbsp; 0x94d1bcee in&nbsp; ( + 0x00000000)<br />
+<br />
+X86 Thread State:<br />
+&nbsp;eax: 0x0000014e&nbsp; ebx: 0xb030ad50&nbsp; ecx: 0xb030acbc&nbsp; edx:0x934bac72<br />
+&nbsp;edi: 0x94dbb9be&nbsp; esi: 0x00000000&nbsp; ebp: 0xb030ad08&nbsp; esp:0xb030acbc<br />
+&nbsp; ss: 0x00000023&nbsp; eip: 0x934bac72&nbsp;&nbsp; cs: 0x0000000b&nbsp;&nbsp; ds:0x00000023<br />
+&nbsp; es: 0x00000023&nbsp;&nbsp; fs: 0x00000023&nbsp;&nbsp; gs: 0x0000000f&nbsp; eflags:0x00000246<br />
+<br />
+<br />
+Loaded modules:<br />
+<br />
+<br />
+Operating System Information<br />
+Operating System: Mac OS X 10.8.1 (Build 12B19)<br />
+CPU: Intel Core Duo, Number: 2, Speed: 2147 MHz<br />
+gestaltPhysicalRAMSizeInMegabytes err = 0, result = 2048 MB<br />
+gestaltSystemVersion err = 0, result = 0x1081<br />
+Screen: 1280 x 800, depth = 32, ltbr = 0, 0, 800, 1280<br />
+<br />
+Microsoft Application Information:<br />
+Error Reporting UUID: 2400935D-8524-4363-93CC-09AAE0507D2B<br />
+Time from launch: 0 hours, 0 minutes, 0 seconds<br />
+Total errors on this client: 67<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Perhaps your <span style="font-style: italic">Mac</span> is "completely up to date" but your Office 2011 software most definitely is
+<br />
+<a href="http://www.officeformachelp.com/office/install/" target="_blank" rel="noreferrer nofollow">Install Office 2011</a><br />
+<br />
+Make sure to repair disk permissions &amp; restart as recommended. <span style="font-style: italic">
+But</span>...<br />
+<br />
+I'm not sure that will completely resolve your issues, though... The report also indicates that you've 'upgraded' to OS X 10.8.x (Mountain Lion) which, itself, requires 2GB RAM. That is all your Mac has installed [<span style="font-weight: bold">gestaltPhysicalRAMSizeInMegabytes
+ err = 0, result = 2048 MB</span>], so you will have dificulty effectively running
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 365&#47;Excel 2016 function help no longer works - Microsoft Community</title>
+<h3> ronrosenfeld  say:</h3>
+<h2>            Office 365&#47;Excel 2016 function help no longer works</h2>
+                    <p>It used to be the case, in Excel 2016 (with an Office 365 subscription, not the standalone), that pressing
+<em>Help on this Function </em>in the Function Arguments dialog box would open a browser and display an MS Help page for the function.&nbsp; eg:</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/689c7e82-6622-487a-b321-6c8b40fba0cb" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/689c7e82-6622-487a-b321-6c8b40fba0cb" /></a></p>
+<p>
+</p><p>This no longer works.&nbsp;&nbsp; When I select the link, the cursor changes to <em>busy</em> for a few seconds, then returns to
+<em>normal</em> and nothing happens.&nbsp; I have tried both the Quick and Online Repairs for Office 365, but the problem persists.</p>
+<p>
+</p><p>I can still see some Help pages by typing the name of the command into the Help box at the top of the Excel window:</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/1e336b18-2d66-4b56-b8b6-5d91c1923e88" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/1e336b18-2d66-4b56-b8b6-5d91c1923e88" /></a></p>
+<p>
+</p><p>and then selecting HELP from the drop down, but this is clearly less convenient than the old way of doing things, and requires more effort.</p>
+<p>
+</p><p>Has the help link in the Function argument dialog box truly&nbsp;been deprecated?&nbsp; Or is there something else going on that I am missing?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello Ron, </span></p>
+<p>
+</p><p><span>You may verify if you have enabled the option ‚ÄòAllow Office to connect to the internet‚Äô under File&gt; Options&gt; Trust Center&gt; Trust Center Settings‚Ä¶&gt; Privacy Options.&nbsp;</span><span><span><span>&nbsp;</span>Check
+ if you are able to use Help option in Office Excel application. </span></span></p>
+<p>
+</p><p><span>If issue persist and
+<span>you are using Internet Explorer as you r default browser, </span>
+I suggest you to try resetting the Internet Explorer and check if help option work as expected.
+</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><a href="http://windows.microsoft.com/en-us/internet-explorer/reset-ie-settings#ie=ie-11" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://windows.microsoft.com/en-us/internet-explorer/reset-ie-settings#ie=ie-11</span></a></span></p>
+<p>
+</p><p><span><span><strong><span style="color: rgba(0, 0, 0, 1)">Disclaimer:</span></strong><span style="color: rgba(0, 0, 0, 1)"> The Reset Internet Explorer Settings feature might reset security settings or privacy settings
+ that you added to the list of Trusted Sites. The Reset Internet Explorer Settings feature might also reset parental control settings. We recommend that you note these sites before you use the Reset Internet Explorer Settings feature.</span></span></span></p>
+<p>
+</p><p><span><span>Please post back with the results, we would be glad to assist you further.</span></span></p>
+<p>
+</p><p><span><span>Thank you.</span></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronrosenfeld  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Trust Center privacy settings were already set to allow Office to connect to the Internet.</p>
+<p>I did have IE as my default browser, but experienced the same behavior using Edge as the default.</p>
+<p>I "Reset" IE, but the behavior did not change (no matter if I use Edge or IE as the default browser.</p>
+<p>I also deleted the temporary internet files, again, with no improvement in the above described behavior.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dougaj4  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No response since July?</p>
+<p>
+</p><p>This used to be a useful feature, but now it just doesn't work.</p>
+<p>
+</p><p>I have checked the settings suggested, and internet connection is allowed.&nbsp; Also pressing F1 brings up the on-line help (eventually).</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gedonis" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GE"); this.style="display: inline-block";'
+<h3> gedonis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gedonis" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GE"); this.style="display: inline-block";'
+<h3> gedonis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>Hi Ron, did you solve the problem? (Help on this function is not working)</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronrosenfeld  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No, the problem was never solved.&nbsp; And the first respondent who, at the time, had the tag of a Microsoft Support Engineer, never got back to me.</p>
+<p>
+</p><p>My best workaround has been to retype the command into the "what do you want to do" box at the top, and then select the "Get Help" option.&nbsp; Nothing like making things harder to use.</p>
+<p>
+</p><p>Are you having the same issue?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronrosenfeld  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>No response since July?</p>
+<p>
+</p><p>
+</p><p>Correct.&nbsp; In my experience, this has been pretty much the case when the first problem is responded to by a so-called "Microsoft Support Engineer".</p>
+<p>
+</p><p>And the problem persists.</p>
+</blockquote>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gedonis" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GE"); this.style="display: inline-block";'
+<h3> gedonis  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yeas I have the same issue. I am planning to reinstall Office.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dougaj4  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There is not a huge amount of discussion of this problem, so presumably it is fairly rare, or maybe people just accept that Microsoft Office help doesn't work very well.</p>
+<p>
+</p><p>I did try the repair process, both the "quick" and "full" repair.</p>
+<p>
+</p><p>It didn't help.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ctc_lab_tech  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>We're having a similar issue that just all of sudden started.&nbsp; We're using the local install of Office 2016 (not 365), and in Excel 2016, when you search for something, like "split cells,"&nbsp; Internet Explorer starts and we are sent to a help page about Room
+ and equipment mailboxes, which is an Outlook term, not an Excel term.&nbsp; Once you close Internet Explorer, the Excel 2016 help window is open but blank.&nbsp; Click the home button in this window and you get the basic help topics, which will work correctly, but only
+ for the items listed.</p>
+<p>
+</p><p>Also tried disabling the network card, but all we get is a blank help window.&nbsp; On one machine that does work correctly, the help window returns that help is available only online.&nbsp; It is almost as if Microsoft has a server issue.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Xbox sign error... - Microsoft Community</title>
+<h3> ajayrajsingh  say:</h3>
+<h2>            Xbox sign error...</h2>
+                    <p>Respected Sir,</p>
+<p>I can not able to sign in with xbox on windows 8.1, there an error code is showing as you can see in the screen shot. I did not what to do. I thing you can give me some solutions for put out me from this problem. I will be thankfull. Please try your best
+ to help me.</p>
+<p>And I want to play project spark. And it was shows the pop-up as you can see in screen shot 2. I get rid of it. I want your essential help.</p>
+<p>Thank you...<a href="https://filestore.community.support.microsoft.com/api/images/51848705-afcb-475b-a9fd-3d81f2e672ca" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/51848705-afcb-475b-a9fd-3d81f2e672ca" /></a><a href="https://filestore.community.support.microsoft.com/api/images/4bbed1f5-b78d-4b94-b69c-247ac80c92dd" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/4bbed1f5-b78d-4b94-b69c-247ac80c92dd" /></a>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    1 person found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=gaming_on_insider_preview">gaming_on_insider_preview, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>problem downloading update for windows defender antimalware platform - Microsoft Community</title>
+<h3> roadwheeler  say:</h3>
+<h2>            problem downloading update for windows defender antimalware platform KB4052623 for windows 10, version 1803, OS build 17133.1  get install error 0X80070643</h2>
+                    <p>problem downloading update for windows defender antimalware platform KB4052623 for windows 10, version 1803, OS build 17133.1&nbsp; get install error 0X80070643</p>
+<p>
+</p><p>
+</p><p><em>[Moved from: Windows / Windows 10 / Windows update, recovery, &amp; backup]</em><br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rwb1012  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It usually means a restart is pending. See if it goes away after several restarts.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jean mariesiino  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>mise a jour ne marche pas</p>
+<p>
+</p><p>
+</p><p>&nbsp;KB4052623 (Version&nbsp;4.14.17639.18041) - Erreur 0x80070643</p>
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_defender_antivirus">microsoft_defender_antivirus, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>what does it mean when it says it&#39;s an unlocked cell phone - Microsoft Community</title>
+<h3> dana062564  say:</h3>
+<h2>            what does it mean when it says it&#39;s an unlocked cell phone</h2>
+                    Does this mean I can use it with any carrier?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> garym123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>An unlocked phone means it is SIM unlocked, you don't have to use the original carriers SIM for the phone to work.
+</p>
+<p>It does not mean you can use it with any carrier. It is up to the user to check if the unlocked phone will work on the carrier you select.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=other_windows_mobile_devices">other_windows_mobile_devices, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+<a href="/search?q=windows_phone_8">windows_phone_8, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>VPNs missing&#160;from &#39;Change Adapter Settings&#39; in Network - Microsoft Community</title>
+<h3> ben nichols  say:</h3>
+<h2>            VPNs missing&#160;from &#39;Change Adapter Settings&#39; in Network and Sharing Center</h2>
+                    <p>I am running build 15025, since this release (and the build previous to this one),&nbsp;VPN connections no longer appear in the&nbsp;'Change Adapter Settings' in Network and Sharing Center. This means it is now impossible to alter advanced security settings on the
+ VPN (such as EAP types, DNS and&nbsp;gateway settings etc). The settings available in the new Settings app are very limited, and these cannot be set.</p>
+<p>
+</p><p>My immediate issue is that I need to set a L2TP&nbsp;VPN to&nbsp;support PAP authentication, which I cant do.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="willy denoyette" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "WD"); this.style="display: inline-block";'
+<h3> willy denoyette  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Two options:</p>
+<p>
+</p><p>1) user powershell cmdlets to configure VPN. </p>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div>
+<div style="color: rgba(0, 0, 0, 1)">
+<pre>   search Technet Set-VpnConnectionIPsecConfiguration Set-VpnConnection and family&nbsp;</pre>
+<p>
+</p><p>2) use <strong>netsh </strong>from the command prompt.</p>
+<p>&nbsp;&nbsp; search internet for samples <strong>netsh ras </strong>......</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john kowalke  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I was able to use Set-VPNConnection to configure my VPN to connect. However, as an IT professional, I can assure you that making remote users run a Powershell cmdlet in order to connect to their workplace is going to accomplish two things:</p>
+<p>
+</p><p>1. Undermine adoption of Windows 10 by businesses.</p>
+<p>2. Create significant negative impressions of the Creator's Update.</p>
+<p>
+</p><p>There needs to be a way to configure Split Tunneling and Authentication via a GUI. Leaving these out is a significant mistake.<br />
+</p>
+<p />
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=web_and_networks">web_and_networks, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Window Definder won&#39;t update, my virus and spyware. - Microsoft Community</title>
+<h3> chuksfabian thompson  say:</h3>
+<h2>            Window Definder won&#39;t update, my virus and spyware.</h2>
+                    <p>Hi all,</p>
+<p>
+</p><p>I keep getting a security warning when I open a browser, internet explorer, Mozilla Firefox won't open any browser, as well as Google Chrome.</p>
+<p>
+</p><p>My window defender won't update my virus and spyware when I try to update it. It will run completing,&nbsp;but then won't update.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>&nbsp;&nbsp;</p>
+<p>
+</p><p>Not sure if the security warning is affecting them all. I have read and try all updates, but still not working.</p>
+<p>
+</p><p>
+</p><p>Please can I get help how to fix them.</p>
+<p>
+</p><p>Many thanks.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sobraunfer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "SO"); this.style="display: inline-block";'
+<h3> sobraunfer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello CHUCSFABIAN
+<br />
+<br />Welcome to the Microsoft Community!
+<br />
+<br />I'm sorry that you're experiencing this problem.
+<br />
+<br />My name is Soraya, I'm an independent consultant and I'm going to try to help you now.
+<br />
+<br />There are a few ways to solve this problem, here are some of them:
+<br />
+<br />1- Excluding temporary files
+<br />It is quite common to learn that certain system files associated with the storage and distribution of updates have been corrupted. In this case, it is possible that the previous version of the Windows Defender virus definition has been affected. To get rid of this problem, it is advisable to remove all temporary files and restart the update procedure. It is worth noting that Windows Defender automatically and regularly updates its definition by storing the files in a dedicated folder. It would also help if you delete the contents of this folder.
+<br />
+<br />Here are the steps to remove the contents of the Definition folder and the temporary system files:
+<br />
+<br />Click the Search icon on the taskbar.
+<br />Type "Disk" (without quotation marks).
+<br />Choose Disk Cleanup from the results.
+<br />Select the system partition (C :) and click OK.
+<br />Choose Clean System Files.
+<br />Make sure the box next to "Temporary files" is checked.
+<br />Click OK to clear the temporary files. Clean up the system files to correct the "Protection Definitions Update Failed" error in Windows Defender
+<br />The next thing to do is boot into safe mode.
+<br />Navigate to this path: C: \ Windows \ Software Distribution.
+<br />Delete the contents of the folder.
+<br />Restart your computer and make sure the behavior of your Windows Defender has improved.
+<br />Restart your computer.
+<br />Make sure your PC is connected to the Internet. From this point on, Windows Defender will automatically get the update and install it.
+<br />
+<br />2- Using an elevated command prompt to update Windows Defender
+<br />There is also a workaround for this problem, which is to upgrade Windows Defender through an elevated command prompt. That said, here are the steps you should follow:
+<br />
+<br />Right-click the Windows icon on the taskbar.
+<br />Select Command Prompt. This should open the elevated command prompt.
+<br />When the command prompt is active, paste the following one by one:
+<br />cd / d "\ Program Files \ Windows Defender"
+<br />exe - signature update
+<br />The above steps should start a new Windows Defender update. When the process is complete, verify that the error still persists.
+<br />
+<br />3 - Restart the Windows Defender service
+<br />If you realize that Defender himself is behaving badly or delaying, then there are certain steps you should take. It is true that Windows Defender is an internal component of the Windows 10 shell. However, it can still be disabled when a third-party antivirus is installed on the computer. Therefore, we advise you to check the dedicated Windows Defender service and make sure it is set to start automatically. Just follow these steps:
+<br />
+<br />On your keyboard, press the Windows + R key. This should open the Run dialog box.
+<br />Type "services.msc" (without quotation marks) and press Enter.
+<br />Navigate to the individual services associated with Windows Defender.
+<br />Right-click on all services and open Properties.
+<br />Make sure they are all set to start automatically.
+<br />
+<br />4- Manually upgrade Windows Defender
+<br />Like any other program, you can manually download the latest setting for Windows 10 and install it on your computer. Needless to say, you can also choose to manually upgrade Windows Defender.
+<br />
+<br />To do so, please use the link: <a href="https://www.microsoft.com/en-us/wdsi/definitions" target="_blank" rel="noreferrer nofollow">https://www.microsoft.com/en-us/wdsi/definitions</a>
+<br />
+<br />These are some of the methods to try to fix the error code.
+<br />
+<br />I hope I have been useful!
+<br />
+<br />Soraya F.
+<br />
+<br />If a response was helpful, please tick Yes at: Does this solve your problem? You will also help the community.       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Reinstall Publisher - Microsoft Community</title>
+<h3> frostproofhistorical museum  say:</h3>
+<h2>            Reinstall Publisher</h2>
+                    Four weeks ago, I bought Publisher 2016.&nbsp; It didn't ask me for my choice of 32 or 64 bit, so 32 bit was installed.&nbsp; I've had nothing but problems for the past week.&nbsp; I just read that if you work with large files and lots of photos, which I do, then 64
+ bit should have been installed.&nbsp; How do I go about reinstalling Publisher, this time 64 bit?&nbsp; I don't want to pay for Publisher again, and I don't want two programs to be in the laptop.&nbsp; Thank you.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Your licence will cover both 32bit and 64bit
+<br />
+<br />You can uninstall your current version of Office and install the 64bit version
+<br />
+<br />Click the link below to go to a page that will walk you through installing the 64bit version of Office
+<br />
+<br /><a href="https://support.office.com/en-ie/article/Download-and-install-or-reinstall-Office-365-or-Office-2016-on-a-PC-or-Mac-4414eaaf-0478-48be-9c42-23adc4716658?ui=en-US&amp;rs=en-IE&amp;ad=IE#InstallSteps=PC_step-by-step" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-ie/article/Downlo...</a>
+<br />
+<br />On that page, click 'PC Step by Step'
+<br />Expand the 'Office for Home' or 'Office for Business' section whichever is applicable       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Latest update error message received Ox80072F8F - Microsoft Community</title>
+<h3> parish &#40;live.com&#35;parishclerk&#41;  say:</h3>
+<h2>            Latest update error message received Ox80072F8F</h2>
+                    i am being asked to activate the software but getting this error message?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Parish,</p>
+<p>&nbsp;</p>
+<p>This issue may be caused by incorrect Windows time/time zone settings, please follow the steps below to check it:
+</p>
+<p style="color: rgba(68, 68, 68, 1)">&nbsp;</p>
+<p>1.Close all Office apps.</p>
+<p>2.In the bottom right-hand corner of your screen, select the date or time.</p>
+<p>3.Select <span style="font-weight: bold">
+Date and time settings</span>.</p>
+<p>4.Select <span style="font-weight: bold">
+Set time automatically</span> and, if shown, <span style="font-weight: bold">Set time zone automatically</span>. If you don't have the option to set the time zone automatically, make sure your local time zone is shown in
+<p>5.Restart any Office app.</p>
+<p>&nbsp;</p>
+<p>If the issue persists, please download following repair tools to troubleshoot this issue.
+</p>
+<p>&nbsp;</p>
+<p>1.Office 365 SARA (only for Office 365 users): Choose Office&gt;I've installed Office, but I can't activate it. Download link:
+<a href="https://diagnostics.outlook.com/#/" target="_blank" rel="noreferrer nofollow">https://diagnostics.outlook.com/#/</a></p>
+<p>2.Activation Troubleshooter for Office 2016 (non-subscription Office products): Download link in following article.</p>
+<p>&nbsp;</p>
+<p>If the issue still persists, I need gather more information to narrow down the possible cause of it.</p>
+<p>&nbsp;</p>
+<p>1.Please provide your current version: Open an Office app like Word&gt;File&gt;Account, it‚Äôs like Version XXXX (build XXXX.XXXX).</p>
+<p>2.Please collect a screenshot of the error message if convenient.</p>
+<p>3.May I ask what Office 365 subscription you have now? (Business Premium, E3, E5‚Ä¶)</p>
+<p>&nbsp;</p>
+<p>Article: troubleshooting activation errors in Office:
+<a href="https://support.office.com/en-us/article/unlicensed-product-and-activation-errors-in-office-0d23d3c0-c19c-4b2f-9845-5344fedc4380" target="_blank" rel="noreferrer nofollow">
+https://support.office.com/en-us/article/unlicensed-product-and-activation-errors-in-office-0d23d3c0-c19c-4b2f-9845-5344fedc4380</a></p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Leo</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bryan Cheng MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "BC"); this.style="display: inline-block";'
+<h3> bryan cheng msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span style="color: rgba(33, 33, 33, 1)">Hi Parish,</span><span style="color: rgba(33, 33, 33, 1)">&nbsp;</span></p>
+<p>
+</p><p><span style="color: rgba(33, 33, 33, 1)">Have you referred to Leo‚Äôs suggestion? Feel free to let us know if you have any concern.</span></p>
+<p>
+</p><p><span style="color: rgba(33, 33, 33, 1)">Thanks,</span></p>
+<p><span style="color: rgba(33, 33, 33, 1)">Bryan Cheng</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook for Mac Preview chewing up CPU, draining battery - Microsoft Community</title>
+<h3> rpmm  say:</h3>
+<h2>            Outlook for Mac Preview chewing up CPU, draining battery</h2>
+                    <p>I installed Outlook for Mac Preview as part of the recent Office for Mac public preview. But despite running it for several days now, I am noticing a sudden surge in CPU (and therefore, fan) use when Outlook is running. Also as a result, the battery drains
+ really quickly.&nbsp;</p>
+<p>
+</p><p>I earlier assumed this was because there was some background sync process trying to catch up on syncing the mailbox (current size is ~ 1GB), but I am hoping after a few hours of it being open, Outlook has synced everything already.&nbsp;</p>
+<p>
+</p><p>What can I do to make the CPU use become normal so that I can continue using Outlook? The way it is now, it is not usable at all.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> rpmm  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>233.5% of CPU usage in my case. All the time, it's not possible to use Outlook at the moment.</p>
+<p>Restarted the Mac Mini several times, applied latest updates on Yosemite (running the beta).</p>
+</blockquote>
+<p>
+</p><p>Emptying cache as suggested by Dan here did the trick for me. I went to each and every folder and emptied cache:
+</p>
+<span>
+<p>
+</p><p>http://answers.microsoft.com/en-us/mac/forum/macofficepreview-macoutlook/outlook-2016-preview-outlook-high-cpu-on-macbook/42db5fe0-f356-46c5-8e66-296036772a74?page=3&amp;rtAction=1427859467740</p>
+<p>
+</p><p /></span>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

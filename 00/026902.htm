@@ -1,0 +1,2569 @@
+    <title>VBA to copy 1st sheet of all workbooks with formats and values, but no - Microsoft Community</title>
+<h3> avasmall  say:</h3>
+<h2>            VBA to copy 1st sheet of all workbooks with formats and values, but no formulas into new workbooks</h2>
+                    <p>This is probably an easy one, because I think I just need one code added. The code below copies everything perfectly to the new location, but it brings over the formulas; I do not want the formulas I want to copy the formating then the values.</p>
+<p>
+</p><p>
+</p><p>Kevin</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>Sub MoveHedgeSheets()<br />
+&nbsp; &nbsp; &nbsp;Dim strPath As String<br />
+&nbsp; &nbsp; &nbsp;Dim strFile As String<br />
+&nbsp; &nbsp; &nbsp;Dim strName As String<br />
+&nbsp; &nbsp; &nbsp;Dim lngPos As Long<br />
+&nbsp; &nbsp; &nbsp;Dim wbkS As Workbook<br />
+&nbsp; &nbsp; &nbsp;Dim wbkT As Workbook<br />
+&nbsp; &nbsp; &nbsp;Dim wshS As Worksheet<br />
+&nbsp; &nbsp; &nbsp;Dim wshT As Worksheet<br />
+&nbsp; &nbsp; &nbsp;Dim colFiles As New Collection<br />
+&nbsp; &nbsp; &nbsp;Dim varFile As Variant<br />
+&nbsp; &nbsp; &nbsp;' Prompt user for folder path<br />
+&nbsp; &nbsp; &nbsp;With Application.FileDialog(4) ' msoFileDialogFolderPicker<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;If .Show Then<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strPath = .SelectedItems(1)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Else<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;MsgBox "No folder selected!", vbExclamation<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Exit Sub<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;End If<br />
+&nbsp; &nbsp; &nbsp;End With<br />
+&nbsp; &nbsp; &nbsp;' Make sure path ends in \<br />
+&nbsp; &nbsp; &nbsp;If Right(strPath, 1) &lt;&gt; "\" Then<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strPath = strPath &amp; "\"<br />
+&nbsp; &nbsp; &nbsp;End If<br />
+&nbsp; &nbsp; &nbsp;' Reduce screen flicker<br />
+&nbsp; &nbsp; &nbsp;Application.ScreenUpdating = False<br />
+&nbsp; &nbsp; &nbsp;Application.DisplayAlerts = False<br />
+&nbsp; &nbsp; &nbsp;' Create target workbook with one sheet<br />
+&nbsp; &nbsp; &nbsp;Set wbkT = Workbooks.Add(Template:=xlWBATWorksheet)<br />
+&nbsp; &nbsp; &nbsp;Set wshT = wbkT.Worksheets(1)<br />
+&nbsp; &nbsp; &nbsp;' Turn on error handling<br />
+&nbsp; &nbsp; &nbsp;On Error GoTo ErrHandler<br />
+&nbsp; &nbsp; &nbsp;' Loop through the files<br />
+&nbsp; &nbsp; &nbsp;strFile = Dir(strPath &amp; "*.xls*")<br />
+&nbsp; &nbsp; &nbsp;Do While strFile &lt;&gt; ""<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Add filename to collection<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;colFiles.Add strFile<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Get the next filename<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strFile = Dir<br />
+&nbsp; &nbsp; &nbsp;Loop<br />
+&nbsp; &nbsp; &nbsp;For Each varFile In colFiles<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Open workbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Set wbkS = Workbooks.Open(Filename:=strPath &amp; varFile, ReadOnly:=True)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Reference to Hedge sheet<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Set wshS = wbkS.Worksheets("Hedge")<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Copy the sheet to the new workbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;wshS.Copy After:=wshT<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Reference to new sheet<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Set wshT = wshT.Next<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Get position of "." in filename<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;lngPos = InStrRev(varFile, ".")<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Get part before the "."<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strName = Left(varFile, lngPos - 1)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strName = Replace(strName, "[", "")<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strName = Replace(strName, "]", "")<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strName = Left(strName, 20)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;strName = strName &amp; " - Hedge"<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Name the new sheet<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;wshT.Name = strName<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Also copy the sheet to a separate workbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;wshS.Copy<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Save the separate workbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ActiveWorkbook.SaveAs Filename:=strPath &amp; strName &amp; ".xlsx", _<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;FileFormat:=xlOpenXMLWorkbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' And close it<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ActiveWorkbook.Close<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;' Close the workbook<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;wbkS.Close<br />
+&nbsp; &nbsp; &nbsp;Next varFile<br />
+&nbsp; &nbsp; &nbsp;' Delete the first (empty) sheet of the new workbook<br />
+&nbsp; &nbsp; &nbsp;wbkT.Worksheets(1).Delete<br />
+ExitHandler:<br />
+&nbsp; &nbsp; &nbsp;Application.DisplayAlerts = True<br />
+&nbsp; &nbsp; &nbsp;Application.ScreenUpdating = True<br />
+&nbsp; &nbsp; &nbsp;Exit Sub<br />
+ErrHandler:<br />
+&nbsp; &nbsp; &nbsp;MsgBox Err.Description, vbExclamation<br />
+&nbsp; &nbsp; &nbsp;Resume ExitHandler<br />
+End Sub </p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="OssieMac" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "OS"); this.style="display: inline-block";'
+<h3> ossiemac  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Add the following code Immediately after the Copy command. It will remove the formulas from the destination. The destination of the Copy should be the ActiveSheet so it is generic to whatever is the destination worksheet.</p>
+<p>
+</p><p><em><strong>Always backup workbooks before&nbsp;testing the code in case it does not perform as expected.</strong></em></p>
+<p>
+</p><p>
+</p><p>&nbsp;&nbsp;&nbsp; wshT.Copy After:=wshT<br />
+&nbsp;&nbsp;&nbsp; ActiveSheet.Cells.Copy<br />
+&nbsp;&nbsp;&nbsp; ActiveSheet.Cells(1, 1).PasteSpecial xlValues<br />
+&nbsp;&nbsp;&nbsp; Application.CutCopyMode = False<br />
+</p>
+<p>
+</p><p>plus the following</p>
+<p>
+</p><p>&nbsp;&nbsp;&nbsp; ' Also copy the sheet to a separate workbook<br />
+&nbsp;&nbsp;&nbsp; wshS.Copy<br />
+&nbsp;&nbsp;&nbsp; ActiveSheet.Cells.Copy<br />
+&nbsp;&nbsp;&nbsp; ActiveSheet.Cells(1, 1).PasteSpecial xlValues<br />
+&nbsp;&nbsp;&nbsp; Application.CutCopyMode = False</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2013 inbox weird issue - Microsoft Community</title>
+<h3> brianstallings  say:</h3>
+<h2>            Outlook 2013 inbox weird issue</h2>
+                    <p>I have a user that cannot move more than one email at a time.&nbsp; If she selects two or more emails an error pops up "Cannot move the items unknown error" however a few seconds after the error box comes up the first email selected gets moved to the folder.
+ The others deselect and don't get moved. This happens only with the Inbox all other folders work correctly.
+</p>
+<p>
+</p><p>Things I tried to fix the issue</p>
+<p><span>I tried installing another profile for the user. &nbsp;Her old and new profile give the same error message.&nbsp;</span><br />
+<span>If the user accesses the&nbsp;web portal the error does not happen.&nbsp;</span><br />
+<span>If the user accesses the&nbsp;web portal the error does not happen.&nbsp;</span><br />
+<span>I closed Lync and Outlook and just re-opened Outlook Same error.</span><br />
+<span>I closed Lync and Outlook and just re-opened Outlook Same error.</span><br />
+<span>I ran Outlook in safe mode same error.&nbsp;</span><br />
+<span>I ran Outlook in safe mode same error.&nbsp;</span><br />
+<span>I changed permissions on her inbox to make the user&nbsp;the owner, restarted Outlook checked that the permissions were still there. They were, same error.&nbsp;</span><br />
+<span>I changed permissions on her inbox to make the user&nbsp;the owner, restarted Outlook checked that the permissions were still there. They were, same error.&nbsp;</span><br />
+<span>The problem only occurs on her inbox if you go into a subfolder and move emails they move and no error happens. If you move them back into the&nbsp;inbox&nbsp;and try to move them out again then the error shows up again.&nbsp;</span><span style="color: rgba(68, 68, 68, 1)"><br />
+<span>The problem only occurs on her inbox if you go into a subfolder and move emails they move and no error happens. If you move them back into the&nbsp;inbox&nbsp;and try to move them out again then the error shows up again.&nbsp;</span><span style="color: rgba(68, 68, 68, 1)"><br />
+</span><span>We moved to another PC and logged in as the user but the problem followed her.&nbsp;</span><br />
+<span>We removed all access to service boxes and just kept her Outlook profile but no change. Another IT guy thought one of the Service MBs might be causing the issue.&nbsp;</span><br />
+<span>We removed all access to service boxes and just kept her Outlook profile but no change. Another IT guy thought one of the Service MBs might be causing the issue.&nbsp;</span><br />
+<span>After a few seconds the email does&nbsp;move into the folder, however if&nbsp;you select multiple emails you get the error and only the first email is moved.&nbsp;</span></p>
+<span>After a few seconds the email does&nbsp;move into the folder, however if&nbsp;you select multiple emails you get the error and only the first email is moved.&nbsp;</span></p>
+<p>
+</p><p><span>Any help, insight, or tips are most welcome</span></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mohan suryanarayan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Welcome to Microsoft Community.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>To resolve this issue we need more information. Let us know the following.</span></span></p>
+<p>
+</p><ol>
+<li>
+<p style="color: rgba(0, 0, 0, 1)">
+Is the User facing this issue connected to a network or domain? </p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+Also, since the user is accessing the web portal are you referring to Outlook Web Access?</p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+Is the user using a Microsoft Exchange email account in Outlook 2013? </p>
+</li></ol>
+<p><span>&nbsp;</span></p>
+<p><span>If yes, then since this issue happens with a Microsoft Exchange Account, the issue will be best addressed in Outlook for Exchange Forum mentioned below:</span></p>
+<p><a href="http://social.technet.microsoft.com/Forums/en-US/exchangesvrclients/threads" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://social.technet.microsoft.com/Forums/en-US/exchangesvrclients/threads</span></a></p>
+<p><span>&nbsp;</span></p>
+<p><span>I request you to post the issue on the above link for further assistance.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>The reason why we recommend posting appropriately is you will get the most qualified pool of respondents, and other partners who read the forums regularly. They can either share
+ their knowledge or learn from your interaction with us. </span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you for your understanding.</span></p>
+<p><span>&nbsp;</span></p>
+<span>Thank you.</span>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>hotmail printing problem. - Microsoft Community</title>
+<h3> yokothompson  say:</h3>
+<h2>            hotmail printing problem.</h2>
+                    <br />
+When I try to print an e-mail from hotmail, I get this error message,script error,line 296,automation server can't create object,URL:res://ieframe.dll/preview.js-can sombody solve this problem?<br />
+<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JMH3143" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmh3143  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><b>Are you doing it this way?<br />
+</b></p>
+<p><b><br />
+</b></p>
+<p><b>For Hotmail interface:</b></p>
+<p>1. Go to your<strong> inbox</strong></p>
+<p>2. Select the desired email message you want to print</p>
+<p>3. Above the message itself, you can see options like New, Reply, Reply all, etc.
+<br />
+</p>
+<p>Please select the <strong>print icon</strong> near Categories</p>
+<p>4.&nbsp; A print preview of the message will appear and so as the print options. <br />
+</p>
+<p>Just click on<strong> Print.</strong></p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi 62repair01,</p>
+<p>&nbsp;</p>
+<p><span>I sincerely apologize for not being able to answer your concern in a timely manner. In addition to what
+JMH3143 posted above, we’d like you to provide us the answers to the following questions that I have enumerated below. These will help us to investigate your concern:</span></p>
+<ul>
+<li><span>Which email application are you using? Are you&nbsp;accessing your account&nbsp;through Web browser&nbsp;or an email client?</span></li><li><span>Have you made any changes on the computer prior to the issue?</span></li><li><span>What is the complete error message?</span></li><li><span>Which programs are you referring to?</span></li></ul>
+<p><span>For a workaround, try to copy the emails and paste it in the Microsoft Office Word document. Also, try to update your JavaScript software in your computer.</span></p>
+<p>&nbsp;</p>
+<p><span>Thanks!</span></p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to receive Black Update on Lumia 920 - Microsoft Community</title>
+<h3> xhb&#40;2&#41;  say:</h3>
+<h2>            Unable to receive Black Update on Lumia 920</h2>
+                    <p>Hi There,</p>
+<p>
+</p><p>According to the official availability chart of Nokia, the Lumia 920 Black Update should be available in India. Following is the information I have extracted from the website:</p>
+<p>
+India
+<table>
+<tbody>
+<tr>
+<td colspan="1" rowspan="1"><strong>Product</strong></td>
+<td colspan="1" rowspan="1"><strong>Description</strong></td>
+<td colspan="1" rowspan="1"><strong>Latest version</strong></td>
+<td colspan="1" rowspan="1"><strong>Lumia Amber update</strong></td>
+<td colspan="1" rowspan="1"><strong>Lumia Black update</strong></td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 520</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3056.40000.1349.2001</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 620</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3056.40000.1404.0001</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 625</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3056.40000.1349.2002</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 720</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3056.40000.1349.2002</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 820</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3051.40000.1347.1001</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 920</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3051.40000.1349.0009</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 925</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3051.40000.1345.1001</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+<tr>
+<td colspan="1" rowspan="1">Lumia 1020</td>
+<td colspan="1" rowspan="1">Country variant</td>
+<td colspan="1" rowspan="1">3051.40000.1345.1002</td>
+<td colspan="1" rowspan="1">Available</td>
+<td colspan="1" rowspan="1">Available</td>
+</tr>
+</tbody>
+</table>
+</p><p>
+</p><p>I bought my phone about 12 months ago and now it is out of warranty. </p>
+<p>
+</p><p>To my surprise I find that people with lesser models than mine (820, 720, 625, 520 etc.) have already received the Black Update but my phone has not.</p>
+<p>
+</p><p>I am still stuck on Build ID: 3047.0000.1326.10144</p>
+<p>
+</p><p>Is it because my phone is out of warranty and I am no longer "licensed" by Microsoft to receive anymore updates or what?</p>
+<p>
+</p><p>I did manage to get some of the features of the Black Update by registering my phone as a "Developer Phone" and yet for some reason I am still isolated when it comes to receiving the complete Black Update.</p>
+<p>
+</p><p>Hope someone has some answers out there as to how to tackle the rot that is Microsoft and Nokia in this respect because frankly it is reaching a point where I will prefer to say "Sayonara" to my Lumia and switch over to the iPhone 6 when it launches.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> fredgiblet  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can reach them here: <a href="http://www.nokia.com/global/contact/" target="_blank" rel="noreferrer nofollow">http://www.nokia.com/global/contact/</a>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Where is the update log for Windows Phone 8&#63; - Microsoft Community</title>
+<h3> kristian g  say:</h3>
+<h2>            Where is the update log for Windows Phone 8&#63;</h2>
+                    <p>Hi,</p>
+<p>As the initial version of Windows Phone 8 seemed very "unfinished", I was glad to see that an update was released today. I just installed it, and the phone said I could go to
+<a href="http://www.windowsphone.com" target="_blank" rel="noreferrer nofollow">www.windowsphone.com</a> to se the update log. I feel really stupid, because I am not able to find this update log anywhere. I have found the update logs for Windows Phone 7, but not for Windows Phone 8. Where is it?</p>
+<p>Thanks.</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Entegy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "EN"); this.style="display: inline-block";'
+<h3> entegy  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's probably not up yet. Can't find it either. Maybe waiting until it's for all devices. Also, the message may have said to visit windowsphone.com to see how to install updates.<br />
+<br />
+What the update contains may be found in Settings&gt;phone update.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kristian g  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks.</p>
+<p>&nbsp;</p>
+<p>Once again, this is one thing that shows how uncomplete the whole system is. Why releasing an upgrade without publishing the release notes, when they know that the phone will inform the users of that release notes is to be found at a certain website?</p>
+<p>&nbsp;</p>
+<p>I don't remember the exact text that was shown, but it was not about "how to install". That would be even worse, as the information was given after the update had been succesfully installed.</p>
+<p>&nbsp;</p>
+<p>Settings &gt; phone update only shows if the phone is updated and settings to how updates should be downloaded.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> morganrw  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><a href="http://www.windowsphone.com/en-US/How-to/wp8/basics/windows-phone-8-update-history" target="_blank" rel="noreferrer nofollow">http://www.windowsphone.com/en-US/How-to/wp8/basics/windows-phone-8-update-history</a></p>
+<p>&nbsp;</p>
+<p>They list the highlights of the update but then of course toss in a general "<span>Other improvements.</span> Includes many other improvements to Windows Phone" statement at the end. I too wish there was a complete list. They may not do
+ so in order to keep from giving out the "secret sauce" of the software that makes it better or different from the competitors products.
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> usualsuspect  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Soooo frustrating you can be Microsoft! You do some cool things, create nice products and then you completely confuse your followers (some of whom, myself included, want to give you some love)&nbsp;with something daft everyday.</p>
+<p>&nbsp;</p>
+<p>Today, I wake up to my new phone telling me about new OS&nbsp;updates. I get all excited and tell them to install whilst I go take a shower. I&nbsp;return to the phone telling me that the updates are installed and if I want to know the details, I need to go to
+<a href="http://www.windowsphone.com" target="_blank" rel="noreferrer nofollow">www.windowsphone.com</a>. &nbsp;&nbsp;</p>
+<p>First, I'm angry because it's a 'smart' phone that is capable of displaying text as well as amazing pictures, correct? So why not just ask me if I'm interesting in seeing 'what's new' and then tell me??? It's that simple!</p>
+<p>Second, I go to <a href="http://www.windowsphone.com" target="_blank" rel="noreferrer nofollow">www.windowsphone.com</a> to look at what may have been installed (on my nice big monitor) and can I see a big sign saying 'Update log' flashing in pseudo neon lights? No. Can I find it anywhere on
+<a href="http://www.windowsphone.com" target="_blank" rel="noreferrer nofollow">www.windowsphone.com</a>? Nope. Can I find it on a search engine? Yes, search for 'Windows phone 8&nbsp;update log' and right at the top is - not the log but this thread!</p>
+<p>&nbsp;</p>
+<p>???????????????????????</p>
+<p>&nbsp;</p>
+<p>Programmers fix bugs and hand over their work to the distribution team who do....what exactly? Not their jobs for a start!
+</p>
+<p>I think I would be fired if I did it in the company I work for? Yes, yes, the boss just told me, I would have been fired.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jit bahadurbishwokarma  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I wanna imo software in my windows phone for calling is it possible ?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jit bahadurbishwokarma  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I wanna imo software in my windows phone for calling is it possible ?
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to apply a style set&#47;template to a set of existing - Microsoft Community</title>
+<h3> seanml  say:</h3>
+<h2>            How to apply a style set&#47;template to a set of existing documents&#63; Word 2010</h2>
+                    I have an interesting problem that I have been working on for several days and have made very little to no progress. I'm trying to change a pretty lengthy set of existing documents and being able to quickly change future documents to adhere to a certain
+ template/style set and have had no luck thus far. This software that we use at &nbsp;my place of work spits out word docs in a certain format (and we are unable to change the way it spits them out), and we have been manually changing them to our preferred format.
+ I am able to edit these documents and I've attempted to save and test several quick style sets to make it a one-click option on new documents, making it very simple to change them over (with little luck - several formatting issues still present), my problem
+ exists in the fact that one of the reasons my created style sets don't work perfectly is because the default left and right margins are not the same as our preferred format. How do I make a one-click style set, or a template 
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Run a macro containing the following code:</p>
+<p>With ActiveDocument.PageSetup<br />
+&nbsp;&nbsp;&nbsp; .LeftMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .RightMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .TopMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .BottomMargin = 72<br />
+End With<br />
+</p>
+<p>(72pts = 1 inch)</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seanml  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Run a macro containing the following code:</p>
+<p>With ActiveDocument.PageSetup<br />
+&nbsp;&nbsp;&nbsp; .LeftMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .RightMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .TopMargin = 72<br />
+&nbsp;&nbsp;&nbsp; .BottomMargin = 72<br />
+End With<br />
+</p>
+<p>(72pts = 1 inch)</p>
+</blockquote>
+<br />
+<div>How do I embed the macro into a template or quick style set?</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What you want to do is save the macro in your new template rather than the default of saving it to NORMAL.DOT(M) or a document itself.<br />
+<br />
+<ul>
+<li>have your new template file created (can be, but doesn't have to be open also)<br />
+</li><li>press &lt;ALT&gt;&lt;F8&gt; to open the Macros dialog</li><li>type the new macro name (just the macro name)</li><li>click on the drop down arrow beside "Macros In"</li><li>select the new template name</li><li>click "create"</li><li>paste the macro code</li><li>finish editing it</li><li>close the macro editing window</li><li>The macro is now saved in the new template</li></ul>
+<p>You can also use the "Organizer" to copy macros from normal to other templates or documents.<br />
+</p>
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Just to clarify one point: There's nothing in styles or style sets that will affect margins. That's why you need Doug's macro. Styles are concerned exclusively with fonts and paragraph properties, while margins are properties of sections (for which there
+ are no styles, unfortunately).<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seanml  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>What you want to do is save the macro in your new template rather than the default of saving it to NORMAL.DOT(M) or a document itself.<br />
+<br />
+<ul>
+<li>have your new template file created (can be, but doesn't have to be open also)<br />
+</li><li>press &lt;ALT&gt;&lt;F8&gt; to open the Macros dialog</li><li>type the new macro name (just the macro name)</li><li>click on the drop down arrow beside "Macros In"</li><li>select the new template name</li><li>click "create"</li><li>paste the macro code</li><li>finish editing it</li><li>close the macro editing window</li><li>The macro is now saved in the new template</li></ul>
+<p>You can also use the "Organizer" to copy macros from normal to other templates or documents.<br />
+</p>
+<br />
+</blockquote>
+<br />
+<div>Thanks everyone for your help! Now, how do I apply this template to existing documents that have the wrong formatting? And is there a way for me to attach a style set to this template that also changes the styles of the existing documents? Or do I have
+ to create an independent quick style set?</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Assuming that this new template contains styles with the same names as the styles in the documents you're reformatting... This is not a style set, it's just the definitions of the styles in the formatting you want.<br />
+<br />
+Create a macro in the template with Doug's code in it -- you need a Sub statement at the beginning and an End Sub statement at the end, like this:<br />
+<br />
+Sub FixMargins()<br />
+&nbsp; With ActiveDocument.PageSetup<br />
+&nbsp;&nbsp; &nbsp;&nbsp; .LeftMargin = 72<br />
+&nbsp;&nbsp; &nbsp;&nbsp; .RightMargin = 72<br />
+&nbsp;&nbsp; &nbsp;&nbsp; .TopMargin = 72<br />
+&nbsp;&nbsp; &nbsp;&nbsp; .BottomMargin = 72<br />
+&nbsp; End With<br />
+End Sub<br />
+<br />
+Make a button for it on the Quick Access Toolbar. See <a href="http://www.gmayor.com/installing_macro.htm" target="_blank" rel="noreferrer nofollow">
+http://www.gmayor.com/installing_macro.htm</a> if needed.<br />
+<br />
+When you get a document from the software, go to the Developer tab, click the Document Template button, check the "Automatically update document styles" box, click the Attach button, and select your template. Click OK. Then
+<b>immediately</b> go back to the same dialog and uncheck the Automatically update box. (For an explanation of why this is necessary, see
+<a href="http://www.shaunakelly.com/word/templates/attachtemplate.html" target="_blank" rel="noreferrer nofollow">http://www.shaunakelly.com/word/templates/attachtemplate.html</a>.)<br />
+<br />
+Click the button to run the FixMargins macro.<br />
+<br />
+That should do it, unless we've missed something.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seanml  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks again, I'm making even more progress! I have another question on editing the styles. I have text that is formatted like this:
+<div><br />
+<div>1.0<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+<div><u>Insert Text Here</u> </div>
+<div><u><br />
+</u></div>
+<div>The 1.0 Establishing the Trust falls under the same style, Heading 1, and I want it to look like this:</div>
+<div><br />
+1.0<span>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span><u>Insert Text Here</u>
+<div><u><br />
+</u>
+<div>I've fixed the formatting manually and then right clicked on Heading 1 and clicked "Update Heading 1 to Match Selection", the problem is, when I put it back to the incorrect formatting and click on Heading 1, it remains as the incorrect formatting. It's
+ as if the modifications don't stick. Here's the formatting description:</div>
+<div><br />
+<div>&nbsp;Font: (Default) Times New Roman Bold, 12 pt, Underline, Small caps, Indent:</div>
+<div>&nbsp; &nbsp; First line: &nbsp;0.5", Justified</div>
+<div>&nbsp; &nbsp; Line spacing: &nbsp;single, Space</div>
+<div>&nbsp; &nbsp; After: &nbsp;12 pt, Widow/Orphan control, Keep with next, Keep lines together, Level 1, Outline numbered + Level: 1 + Numbering Style: 1, 2, 3, … + Start at: 1 + Alignment: Left + Aligned at: &nbsp;0.5" + Indent at: &nbsp;0", Style: Linked, Automatically update,
+ Quick Style</div>
+<div>&nbsp; &nbsp; Following style: Normal</div>
+<div><br />
+<div>Once again, I really appreciate everyone's help!</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Go into the modify dialog for the style and look at the bottom of the dialog. Is the "Automatically updte" option turned on.&nbsp; Turn it off and reset the style formatting as desired. Then try applying it again.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seanml  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Okay I'm at a point where I've tried a bunch of things and I still cannot get the formatting and styles to make the document look the way I want it to, even after several hours of trial and error. Would anyone be wiling to look at the two documents and
+ point me in the right direction? One is the correct formatting (although with the wrong styles), and the other is the output of our software (what I want to be able to change in a couple of clicks). I can also send the template that I've created, although
+ not as much progress has been made as I would like. This is a lot to ask, but I'm at a loss on what to do, and being an extremely tech savvy person, this is very frustrating.
+<div><br />
+<div>EDIT: Both documents are 1 page extracts of much longer documents.</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sure, post your examples on a file share site and give us edit / download link access to them.<br />
+<br />
+<b><span>Posting using Metrofied Skydrive </span></b>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>If you have a predefined PUBLIC folder use it for sharing. That way you know which files are out there for others to see.&nbsp; If not create a new folder.</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Beside the "Sort by:" drop down there are 3 icons: Details View, Thumbnail View and Details pane.&nbsp; I prefer to work in the details view.</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>On the top "menu" there is a "Create" button, select "folder" and name it.</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click on the folder name to enter the folder</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>On the top menu bar there is an "Upload" button. Find the file and click on it. It will take several seconds to upload the file.&nbsp;
+</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Single clik on the checkmark box, or right click on the file name</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>click on the share option</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>you should see a new dialog with 3 options on the left side. Choose "Get a Link".</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>In the right side of the pane you will have 3 options: "View Only", "View and Edit" and "Public".
+</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>click on the button under the appropriate choice</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>copy the generated link</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>click on done to close the dialog</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Paste the link in here or where ever it is needed.</span></p>
+<b><span>File Sharing / File Share / skydrive</span></b>
+<p><span><a href="http://office.microsoft.com/en-us/web-apps-help/share-office-documents-in-skydrive-HA101820121.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-us/web-apps-help/share-office-documents-in-skydrive-HA101820121.aspx</a>
+</span></p>
+<p>It is simple enough. First thing to remember is never post anything on a file share (share being the key word!) site (public or private) that you wouldn't be willing to see posted on a public bill board.</p>
+<p>Create a "sanitized" version of the file that does not contain any sensitive personal or corporate information</p>
+<p>Pick a file share service:, Skydrive, Fyels, Ge.tt, Crate, to name a few) and sign up for a FREE account</p>
+<p>Follow their instructions to upload the file and to mark is as public shared</p>
+<p>Copy the link to the file</p>
+<p>Paste it in the post back here.</p>
+<p>This link has instructions specific to MS Skydrive: <a href="http://social.technet.microsoft.com/Forums/en-US/w7itproui/thread/4fc10639-02db-4665-993a-08d865088d65" target="_blank" rel="noreferrer nofollow">
+<span>http://social.technet.microsoft.com/Forums/en-US/w7itproui/thread/4fc10639-02db-4665-993a-08d865088d65</span></a></p>
+<p><b>NOTE:</b> MS has added file structure validation to Skydrive. If your problem is file corruption, like the “missing XML end tag” problem, you can no longer upload the files to skydrive.
+ Use one of the other file sharing site.</p>
+<p><b>FYI:<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></b>MS has change the use term on Skydrive. Originally they offered 25 GB for free. They have decided to reduce that to 7 GB for new users.&nbsp; Anyone who is already a member can "grandfather" to keep the 25 GB allowance.</p>
+<p>You have to log in to your account. You'll see that your limit has been reduced to 7GB. Go to Manage Storage.and click on the button to "Reserve" 25 GB.
+</p>
+<p>Your limit is back up to 25 GB.
+</p>
+<p><a href="http://www.techrepublic.com/blog/australia/claim-25gb-from-microsoft-on-updated-skydrive/900?tag=nl.e019" target="_blank" rel="noreferrer nofollow">http://www.techrepublic.com/blog/australia/claim-25gb-from-microsoft-on-updated-skydrive/900?tag=nl.e019</a>
+</p>
+<p><a href="http://www.infoworld.com/d/cloud-computing/10-file-sharing-options-dropbox-google-drive-and-more-197709?source=IFWNLE_nlt_daily_2012-07-31" target="_blank" rel="noreferrer nofollow">http://www.infoworld.com/d/cloud-computing/10-file-sharing-options-dropbox-google-drive-and-more-197709?source=IFWNLE_nlt_daily_2012-07-31</a>
+</p>
+<p>/3 Dropbox Portable – Run Dropbox form a USB Drive - <a href="http://www.technibble.com/dropbox-portable-2/" target="_blank" rel="noreferrer nofollow">
+http://www.technibble.com/dropbox-portable-2/</a> </p>
+<p><a href="http://www.freewaregenius.com/2012/05/02/a-comparison-of-free-cloud-storage-services/" target="_blank" rel="noreferrer nofollow">http://www.freewaregenius.com/2012/05/02/a-comparison-of-free-cloud-storage-services/</a> -
+<b>A comparison of FREE Cloud Storage Services</b></p>
+<p>Here are some other file sharing sites for you to chose from:</p>
+<table>
+<tbody>
+<tr>
+<td>
+<p>
+<b>Skydrive:</b> <a href="https://skydrive.live.com/" target="_blank" rel="noreferrer nofollow">https://skydrive.live.com/</a><span>&nbsp;
+</span>(signin)</p>
+</td>
+<td>
+<p>
+<b>Gyazo</b> - <a href="http://gyazo.com/?ref=bar" target="_blank" rel="noreferrer nofollow">http://gyazo.com/?ref=bar</a> Instant Screen grab and sharing</p>
+</td>
+<td>
+<p>
+2Shared <a href="http://www.2shared.com" target="_blank" rel="noreferrer nofollow">www.2shared.com</a> (no signin)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>
+<b>Box.Net</b>: <a href="http://www.box.net/files" target="_blank" rel="noreferrer nofollow">http://www.box.net/files</a></p>
+</td>
+<td>
+<p>
+<b>Box:</b> <a href="http://www.box.com/" target="_blank" rel="noreferrer nofollow">http://www.box.com/</a></p>
+</td>
+<td>
+<p>
+<b>Google Drive: </b><a href="http://drive.google.com/" target="_blank" rel="noreferrer nofollow">http://drive.google.com/</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>
+<b>Driveway -</b> <a href="http://www.driveway.com/" target="_blank" rel="noreferrer nofollow">http://www.driveway.com/</a></p>
+</td>
+<td>
+<p>
+&nbsp;</p>
+</td>
+<td>
+<p>
+<b>FileDropper</b>: <a href="http://www.filedropper.com" target="_blank" rel="noreferrer nofollow">http://www.filedropper.com</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>
+<b>FileFactory</b>: <a href="http://www.filefactory.com" target="_blank" rel="noreferrer nofollow">http://www.filefactory.com</a></p>
+</td>
+<td>
+<p>
+<b>FileSavr</b>: <a href="http://www.filesavr.com" target="_blank" rel="noreferrer nofollow">http://www.filesavr.com</a></p>
+</td>
+<td>
+<p>
+<b>FileToLink:</b> <a href="http://www.filetolink.com/" target="_blank" rel="noreferrer nofollow">http://www.filetolink.com/</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>
+<b>Fyels:</b> <a href="http://fyels.com/" target="_blank" rel="noreferrer nofollow">http://fyels.com/</a></p>
+</td>
+<td>
+<p>
+<b>Ge.</b>TT: <a href="http://ge.tt/" target="_blank" rel="noreferrer nofollow">http://ge.tt/</a></p>
+</td>
+<td>
+<p>
+<b>Let’s Crate:</b> <a href="http://letscrate.com/" target="_blank" rel="noreferrer nofollow">http://letscrate.com/</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>
+<b>MediaFire</b>: <a href="http://www.mediafire.com" target="_blank" rel="noreferrer nofollow">http://www.mediafire.com</a></p>
+</td>
+<td>
+<p>
+<b>RapidShare</b>: <a href="http://www.rapidshare.com" target="_blank" rel="noreferrer nofollow">http://www.rapidshare.com</a></p>
+</td>
+<td>
+<p>
+<b>YouSendit</b>: <a href="https://www.yousendit.com/" target="_blank" rel="noreferrer nofollow">https://www.yousendit.com/</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<br />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>MS Edge, Windows 10 mobil - Microsoft Community</title>
+<h3> michael andrew norge  say:</h3>
+<h2>            MS Edge, Windows 10 mobil</h2>
+                    Edge continues to reload pages every 30 seconds until it reverts to an error page. My system will not allow me to reset the app. I have cleared everything. Suggestions to fix this?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> arnie est  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello Michael,</p>
+<p>
+</p><p>
+</p><p>Issues with Microsoft Edge could be due to some updates , app-specific error, and other factors. To isolate this, you can send us a screenshot of the error page. When did the issue start? Does performing a soft reset made any differences? Press and hold
+<strong>Volume</strong> <strong>down</strong> and <strong>Power</strong> button until the phone vibrates and restart. Also make sure that your phone is up-to-date. You can go to
+<strong>Settings</strong> &gt; <strong>Update</strong> <strong>&amp; security</strong> &gt;
+<strong>Check</strong> <strong>for</strong> <strong>updates</strong>.</p>
+<p>
+</p><p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Why does my formatting change when I email or upload it&#63; - Microsoft Community</title>
+<h3> laureldancy  say:</h3>
+<h2>            Why does my formatting change when I email or upload it&#63;</h2>
+                    I'm trying to upload a manuscript to ebooks and the formatting is all off when I upload it.&nbsp; I tried emailing it to myself and then uploading it but the formatting problems continued.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davidf2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>To what format are you converting the Publisher file? </p>
+<p>
+</p><p>If you are converting to HTML then you are likely to fail. Publisher will choke when trying to convert some print formatting into HTML or web formatting as there are no equivalents in some cases. Then Publisher will often convert those parts of the page
+ into pictures.</p>
+<p>
+</p><p>I don't know what kind of format you need for ebooks but if you can use PDF then Publisher will do a better job for you. You might also find Word a better choice for producing your manuscript.</p>
+<p>
+</p><p>DavidF</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Does the Project Spartan browser have an auto-complete feature&#63; - Microsoft Community</title>
+<h3> sharief k  say:</h3>
+<h2>            Does the Project Spartan browser have an auto-complete feature&#63;</h2>
+                    <span style="color: rgba(0, 0, 0, 1)">The Project Spartan browser doesn’t seem to remember what I’ve entered into forms on webpages or into password boxes in prior browsing sessions.
+<span>&nbsp;</span>Is there a way to turn on an auto-complete option for forms and passwords?</span>
+<span>&nbsp;</span>Is there a way to turn on an auto-complete option for forms and passwords?</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> john rubdy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Sharief,</p>
+<p>
+</p><p>
+</p><p><span>The form and password auto-complete feature is not yet included in the initial preview of the Project Spartan browser.<span>&nbsp;
+</span></span><span>We hope to add these features in a future release.&nbsp; </span></p>
+<p>
+</p><p><span>Thanks and regards,</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=microsoft_edge_and_internet_explorer_on_insider_preview">microsoft_edge_and_internet_explorer_on_insider_preview, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>N8&#47;C7 PURPLE SCREEN ISSUE AND HOW TO SPOT IF YOU HAVE IT PLEASE - Microsoft Community</title>
+<h3> buxz777  say:</h3>
+<h2>            N8&#47;C7 PURPLE SCREEN ISSUE AND HOW TO SPOT IF YOU HAVE IT PLEASE READ</h2>
+                    
+<p>MODS THIS IS NOT A POLL OR IN ANYWAY SHAPE OR FORM A VOTING THREAD IT IS A THREAD TO WARN USERS ABOUT THE PURPLE SCREEN ISSUE AND HOW TO SPOT IT IN THEIR PHONES CLEAR AS DAY , I HAVE BEEN INFORMED FROM THE DIRECTOR OF COMUNICATIONS AT NOKIA VIA TWITTER THAT
+ THIS THREAD IS OK AND THE TEST IMAGE IS FINE TO LOAD UP</p>
+<p>&nbsp;</p>
+<p><em>--------------------------------------------</em></p>
+<p><em>The following has been added by vandelay (Nokia administrator) :</em></p>
+<p><em>Please note that there is normally a slight variation in the purple color level in each display unit. This is related to the display manufacturer's optical tuning process. However, some Nokia C7 and Nokia N8 users seem to be experiencing a slightly higher
+ level of purple color tint on their device screens.</em></p>
+<p>&nbsp;</p>
+<p><em>Nokia Care's technical experts told me that the easiest way to spot this problem is to just look at the black idle screen of the device - if there is a clear purple color tint on the idle screen, you should have the device inspected at a Nokia Care point.
+ They will repair the device the device under warranty if there is a clear defect in the device.</em></p>
+<p><em><br />
+</em></p>
+<p><em>So seeing some purple on the test image does not necessarily mean that your screen is faulty, but we hope that it helps some people to decide whether they should visit a Nokia Care point.</em></p>
+<p><em>(end of vandelay's addition)<br />
+</em></p>
+<p><em>--------------------------------------------</em></p>
+<p>&nbsp;</p>
+<p>as you may or may not have read many n8s and c7s have a purple tint issue</p>
+<p>&nbsp;</p>
+<p>this can easily be spoted by saving the picture below to your pc , transfering it to your n8/c7 , then viewing the image in your gallery</p>
+<p>&nbsp;</p>
+<p>if the image shows purple squares in some areas then iam afraid you have one of the screens that is showing defects in gradiation of colurs and the greyscale</p>
+<p>&nbsp;</p>
+<p>there are also many n8s out in the wild that dont have this problem , i have 3 n8s , my gfriend has one , hers is perfect and shows the test image with no purple tint at all my three n8s all have purple tint and some display it worse then others</p>
+<p>&nbsp;</p>
+<p>the test image can be viewed on any brightness and it should display just as it does on your monitor screen ,my gfriends n8 displays the image perfect under all brightness levels yet my three n8s show the purple tint heavily on low brightness and not as
+ much on full brightness</p>
+<p>&nbsp;</p>
+<p>the test image can also be viewed via tv out and hdmi out and again if you have a defect screen you will see the image perfect on your tv yet on your n8 screen you will have purple tints</p>
+<p>&nbsp;</p>
+<p>here is the test image for you to load to your device and view via the gallery</p>
+<p>&nbsp;</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2foi53.tinypic.com%2f2ivlhcl.jpg" /></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>as stated above if you have one of the screens with defects in colour gradiation you will see some of the squares as purple</p>
+<p>&nbsp;</p>
+<p>this shouldnt be happending as there n8s out there that display the test image perfectly</p>
+<p>&nbsp;</p>
+<p>from all my research on this in the last month and my time studying ICT systems support in which i have a diploma , it seems clear to me that nokia have used at least two screens in the build of the n8</p>
+<p>&nbsp;</p>
+<p>many phones bought between october launch and december dont have the problem yet there are still some that do but not as many as now , phones bought from the end of december up untill current date seem to have the issue moreand its now nearly impossible
+ to find one without the purple tint issue</p>
+<p>&nbsp;</p>
+<p>this leads me to believe that from the start nokia were using at least two screen in the n8 , then one started to run out around december and by the end of december a huge majority of n8/c7 handsets have the troubles, if not all of them shipped after december</p>
+<p>&nbsp;</p>
+<p>infact ive been to every phone shop in lakeside , chelmsford , colchester which included : carphone warehouse , o2 , vodafone , orange , three ,&nbsp; phones4u , tmobile all n8/c7 handsets i asked to look at had the problem not one n8 i looked at didnt have the
+ issue&nbsp;</p>
+<p>&nbsp;</p>
+<p>i have been in contact with nokia care escalation team , all they did is send me very badly refurbed handsets back for my brand new n8s ,&nbsp; which across all three handsets had the following faults</p>
+<p>#hdmi covers scratched and worn</p>
+<p>#no imei number under the hdmi cover on one of them</p>
+<p>#torx screws on battery cover very worn</p>
+<p>#plastic top caps not fitted right</p>
+<p>#one had a huge gap between the silver screen surround and the main chasis of n8</p>
+<p>#they all still had purple tint issue</p>
+<p>&nbsp;</p>
+<p>so nokia sent me three refurbed handsets for my brand new n8s , i obvously complained as they were so new i could have taken them back to the shops with the reciept but now nokia had changed the imei numbers my reciept was useless , i said i should be sent
+ three brand new n8s , they again sent me badly refurbed handsets just as bad as the 1st lot and again all three of them had purple screen issues&nbsp;</p>
+<p>&nbsp;</p>
+<p>i complained again and this time supervsior took over the case and agreed that 3 new n8s should be sent to me as mine was so new , she got them sent out and this time they were new but they still have the purple screen issue</p>
+<p>&nbsp;</p>
+<p>thats a toatal 12 n8s direct from nokia and all of them have had the issue&nbsp; so i cant recomend going to a nokia care point or nokia care uk as the refurbs i was sent was a complete joke and looked like they were just used handsets that had been through a
+ rough time</p>
+<p>&nbsp;</p>
+<p>through this month of me talking to nokia and sending emails and getting these phones swapped back to a condition of the phones that i sent them , they have said they are investigating it and taking it seriously however after some of their actions towards
+ users (myself included) on these forums it doesnt seem like they are taking it very serious at all , they have known about it for a month now and we still have not had an offical response from nokia themselves</p>
+<p>&nbsp;</p>
+<p>if you would like to read more infomation on this problem and to see how wide spread it is then please check the following links</p>
+<p>&nbsp;</p>
+<p><a href="http://www.nokiausers.net/forum/nokia-n8/39462-i-think-nokia-using-two-different-types-screen-n8-maybe-c7.html" target="_blank" rel="noreferrer nofollow">http://www.nokiausers.net/forum/nokia-n8/39462-i-think-nokia-using-two-different-types-screen-n8-maybe-c7.html</a></p>
+<p>&nbsp;</p>
+<p><a href="http://www.nokiausers.net/forum/nokia-n8/39532-n8-purple-screen-test-please-take-part-if-you-have-n8-results-only-please.html" target="_blank" rel="noreferrer nofollow">http://www.nokiausers.net/forum/nokia-n8/39532-n8-purple-screen-test-please-take-part-if-you-have-n8-results-only-please.html</a></p>
+<p>&nbsp;</p>
+<p><a href="http://www.allaboutsymbian.com/news/item/12604_Defective_screens_found_in_som.php" target="_blank" rel="noreferrer nofollow">http://www.allaboutsymbian.com/news/item/12604_Defective_screens_found_in_som.php</a></p>
+<p>&nbsp;</p>
+<p><a href="http://forum.dailymobile.se/index.php?topic=39665.0" target="_blank" rel="noreferrer nofollow">http://forum.dailymobile.se/index.php?topic=39665.0</a></p>
+<p>&nbsp;</p>
+<p><a href="http://www.nokiadna.com/2011/02/nokia-n8-nokia-c7-oled-screen-issues-plauge-nokia-users/" target="_blank" rel="noreferrer nofollow">http://www.nokiadna.com/2011/02/nokia-n8-nokia-c7-oled-screen-issues-plauge-nokia-users/</a></p>
+<p>&nbsp;</p>
+<p><a href="http://n8geeks.com/nokia-n8-amoled-display-issue/" target="_blank" rel="noreferrer nofollow">http://n8geeks.com/nokia-n8-amoled-display-issue/</a></p>
+<p>&nbsp;</p>
+<p>there are many more threads about this issue across the net and if you google n8 screen problems or n8 purple screen problems you will come acroos many many pages of unhappy users from all across the globe</p>
+<p>&nbsp;</p>
+<p>i just hope nokia sort this out soon</p>
+<p>&nbsp;</p>
+<p>ho do you users with the problem feel about this issue and how do you think nokia should resolve it</p>
+<p>&nbsp;</p>
+<p>id be happy for a screen swap at a nsc or via warranty postal repair as long as it could be done quickly and the user wasnt without their phone for too long after all this is nokias mistake and not the users that bought the phone so all fixes should be at
+ minimal disturbance to them</p>
+<p>&nbsp;</p>
+<p>heres hoping when you test the image your not as unlucky as me and many other n8 owners from across the globe , its a brilliant phone but this screen issue lets it down alot especially during watching films and stuff</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cooldudsubho  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Kudos to you buzx.I request the mods to not delete this thread.This thread will help people to spot the problem and get the handset fixed or replaced by nokia care.And i have this issue.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            there already has been a thread the other day with this and it was removed
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> amarokss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>My N8 phone is affected by this as well but this is not just an issue, it's clearly a FAULT. Nokia need to do a recall or upload a software patch.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ljung---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>My N8 (made in Finland) also got this problem, does nokia care point's know about this and exchange the amoled screen on warranty?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="93tid" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> 93tid  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;</p>
+<blockquote>
+<hr />
+ljung wrote:<br />
+<p>My N8 (made in Finland) also got this problem, does nokia care point's know about this and exchange the amoled screen on warranty?</p>
+<hr />
+</blockquote>
+<p>You can only find out if you take it in for servicing. Allegedly Nokia has stated that they are aware of this issue and have recommended that everyone affected approaches their local NCC. You should do the same.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> buxz777  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>sorry to hear you guys are having troubles too , its a shame sucha&nbsp; great device as the nokia n8 has had an issue like this arise , it is effecting alot of n8/c7 handsets and is quite a widespread issue across the globe</p>
+<p>&nbsp;</p>
+<p>it would be great to hear from as many users as possible about this and what they think about it as a user of the c7/n8</p>
+<p>&nbsp;</p>
+<p>jimmyireland about your post mate</p>
+<p>&nbsp;</p>
+<p>yes it was written by me and yes it ws deleted not once but 3or4 times actually</p>
+<p>&nbsp;</p>
+<p>the mods said it was because i had set up a poll and voting system , so i read through forum rules and posted it again with what fitted their guidelines and even put in big caps that it was not a poll but a thread to help users identify a problem and discuss
+ it which is what the forum is for , it was deleted again , i then posted it again with just the test image and how to spot the problem and again put big caps that the post fitted their guidelines and was just to help users , it was again deleted and i was
+ banned by mods for 2 days saying that i had broke forum rules and posted a poll and that the test image wasnt a proper test image</p>
+<p>&nbsp;</p>
+<p>i then asked other users to post the image but when they tryed nokias spam filter kicked in with a message saying that their post contained spam and that they should write it again and try posting again</p>
+<p>&nbsp;</p>
+<p>to be honest it really looked like they were trying to cover up the issue , fair enough my 1st post could be considered a very very rough poll but the posts i made afterwards were edited to fit nokias guidelines and they still removed them ad banned me and
+ then other users posts were marked as spam</p>
+<p>&nbsp;</p>
+<p>so i tweeted alot of people and even nokia have said that as long as the post doesnt contain polls/votes then it will be fine to postand that mods shouldnt delete it , which was excellent news and hopefull this thread will stay and users can load the image
+ and test their screens and then discuss the issue here so nokia can see users discussion in one thread , it will alo help awareness of the issue</p>
+<p>&nbsp;</p>
+<p>hence this post that isnt a poll but a thread to help users identify wether their n8/c7 has a screen with a defect in the gradiation of colours</p>
+<p>&nbsp;</p>
+<p>as stated in original post not all n8s have this problem my gfriends doesnt and it displays the test image perfectly on all brightness settings , yet my n8s show the image as very purple on low brightness and the brighter the screen goes the less the purple
+ is shown , it is still there just not as visible as it is in the lower brightness settings</p>
+<p>&nbsp;</p>
+<p>as i also mentioned many n8s between october and mid december are fine although some still have the problem , yet from mid december till current date the amount of n8s with purple issue is much much higher and it now seems very very rare that you will get
+ a brand new n8 from the shops without this screen issue which leads me to believe that from launch nokia have used at least two screens in the builds of the n8 , some great screens and then the ones with dodgy purple tint , from the threads across the web
+ it seems like the good screens nokia were using either run out or they have failed to source the same screen or the manufactuer of the screen has changed something</p>
+<p>&nbsp;</p>
+<p>iam not a nokia hater and iam not here to cause trouble or loose nokia sales etc</p>
+<p>&nbsp;</p>
+<p>i love nokia have used them for years and used symbian since the 6680 , iam always helping users across the web with their nokia problems and am an avid user on nokia users please check my profile and feel free to check my posts and how many times ive been
+ thanked for being helpfull</p>
+<p>&nbsp;</p>
+<p><a href="http://www.nokiausers.net/forum/members/buxz777.html" target="_blank" rel="noreferrer nofollow">http://www.nokiausers.net/forum/members/buxz777.html</a></p>
+<p>&nbsp;</p>
+<p>as you can see i love nokia and spend alot of time using their devices , speaking highly of them and helping their users with problems, i also love good customer services and customer relations</p>
+<p>&nbsp;</p>
+<p>i understand that big companys have build issues iam a gadget lover and trained in ict supprt iam not silly and understand that these things happend and building these phones with such complicated electronics and some could end up with issues , it could
+ happend to anyone , sony , apple , samsung , blackberry , lg etc etc</p>
+<p>&nbsp;</p>
+<p>however its how the companys react to these issues and relate to their customers that have spent 100s of pounds on their devices that is important , issues do arise , its how the company looks after its customers thats important</p>
+<p>&nbsp;</p>
+<p>i think alot of users think the same , they dont expect nokia to click their fingers and go heres a fix but they do expect nokia to investigate the issue and they do expect nokia to relate to its customers and not ignore them or the issue which is what it
+ looks like when posts are deleted and users are banned for posting informative posts that help users identify a problem</p>
+<p>&nbsp;</p>
+<p>things like sending users really bad refurbs for brand new n8s also dont help users confidence in nokia statement of going to nokia care about the problem as all i got was second hand looking n8s that still have the problem they were sent off with and the
+ originals were in much better condition</p>
+<p>&nbsp;</p>
+<p>like i say iam not here to cause trouble and i love nokia the n8 is the best phone ive ever had and its almost my dream device and everything ive wanted on a device for years its the ultimate convergance device and agadget lovers dream , however when you
+ see your gfriends and some of your mates n8 screens display the test image perfect then your n8 display it with a very purple hue it does dissapoint you and you do hope that nokia will take notice and fix the issue with the least amunt of hassle to the users</p>
+<p>&nbsp;</p>
+<p>cheers jimmy and sorry about the long post just wanted to clear some things up</p>
+<p>&nbsp;</p>
+<p>now lets get back to discussing the issue and what other users think about it</p>
+<p>&nbsp;</p>
+<p>have a great evening</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jeffrey harrisnz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Cheers for the great posts Buzx and for championing this issue.</p>
+<p>I have this issue as well and just hope there is a Firmware fix as I can't see Nokia recalling all these phones.</p>
+<p>I would have thought that they would have learnt from Apples PR shambles over the antenna issue on the I4, but judging by the overwhelming silence on this issue, apparently not.</p>
+<p>Pity as it spoils a great phone.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            there is only one discussion and as advised already if your phone has this issue it must be returned to a Nokia care point simple as that and that is the only answer buddy.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> buxz777  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>iam sorry jimmy ireland&nbsp; but if thats the case then nokia should come out and say something like</p>
+<p>&nbsp;</p>
+<p>''if users believe they are effected by the purple screen problem that has arisen on some n8 and c7 handsets we know whats caused it and it can fixed via nsc centre or via postal warranty service ''</p>
+<p>&nbsp;</p>
+<p>all we have had is standard replys from nokia mods that can not be taken as offical statements as they are standard replys to users who think they have issues on many threads</p>
+<p>&nbsp;</p>
+<p>there has been no offical statement or repair procedure put in place so users dont even know if it can be fixed etc</p>
+<p>&nbsp;</p>
+<p>nokia should come out on nokia conversations and say they have a fix if there is one at least users will know it can be fixed , it will be fixed and itll be worth the time it takes to fix it as it wont come back the same or a refurbed handset with the same
+ problem</p>
+<p>&nbsp;</p>
+<p>with the motherboard issue nokia were pretty good and come out and said they had identified the issue and it has been put right and to visit the nokia care points for it to be sorted out , why cant they do the same thing here if they have a fix and it can
+ be done at nokia service centres</p>
+<p>&nbsp;</p>
+<p>pretty much all the service centres users have been to have said things like '' the n8 is designed like this'' many users have reported the same on forums , which makes me think do nokia service centres even know about it yet</p>
+<p>&nbsp;</p>
+<p>ive also tryed sending my n8s to nokia care uk and after an original swap and then two more doorstep swaps iam still no better off and still have the screen issue , this is why i think its important that nokia come out and say something through nokia conversations
+ etc</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="93tid" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> 93tid  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;</p>
+<blockquote>
+<hr />
+jimmyireland wrote:<br />
+there is only one discussion and as advised already if your phone has this issue it must be returned to a Nokia care point simple as that and that is the only answer buddy.
+<hr />
+</blockquote>
+<p>&nbsp;</p>
+<p>I don't think there's a discussion any more - it's painfully obvious there is a major issue with handsets produced in all locations - Finland, China, Korea.</p>
+<p>&nbsp;</p>
+<p>We are trying to make it as easy as possible for affected customers to identify whether they have the defective screen.</p>
+<p>&nbsp;</p>
+<p>So far the response from NCCs across the globe has been pitiful, to say the least. I sincerely hope that as many affected customers as possible go asap to their nearest NCC with their defective handsets in order to reach quicker the critical mass required
+ for Nokia to acknowledge the probem publicly.</p>
+<p>&nbsp;</p>
+<p>For that reason I fully agree with the recommendation given in this forum - take your defective handset to your nearest NCC and have it replaced. I would add - take the test image with you on a USB stick and test the new handset on the spot. If it's defective
+ as well - insist on another replacement.</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Credit Card Update &#40;Personal Account&#41; - Microsoft Community</title>
+<h3> chesspin1  say:</h3>
+<h2>            Credit Card Update &#40;Personal Account&#41;</h2>
+                    <p>My credit card was recently replaced due to fraud (not related to Microsoft) and I need to remove it from my account. Whenever I try to delete it, I get caught in an endless loop telling me to change a payment method for a service then come back, but I've
+ already done that.</p>
+<p>
+</p><p>If Microsoft attempts to charge this card, it would come back as "Stolen" so I want it off my account. How do I delete it?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>For us to assist you with your concern, we suggest that it would be best to seek assistance in our
+<a href="https://partner.support.services.microsoft.com/en-us/contact/menu/" target="_blank" rel="noreferrer nofollow">
+Answer Desk</a>. They are the one handling issues related to account and payments.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com_premium">outlook.com_premium, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Persian Language support Windows Phone - Microsoft Community</title>
+<h3> avaf  say:</h3>
+<h2>            Persian Language support Windows Phone</h2>
+                    please add persian keyboard to your OS.we need to this future ... thank you
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="7thSense" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "T"); this.style="display: inline-block";'
+<h3> 7thsense  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This has been asked many times here and Microsoft has announced that this is coming in mid-2012. Most likely in the big Apollo update.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>scam - Microsoft Community</title>
+<h3> rayyoung3  say:</h3>
+<h2>            scam</h2>
+                    There is a scam going on a fake Microsoft tech. Their number is 888-706-6502. Please check into this.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> garym123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>This is the place to report the scam.</p>
+<p><a href="https://www.microsoft.com/en-us/concern/scam?rtc=1" target="_blank" rel="noreferrer nofollow">https://www.microsoft.com/en-us/concern/scam?rtc=1</a></p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>windows preview built 14316 edge make a web note tool doesn&#39;t work - Microsoft Community</title>
+<h3> vfragos  say:</h3>
+<h2>            windows preview built 14316 edge make a web note tool doesn&#39;t work correctly</h2>
+                    <p>When I try to make screen clip with the make a web note and using the clip tool to clip a portion of the screen and save it to onenote the image imported to onenote is corrupted. I'll upload an example.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/6d72e998-d70e-4b51-8d31-b298ddc1cf51" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/6d72e998-d70e-4b51-8d31-b298ddc1cf51" /></a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)"><span>Hi,
+</span></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>&nbsp;</span></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>Thank you for posting your query in Microsoft Community.</span></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span>&nbsp;</span></span></p>
+<p><span>I understand your concern and will assist you to resolve this issue.&nbsp;&nbsp;&nbsp;
+</span></p>
+<ol>
+<li>
+<p style="color: rgba(0, 0, 0, 1)">
+<span>Since when are you facing this issue?</span></p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+<span>Did you make any changes prior to this issue?</span></p>
+</li></ol>
+<p><span>&nbsp;</span></p>
+<p><span><span style="color: rgba(0, 0, 0, 1)">I suggest you to Run
+</span><span>App trouble shooters and check if it helps.</span></span></p>
+<p><span><span>Refer the link below and check if it helps.</span></span></p>
+<p><a href="http://windows.microsoft.com/en-us/windows-10/run-the-troubleshooter-for-windows-apps" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(0, 108, 216, 1)">http://windows.microsoft.com/en-us/windows-10/run-the-troubleshooter-for-windows-apps</span></span></a></p>
+<p><span>&nbsp;</span></p>
+<p><span>Keep us posted on this issue so that we can assist you better.</span></p>
+<p><span>Thanks and Regards.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vfragos  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>Thank you for helping me and I want to apologize for my bad English! I tried the trouble shooter, didn't helped.</p>
+<p>The problem occurred after updating to preview build 14316, before I was on consumer edition of windows 10 pro. The only think I can think of doing before is to load the new extensions on edge browser along them and the onenote extension. I also tried to
+ disable them all and restarted the edge, didn't worked either.</p>
+<p>Also I noticed when I press the make a note tool and right after the save to onenote which takes a full screeshoot, the image is all right without any problems, so this occurs only when I use the clip tool to clip a portion of the screen.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vfragos  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I would like to add if this is of any help that I'm on a Surface pro 4 i5 8gb.
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=microsoft_edge_and_internet_explorer_on_insider_preview">microsoft_edge_and_internet_explorer_on_insider_preview, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I&#39;m sending emails to email addresses with a shaw.ca extension but - Microsoft Community</title>
+<h3> leonardpiggin  say:</h3>
+<h2>            I&#39;m sending emails to email addresses with a shaw.ca extension but nobody with that extension is receiving them</h2>
+                    <p>My email account is with Telus.net.</p>
+<p>I use Microsoft Outlook 2010.</p>
+<p>When I send an email to an email account with the extension shaw.ca the person on the other end doesn't receive it.</p>
+<p>This just happened recently.</p>
+<p>I haven't changed any thing in Microsoft Outlook.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p>
+</p><p><span>Welcome to Microsoft Community.</span></p>
+<p>
+</p><p><span>I would like to know what type of account you have configured in Outlook.&nbsp; (POP3, IMAP, Exchange ActiveSync or an Exchange account)</span></p>
+<p><span>Do you get any error messages?</span></p>
+<p><span>Where there any recent updates office/windows installed.</span></p>
+<p>
+</p><p><span>Meanwhile let us try opening Outlook in safe mode and check if it works.</span></p>
+<p>
+</p><p><span><span>To do that, close Outlook. Let us type in ‘Run’ in the search bar next to start button, click on the 'run' icon that appears – in the 'Run window' type in Outlook /safe and hit ok. (Note: There is a space between Outlook and /).<span>&nbsp;
+</span></span></span></p>
+<p>
+</p><p><span>If the application works fine safe mode, try disabling the add ins for the application and check the result,</span></p>
+<p><span>Click the File tab. </span></p>
+<p><span>Go to Options.</span></p>
+<p><span>Click Add-ins.</span></p>
+<p><span>In the Manage section, select COM Add-ins and click on Go.</span></p>
+<p>
+</p><p><span>Now uncheck the Add-ins and click on OK. </span></p>
+<p>
+</p><p><span>If issue persist, let us disable the disable the anti-virus and check.</span></p>
+<p>
+</p><p><span>Hope this information helps you. Please let us know if you need additional information.</span></p>
+<p>
+</p><p><span>Thank you.</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>When I send an email to an email account with the extension shaw.ca the person on the other end doesn't receive it.<br />
+<br />
+</p>
+</blockquote>
+<p>
+</p><p>If everyone else who isn't with shaw.ca is receiving your emails then the issue is with shaw - who it would seem is either blocking your email server's IP address or shaw.ca is temporarily having issues of their own. Outlook doesn't pick and choose what
+ emails get sent to the SMTP server and has no control over what the Telus SMTP server does or doesn't send etc.</p>
+<p>
+</p><p>In short - you need to check with Telus on your end and your recipients need to check with Shaw on their end.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>List of fonts missing to display a document&#63; - Microsoft Community</title>
+<h3> brog.peredhel  say:</h3>
+<h2>            List of fonts missing to display a document&#63;</h2>
+                    I have to open a large Word document with a set of exotic fonts that are missing. Is there any way to get a list of all fonts that need to be imported to correctly display this particular document?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            After opening the document, click File &gt; Options &gt; Advanced. Scroll down to the&nbsp; "Show document content" section of the dialog and click the Font Substitution button. The next dialog shows the list you want, and also shows which font is currently used
+ as a replacement for each of the missing fonts.<br />
+<br />
+Unfortunately, there's no way to copy the list to paste elsewhere for later use, except to take a screen shot of the dialog. As far as I can tell, VBA doesn't have access to a collection of the names of fonts being substituted.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>alternative sync program for ms mobile device center&#63;&#63;&#63; MS - Microsoft Community</title>
+<h3> keesdewalle  say:</h3>
+<h2>            alternative sync program for ms mobile device center&#63;&#63;&#63; MS is truly missing out on ease of use .........</h2>
+                    <span>Hi, does anyone know if there are alternative synchronisation programs available on the market. I face various problems with MS mobile device center and active sync which i would like to address. I own a samsung
+                    <span>Hi, does anyone know if there are alternative synchronisation programs available on the market. I face various problems with MS mobile device center and active sync which i would like to address. I own a samsung
+ omnia i900 with windows mobile 6.1<br />
+<br />
+a) it's allows for very limited folder selection - ie when having two accounts (pst/exchange or multiple pst files) - I want to be be able to select the entire 'mail tree'
+<br />
+b) 2 different programs for vista and xp - i would lik to work with one sync program on xp and vista to rule out incompatibility issues<br />
+c) it's not transparent in what data it syncs - i want to see logs what data it exchanges.<br />
+d) i can't find the option to change the way contacts are stored. i would like to see it first name, last name.<br />
+<br />
+I had a nokia phone and their software suite is really good and transaparent in what fields and data it updated.<br />
+<br />
+to be honest, i can't believe that there is such limited integration and interaction between programs made by one vendor being MS and what they produced is more a shame then a blessing....<br />
+<br />
+Hope someone can suggest a good alternative.<br />
+<br />
+Thanks<br />
+<br />
+Kees de Walle<br />
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> biggles the dog  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Check this software. I haven't tried it myself but I'm lokking for something similar.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><a href="http://pocketpccentral.net/software/sync.htm" target="_blank" rel="noreferrer nofollow">http://pocketpccentral.net/software/sync.htm</a></p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> keesdewalle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>Thx, will do and post back results
+<img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2fforums.microsoft.com%2fMSDN%2femoticons%2femotion-1.gif" /><br />
+</span>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> biz-arch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I've just set up my Samsung Omnia i910 and am having similar issues that KeesdeWalle found.&nbsp; Have either of you made any progress with research or experimentation?
+
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can I automatically geotag the photos in Lumia 532 - Microsoft Community</title>
+<h3> umapathy &#40;உமாபதி&#41;  say:</h3>
+<h2>            How can I automatically geotag the photos in Lumia 532</h2>
+                    Last week I bought Microsoft Lumia 532 and it's my very first smart phone. I am very much interested GIS (geographic Information system) I used to contribute to openstreetmap (http://hdyc.neis-one.org/?Umapathy) and I also take photo and upload it to panoramio
+ (http://www.panoramio.com/user/69195). Uploaded photos if selected will appear in google earth, google maps and etc. I am relatively new to lumia is there any place I can set the camera to take photo with the geotag (I mean location infor where the photo was
+ taken. i.e&nbsp; latitude and the longitude as it is having gps) automatically.&nbsp; That will simply my work.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="pink_butterfly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "PI"); this.style="display: inline-block";'
+<h3> pink_butterfly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello, <a href="https://answers.microsoft.com/en-us/profile/7d700ff6-8d86-48dc-a2e0-495a22015c0a" title="Umapathy (உமாபதி)">
+Umapathy (உமாபதி).</a> You may find this link: <a href="http://allaboutwindowsphone.com/flow/item/18140_view_add_and_edit_photo_locati.php" target="_blank" rel="noreferrer nofollow">
+http://allaboutwindowsphone.com/flow/item/18140_view_add_and_edit_photo_locati.php</a> helpful. If you have other questions, feel free to post. ^__^
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Umapathy &#40;உமாபதி&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "U"); this.style="display: inline-block";'
+<h3> umapathy &#40;உமாபதி&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ok installed this application. It guided me to make changes to the Photos Settings to enable Under that camera settings tick the use location info. It looks like the issue beeen fixed now. Many thanks for the reply,
+<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=camera,_photos_&#43;_videos">camera,_photos_&#43;_videos, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to use Avery Business Card Template with Word 2010&#63; - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            How to use Avery Business Card Template with Word 2010&#63;</h2>
+                    <p>Hello,</p>
+<p>I am a Microsoft Online Customer Service, who contacting on behalf of my customer. He is unable to use Avery Avery Business Card Template with Word 2010. And he couldn't find it on the Tool option of Word 2010.
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If your customer is trying to use one of the "templates" that can be downloaded from www.avery.com (which are .doc document files and not .dot template files), that isn't necessary. Everything needed to create business cards on Avery stock is built into
+ Word.<br />
+<br />
+Also, Word 2010 doesn't have any "Tool option", but the use of term indicates that the customer was probably reading instructions for Word 2003 or earlier.<br />
+<br />
+The key is that business cards are handled as labels. In Word 2010, click the Mailings tab of the ribbon and then click the Labels button near the left end. Click the Options button in the Labels dialog. Open the "Label vendors" list box and choose Avery US
+ Letter. In the "Product number" list, choose any of the Clean Edge Business Card items from #8869 through #8878 -- they're all the same layout.<br />
+<br />
+Simply filling in the text in the Address box of the Labels dialog is sufficient for all-text cards. If the customer wants to include graphics, he or she should read this page:
+<a href="http://www.gmayor.com/graphics_on_labels.htm" target="_blank" rel="noreferrer nofollow">http://www.gmayor.com/graphics_on_labels.htm</a><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Is this email legit&#63; - Microsoft Community</title>
+<h3> eslambaklola  say:</h3>
+<h2>            Is this email legit&#63;</h2>
+                    <p>Original title: Is this hacker ?</p>
+<p>
+</p><p>
+</p><p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/3fcd03ac-bd95-4866-ba86-4544f784431b" /></p>
+<p>
+</p><p>
+</p><p>
+</p><p>Is this message from hacker ???</p>
+<p>i get it many times</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Its a scam.&nbsp; A well known and long running one.&nbsp; Microsoft will never ask for personal details (they already have them) and will never cold call you or send out anti virus messages.<br />
+Microsoft does not do that nor do they have partners who do that<br />
+See the following for additional information about this and what to do and how Microsoft operates: http://www.microsoft.com/security/online-privacy/msname.aspx answers.microsoft.com/en-us/protect/wiki/protect_other-protect_scanning/is-that-call-from-microsoft-a-scam/6718e389-8a00-4e4b-aca1-d07298ea4c19?rtAction=1405643984573<br />
+<br />
+<br />
+<br />
+What should you do if you receive a questionable email? DONT CLICK ON LINKS, Dont go to web sites that are suggested, dont give access, or volunteer information (usually if you mouse over links they will not point to Microsoft)<br />
+<br />
+<br />
+<br />
+<br />
+1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Investigate the information.<br />
+Take some time and check up on the information. Often sites like snopes.com can provide information on known chain letters and other scams and untruths.&nbsp; Do not click on links within the mail, but do go to that company’s website, and contact their customer
+ service reps via phone or online to verify the validity of the email.<br />
+<br />
+<br />
+<br />
+<br />
+2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Report suspicious activities.<br />
+If you think someone has accessed your Outlook.com account, that the Live ID sign-in page looks fraudulent, or you receive an email that tries to confirm a password change you didn’t authorize, change your password immediately by going to: http://account.live.com.
+ Next, help ensure your PC has not been infected with a virus or malware by running a free full-PC scan.<br />
+<br />
+<br />
+<br />
+<br />
+3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Help the Outlook.com team identify new scams.<br />
+Click on the Junk button in Outlook.com and select “Junk” or “Report phishing scam” to report it to the Outlook.com team. Whatever you do, do not reply back to the sender.<br />
+If you think you might be a victim of fraud, you can report it.<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Mac 2016 not scrolling sheet tabs in full screen mode - Microsoft Community</title>
+<h3> stuartr_143  say:</h3>
+<h2>            Excel Mac 2016 not scrolling sheet tabs in full screen mode</h2>
+                    <p>Hi. I've seen this problem in at least two posts, but in neither one is Microsoft seeming to understand the problem or to provide a solution. So here goes again...</p>
+<p>
+</p><p>I have a workbook with around 200 individual worksheets. Needless to say, the tab strip navigation at the bottom doesn't show them all, and I use the two arrow keys bottom left to navigate. In Windowed mode, this works.</p>
+<p>
+</p><p>In full screen mode, though, it doesn't. Not left click, not right click. Not CMD-click. Nothing works. If I want to scroll the tabs so that I can select the next set of worksheets, I have to take Excel out of full screen mode, navigate to where I want to
+ go, and then put it back again.</p>
+<p>
+</p><p>I'm trying to do some analysis which requires me to keep selecting different sheets to see the data in them. Needless to say, this is intensely irritating!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Is your installation of Office 2016 fully updated? It should be at v15.23.2 or higher.</p>
+<p>
+</p><p>Several versions back there was an issue with a yellow tip box obstructing access to the arrows. This has been improved significantly but may still present a problem in Full Screen view. Unfortunately, I don't have O2016 available right now to verify.</p>
+<p>
+</p><p>If this is what you're referring to, make sure the tip of the pointer is <em>not</em> on the yellow tip box... point to the arrow space to the left of it. That should at least allow right-clicking to bring up a list of sheet names to select from.</p>
+<p>
+</p><p>If that isn't the issue &amp; your software is fully updated, use the ☺ at the right end of the Excel Ribbon to submit the details to Microsoft.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> david0603  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have just installed the latest version of Excel and have the same problem - I can't scroll across worksheet tabs in full screen mode. This is so annoying!
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> roberto oca  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi David,</p>
+<p>
+</p><p>I'm using Office 2016 and just hit "Command + ~" and it works for me.</p>
+<p>
+</p><p>Just give it a try and let us know how it goes.</p>
+<p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>On opening a Word file via Explorer, error&#58; The command cannot be - Microsoft Community</title>
+<h3> &#42;&#42;&#42;&#42; ic2  say:</h3>
+<h2>            On opening a Word file via Explorer, error&#58; The command cannot be performed because a dialog box is opened</h2>
+                    <p>In Word 2016, running on W10 Professional, when I double click a .docx file, I get an error box saying "The command cannot be performed because a dialog box is opened". Dutch: De opdracht kan niet worden uitgevoerd, omdat er een dialoogvenster is geopend.
+ Sluit het dialoogvenster om door te gaan.</p>
+<p>
+</p><p>At that moment I have no other documents or Word versions open. I can just click this away and continue but it's annoying.</p>
+<p>
+</p><p>Solution I found (for older Word versions) are:</p>
+<p>
+</p><p>1 A Norton Antivirus problem (no because I do not use that)</p>
+<p>2 Rename Officeav.dll&nbsp; , an older DLL which could cause it. This file is not present on my PC</p>
+<p>3 A macro present in the startup template. This is not the case either. In %appdata%\Microsoft\Templates, there's only normal.dot. Renaming it creates a new one with the same problem.</p>
+<p>
+</p><p>It could have something to do with Office 2003 in use on the same PC, which is documented to be possible. My preferred solution would be that a double click on a .DOC(x) document opens Word 2003 but using Open with and then pointing to C:\Program Files (x86)\Microsoft
+ Office\OFFICE11\Winword.exe still opens it with Office 2016. I have Office 2016 on my PC for being able to open the latest documents but I prefer Office 2003 in almost every aspect above Office&nbsp; 2016.</p>
+<p>
+</p><p>What else could cause it?</p>
+<p>
+</p><p>****</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Since you are running both Office 2016 and 2003 on the same machine, and you want Office 2003 to be the default, clear the option (in Word 2013) at File | Options | General that says "Tell me if Microsoft isn't the default application for viewing and editing
+ documents." Most likely, doing that would improve the situation.</p>
+<p>
+</p><p>I haven't tested thouroughly what happens if you keep, say, Word 2016 open and then double-click a *.docx file. It is quite possible that the open version of Word also tries to open the file, which is why you have to make sure that no dialog box is open
+ in whatever version of Word is running at the time that you double-click.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> &#42;&#42;&#42;&#42; ic2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Stefan,</p>
+<p>
+</p><p>Thanks for the quick reply. Something seems to have changed with your tip: after I cleared the box, the message was limited to files which are password protected as you can see below:</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/b3357217-aa2c-44d9-98af-4aa267968c09" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/b3357217-aa2c-44d9-98af-4aa267968c09" /></a></p>
+<p>This was actually the situation I had with an earlier installation of Office 2016. Remarkable thing is that after checking the box again, some other (non password protected documents) which opened with the above error earlier today now opened without the
+ error. So it must have cleared something, but </p>
+<p>1) it is not solved as you see </p>
+<p>2) I am still unable to set Office 2003 as default. E.g. for .doc opening with Word 2003 would be nice, but Settings/Standard apps doesn't let me chose anything else than Word 2016 or an app from the store, and as said, Open with, pointing to winword.exe
+ in the Office 11 folder still redirects to Office 2016 (note: not Office 2013 as you wrote).</p>
+<p>
+</p><p>Even renaming winword.exe in C:\Program Files (x86)\Microsoft Office\root\Office16 to winword2016.exe is not the solution. It does enable me to chose Office 2003 again but it won't start Word&nbsp; 2016 anymore (nothing happens when I click the renamed .exe).</p>
+<p>
+</p><p>The reason I installed Office 2016 is that I actually like one program in it: OneNote 2016. The problem is, when I install only OneNote 2016 (even the free version), Office 2003 gives opening errors on some documents (mainly some docx files). This
+ problem is immediately gone after I uninstall Onenote 2016 and re-appears when I install it again or install Office 2016.</p>
+<p>
+</p><p>So basically to me it seems that there are quite some elements deliberately programmed in Office 2016 to "discourage" the use of older programs. Just like we need to revert to a few tracks to get back the Windows 7 games, the previous much better
+ working calculator, or the Start menu in Windows 10. Some things certainly improved in newer software versions like Windows 10 or Office 2016 but it's a pity that more productive solutions are replaced and not or difficult to get back. Word and Excel 2003
+ are much faster, the regular menu's are more logical and faster to browse, it has a help file which does need an internet connection and Excel 2003 can export more file formats. I write this just to explain why I want to keep using Office 2003 for most of
+ my work which probably sounds like an odd choice.</p>
+<p>
+****</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you start Word first, can you then open these files by navigating to them in the Open dialog box? If that works, you may have to keep doing that as a workaround.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> &#42;&#42;&#42;&#42; ic2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Stefan,</p>
+<p>
+</p><p>Yes, that way it works fine. To open files via Word as a workaround is not really needed because it's always more clicks than double clicking a file, even with this extra click. Note that I
+<strong>can </strong>open such a file with clicking away the dialog. But it shouldn't happen. I had this problem earlier as well. After a clean reinstall of my PC I worked since August with only Office 2003. Then I reinstalled Office 2016 and found that this
+ error returned. Maybe it is somehow related to Office 2003 on the system. Another problem I had earlier with Office 2016 was gone however: the previous installation did not show any help telling me that "I need an internet connection" for that which I obviously
+ had. This now works fortunately.</p>
+<p>
+</p><p>****</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The workaround will be a little quicker if you use the Ctrl+O shortcut to go directly to the Open dialog box. Note that for this to work you must select "Don't show the Backstage when opening or saving files" at File | Options | Save.</p>
+<p>
+</p><p>That said, I don't know why the workaround is necessary. It appears that Word, for the affected documents,&nbsp;can't handle the password dialog box when it pops up.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>1 user 2 pc Office Home and business 2010 dvd - Microsoft Community</title>
+<h3> lyna  say:</h3>
+<h2>            1 user 2 pc Office Home and business 2010 dvd</h2>
+                    <p>Hi,</p>
+<p>I purchased a DVD full version of Office Home and Business </p>
+<p>the product descriptions are as follows:</p>
+<p>Licensed for use on two PCs by 1 user, Microsoft <strong>Office Home and Business 2010</strong> provides you with all the essential tools you need to work effectively, whether dealing with household matters or work. Included in this package are Word 2010,
+ Excel 2010, PowerPoint 2010, OneNote 2010, and Outlook 2010.<br />
+</p>
+<p>Can we install it on two separate PCs for our company use? Two different persons will&nbsp;use the different machines. Does that count as one user? As the company is the user, in effect.</p>
+<p>&nbsp;</p>
+<p>Do we need to uninstall the old version Office first then install the Office 2010?</p>
+<p>&nbsp;</p>
+<p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Under the actual terms of the licence, its licensed for use by a single person on two devices. Generally two devices, under MS terms is a desktop &amp; portable.</p>
+<p>MS has no means of identifying the actual useage or sys its installed on (Other than the number of times its being activated)</p>
+<p>You dont have to uninstall the prior version, the std install of 2010 will offer to 'upgrade' the earlier version. But you can uninstall any earlier version first, if you wish, no data is lost</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> sanwin2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            One user = one person., the rest is up to conscience.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Creating Multiple outlook.com Accounts for Outlook Training - Microsoft Community</title>
+<h3> geoffhiggins  say:</h3>
+<h2>            Creating Multiple outlook.com Accounts for Outlook Training</h2>
+                    <p>I am teaching' Outlook skills to a class of adult learners.&nbsp; The participants will come from outside the organisation to attend the training.&nbsp; The PCs I am using have Outlook 2010 installed and internet access.&nbsp; The venue I am using has Exchange and tight
+ policies around creation of new accounts.&nbsp; </p>
+<p>&nbsp;</p>
+<p>1. Can I create multiple outlook.com accounts (learner1, learner2, etc) temporarily or permanently?</p>
+<p>2. Can I set these accounts up in Outlook?</p>
+<p>3. Will the participants be able to trade emails and meeting requests?</p>
+<p>4. Will the participants be able to view each other's calendars for availability?</p>
+<p>&nbsp;</p>
+<p>...Geoff</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>1. Can I create multiple outlook.com accounts (learner1, learner2, etc) temporarily or permanently?</p>
+<p>When you setup an Outlook.com account, you provide profile information.&nbsp; It would be simpler to create a new account and have the correct profile information than to rename learner1 and change the profile information.</p>
+<p>&nbsp;</p>
+<p>2. Can I set these accounts up in Outlook?</p>
+<p><span><a href="http://support.microsoft.com/kb/2735989" target="_blank" rel="noreferrer nofollow">How to configure Outlook to connect to an outlook.com email account</a></span></p>
+<p>&nbsp;</p>
+<p>3. Will the participants be able to trade emails and meeting requests?</p>
+<p>When you create learner1, you must use the account in the first 10 days&nbsp;to keep the account active and login at least every 270 days.&nbsp; If the account is active, the answer is Yes.</p>
+<p>&nbsp;</p>
+<p>4. Will the participants be able to view each other's calendars for availability?</p>
+<p><a href="http://office.microsoft.com/en-us/outlook-help/microsoft-office-outlook-hotmail-connector-overview-HA010222518.aspx#BM3" target="_blank" rel="noreferrer nofollow"><strong>Synchronize calendars from Windows Live Calendar into Outlook</strong></a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Why do I have Inferences in my logs&#63; - Microsoft Community</title>
+<h3> mondicke  say:</h3>
+<h2>            Why do I have Inferences in my logs&#63;</h2>
+                    When I went to add outlook.com I also had two Inference files, WHY? What are they?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> anna bon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>
+</p><p>For us to identify what is causing this issue, we need to confirm some information. Please answer the following:
+</p>
+<p>
+</p><ul>
+<li>Where can you see the Inference files? Is it when adding your Outlook.com?</li><li>How are you trying to add your Outlook.com account?</li></ul>
+<p>
+</p><p>Meanwhile, we suggest that you check the links below and confirm to us the steps you are doing to add your account:</p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/Add-your-Outlook-com-account-in-Outlook-for-Windows-642C1902-BDD9-4DC3-ABE7-76D60B148B23" target="_blank" rel="noreferrer nofollow">Add your Outlook.com account in Outlook for Windows</a></p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/Add-your-other-email-accounts-to-Outlook-com-c5224df4-5885-4e79-91ba-523aa743f0ba" target="_blank" rel="noreferrer nofollow">Add your other email accounts to Outlook.com</a></p>
+<p>
+</p><p>We would also appreciate if you can provide us a screenshot of the inference files you are referring to so we can have a better view of your issue.</p>
+<p>
+</p><p>Please reply with the required information and the result to help you further.</p>
+<p>
+</p><p>
+</p><p>Thank you.</p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> brian tillman &#91;outlook mvp 2007-2019&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Can you explain this in more detail? What are "Inference files" and where do you see them?
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

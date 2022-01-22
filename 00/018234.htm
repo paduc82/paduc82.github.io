@@ -1,0 +1,2507 @@
+    <title>How to check time and numbers in vba - Microsoft Community</title>
+<h3> dvdmanuk  say:</h3>
+<h2>            How to check time and numbers in vba</h2>
+                    <p>I am trying to create a userform for excel using vba.</p>
+<p>&nbsp;</p>
+<p>I wish to check that when someone&nbsp;inputs in a field&nbsp;that it is a number between&nbsp;99 and 1000.</p>
+<p>I am able to check if it is a number using the "isnumberic" but just cannot workout how to also check that the number entered is between&nbsp;99 and 1000?</p>
+<p>&nbsp;</p>
+<p>I also wish for a time to be entered, but cannot see how to do it, I've used the "IsDate" to check if a date has been entered.</p>
+<p>&nbsp;</p>
+<p>Thank you in advance for any help you can give.</p>
+<p>Neil</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JLLatham" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JL"); this.style="display: inline-block";'
+<h3> jllatham  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>OK, now to tackle the issue of finding the next empty cell in column B to begin putting your values from the UserForm into.&nbsp; See my previous post for explanation of the use of Sheet9 in this example:</p>
+<p>&nbsp;</p>
+<p>Replace the one line of code you have now that reads:</p>
+<p>RowCount = Worksheets("Sheet1").Range("B17").CurrentRegion.Rows.Count</p>
+<p>&nbsp;</p>
+<p>With this long winded piece of code:</p>
+<p>&nbsp;</p>
+<p>Dim searchRange As Range<br />
+Set searchRange = Sheet1.Range("B:B")<br />
+On Error Resume Next<br />
+RowCount = searchRange.Find(What:="*", _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; After:=searchRange.Cells(1), _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Lookat:=xlPart, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LookIn:=xlFormulas, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SearchOrder:=xlByRows, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SearchDirection:=xlPrevious, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MatchCase:=False).Row<br />
+If Err &lt;&gt; 0 Then<br />
+&nbsp; 'was an empty column!<br />
+&nbsp; RowCount = 0 ' will get set to 1 later<br />
+&nbsp; Err.Clear<br />
+End If<br />
+On Error GoTo 0 ' reset error trapping to 'normal'<br />
+'limit start row to specific row<br />
+If RowCount &lt; 17 Then<br />
+&nbsp; RowCount = 16<br />
+End If<br />
+Set searchRange = Nothing ' no longer needed<br />
+RowCount = RowCount + 1 ' points to next empty row now</p>
+<p>&nbsp;</p>
+<p>At this point, RowCount will point directly at either row 17 or at the next empty cell below row 17 in column B.&nbsp; So we can rewrite the With ... End With block like this now:</p>
+<p>&nbsp;</p>
+<p>With Sheet9.Range("B" &amp; RowCount)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Offset(0, 0).Value = Me.txtPTitle.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Offset(0, 1).Value = Me.txtCNumber.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Offset(0, 3).Value = Me.cboDay.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Offset(0, 5).Value = Me.txtSTime.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Offset(0, 6).Value = Me.txtETime.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Offset(0, 9).Value = Me.cboPStage.Value<br />
+End With</p>
+<p>&nbsp;</p>
+<p>And I think that should take care of things nicely.</p>
+<p>BTW: Ron DeBruin has some nice "find last" Subs and Functions published here:</p>
+<p><a href="http://www.rondebruin.nl/last.htm" target="_blank" rel="noreferrer nofollow">http://www.rondebruin.nl/last.htm</a></p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JLLatham" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JL"); this.style="display: inline-block";'
+<h3> jllatham  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>First piece: validating the value of the input</p>
+<p>Entries on forms are really all text (as you probably already know), so let's say it was entered into TextBox1, then you can use the VBA VAL() function to turn text into a real number and then test.&nbsp; After verifying that it IsNumeric() put this inside of
+ that IF..,Then test as a second one:</p>
+<p>If Val(TextBox1.Value) &lt; 99 Or Val(TextBox1.Value) &gt; 1000 Then<br />
+&nbsp;&nbsp; MsgBox "Not between 99 and 1000"<br />
+Else<br />
+&nbsp;&nbsp; MsgBox "Is 99-1000, inclusive."<br />
+&nbsp;&nbsp;&nbsp;MyNumber = Val(TextBox1.Value)<br />
+End If</p>
+<p>Of course, after having tested for IsNumeric() and finding that it was you could assign it to an Integer or other numeric variable and then test that for &lt;99 or &gt;1000 using the VAL() function again.</p>
+<p>You can still use IsDate() to test if an entry is a valid time:</p>
+<p>Private Sub CommandButton1_Click()<br />
+&nbsp; Dim t1Entry As String<br />
+&nbsp; <br />
+&nbsp; t1Entry = Me!TextBox1.Value<br />
+&nbsp; If IsDate(t1Entry) Then<br />
+&nbsp;&nbsp;&nbsp; MsgBox "Is date/time"<br />
+&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp; MsgBox "Is not date/time"<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+&nbsp; End If<br />
+&nbsp; MsgBox "Hour is: " &amp; Hour(t1Entry)<br />
+&nbsp; MsgBox "Minute is: " &amp; Minute(t1Entry)<br />
+&nbsp; MsgBox "Seconds are: " &amp; Second(t1Entry)<br />
+End Sub<br />
+</p>
+<p>Of course that hasn't validated that it is a TIME rather than a DATE - you need to add more validation to see if it is one or the other - such as varifying that there are colons in it to separate hours:minutes:seconds (seconds being optional).&nbsp; You haven't
+ said what you are expecting the inputs to look like; 24-hour entries or with A.M./P.M. as part of the entry.</p>
+<p>The code above will let you try various inputs and see how the hour/minute/seconds portions of your entry are evaluated.&nbsp; If you just entered a date, then hour = 0, minutes = 0 and seconds = 0.&nbsp; So non-zero values for those would indicate you have an entry
+ that can be used for a time.</p>
+<p>There are some other ways to check it - take a look at this page:</p>
+<p><a href="http://excel.tips.net/T003292_Checking_for_Time_Input.html" target="_blank" rel="noreferrer nofollow">http://excel.tips.net/T003292_Checking_for_Time_Input.html</a></p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Campaign Status Changed by Administrator Not Myself, How could it - Microsoft Community</title>
+<h3> zo_oe  say:</h3>
+<h2>            Campaign Status Changed by Administrator Not Myself, How could it be&#63;</h2>
+                    <p>There's a strange situation for me account, i didn't make any changes to my Ads, but when i check the change history found that some campaign status from not paused to budget paused, then after some hours it changed to not paused again. i didn't change the
+ budget at all, and the Ad Schedule is "All days and hours", so does anyone has the same problem? does it have bad influence?</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/d0ba0385-1882-4fb5-b120-be92df8e290b" /></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>
+</p><p>Thank you for contacting Bing Ads Support. Administrator is the system label when your campaign is out of budget for the day before the day is over.
+</p>
+<p><a href="http://advertise.bingads.microsoft.com/en-us/blog/28815/usability-improvements-for-change-history-are-now-live-in-bing-ads" target="_blank" rel="noreferrer nofollow">http://advertise.bingads.microsoft.com/en-us/blog/28815/usability-improvements-for-change-history-are-now-live-in-bing-ads</a>
+</p>
+<p>
+</p><p>Please if you have any additional question please contact our support team via chat or call 1-800-518-5689.
+</p>
+<p>
+</p><p>Thanks </p>
+<p>Priscilla </p>
+<p>Bing Ads Support Engineer </p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=managing_and_optimizing_campaigns">managing_and_optimizing_campaigns, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>thunderbird - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            thunderbird</h2>
+                    <p>as of this morning i was able to access to my account with no problems but</p>
+<p>in the afternoon i can't do this anymore.&nbsp;</p>
+<p>
+</p><p>I have another Hotmail account which i can access it from Thunderbird no problems.</p>
+<p>I have not changed anything and as a matter of fact i can use the web interface, no problems</p>
+<p>and i am also logged in posting this message with the same account.</p>
+<p>
+</p><p>I have tried to re-create the account using "outlook" instead of "Hotmail" but nothing.</p>
+<p>I have tried this from another computer same.</p>
+<p>
+</p><p>P.S. I am a PC technician so I have done everything I know to fix this but i believe it is coming from</p>
+<p>Microsoft in the move to "outlook.com".</p>
+<p>
+</p><p>
+</p><p><strong><em>***Personal information deleted by the moderator. Please see the <a href="http://answers.microsoft.com/en-us/page/faq#faqCodeConduct">
+Microsoft Community Frequently Asked Questions</a> for more information on how you can protect your privacy.***</em></strong></p>
+<p>
+</p><p><em><strong>***Post moved by moderator to the appropriate category.***</strong></em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ryan pag  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>In order for us to isolate the on your Hotmail account, we'd like to get more information:</p>
+<p>
+</p><ol>
+<li>Which version of Outlook application are you using?<br />
+</li><li>Do you experience any error message? </li><li>Can you tell us the details of the troubleshooting steps you have performed?<br />
+</li></ol>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I am not using outlook at all.</p>
+<p>I said in my previous message that i am using Thunderbird (used it for many years).</p>
+<p>I have another Hotmail account that i can access also with Thunderbird no problems.</p>
+<p>
+</p><p>I have used another computer same results.</p>
+<p>I installed the latest version of Thunderbird and try to create an account using the same credentials</p>
+<p>but can't create the account at all, the error "Configuration could not be verified--is the username or password wrong?</p>
+<p>I am using the account in question that allows me to use the web interface and also login in here</p>
+<p>to post my question.</p>
+<p>
+</p><p>I created "another Hotmail account" at Microsoft and using Thunderbird have no problems creating the account and login in.</p>
+<p>I have no idea just what happened. I don't think Microsoft has blocked that account because of</p>
+<p>a quota or something, since login in using the Microsoft signing in page, no problems.</p>
+<p>
+</p><p>P.S. I think one message from you you said you deleted personal information. I think it must be the actual address i type here. thanks</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Another Hotmail account cripple by Microsoft without warning.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>Another Hotmail account cripple by Microsoft without warning.
+</blockquote>
+<p><span style="text-decoration-line: underline"><strong>This is for everyone who has a problem with Hotmail login in.</strong></span></p>
+<p>I discover that if you use the "Mail App" from windows 10 it works. It doesn't look like you are going to the Web interface but rather using an "email client".</p>
+<p>It look s like "Microsoft Outlook" to some extent, of course Limited but not like "outlook.com".</p>
+<p>
+</p><p>So as I have already stated this is Microsoft plot to move "Hotmail users" to "outlook.com" or if you have Windows 10 to use the "Mail app".</p>
+<p>
+</p><p>P.S. I know now that I can't use Thunderbird with "Hotmail" at all. it works with an "Outlook.com account" with no problems.</p>
+<p>P.S.S If you try to create another account with Microsoft it shows that you can choose Outlook.com or Hotmail, so if in fact you choose Hotmail, in reality, this is really an "Outlook.com" account.</p>
+<p>So this "Hotmail" option is phony.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ryan pag  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>To further assist you resolve the error message that you are experiencing, we recommend checking the articles below.</p>
+<p>
+</p><p><strong><a href="https://support.office.com/en-us/article/POP-and-IMAP-settings-for-Outlook-Office-365-for-business-7fc677eb-2491-4cbc-8153-8e7113525f6c" target="_blank" rel="noreferrer nofollow">POP and IMAP settings for Outlook</a></strong></p>
+<p><strong><a href="https://support.office.com/en-us/article/Add-your-Outlook-com-account-to-another-mail-app-73f3b178-0009-41ae-aab1-87b80fa94970?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">Add your Outlook.com account to another mail app</a></strong><strong><a href="https://support.office.com/en-us/article/Get-help-with-Outlook-com-40676AD0-C831-45AC-A023-5BE633BE798D?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">Get
+ help with Outlook.com</a></strong></p>
+<p>
+</p><p>Let us know the outcome.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have already said that i have an outlook.com account and the settings have been there for a long time.</p>
+<p>These setting were also used in the Hotmail account and my 2 hotmail accounts, now, that were working, don't anymore.</p>
+<p>I have tried to use POP but this produces the same error messages, that the account can't be verified.</p>
+<p>
+</p><p>I have already redirected messages to these 2 hotmail accounts to another. That solves the problem.</p>
+<p>No real answer coming from you or anyone else.</p>
+<p>
+</p><p>Since these 2 Hotmail accounts were created a long time ago I am pretty sure the Microsoft doesn't want them to be accessed from another email client.</p>
+<p>I have also mentioned that if I use the web interface the accounts work.</p>
+<p>
+</p><p>What is more interesting is that (already mentioned) Windows 10 has a Mail app (consider to be an email client, i believe) and have no problems using these 2 Hotmail accounts with this "client".</p>
+<p>
+</p><p>P.S. Your second suggestion about adding, it is not an oulook.com account but I have done this already.</p>
+<p>
+</p><p>P.S.S. Just in case I will say this again I am a computer technician with many years of experience so i know better about POP/IMAP accounts, or if someone still uses "DIAL UP" or anything thing else.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I was asked if my question was answered or not. The link didn't provide a different place to post my answer so I am using the same thread.</p>
+<p>
+</p><p>The answer is not. Didn't get a real answer at all.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yet another nasty move by Microsoft. As I have said I created a new account: there were 2 options:</p>
+<p>1.- for outlook.com</p>
+<p>2.- for hotmail.com</p>
+<p>I chose 2 to see if "hotmail.com" was still working or my account(s) were compromised.</p>
+<p>
+</p><p>For a while it seems that new account was working but now I get a nasty message that the account has been compromised. This is not true because I don't use this account.</p>
+<p>It is asking me to send me a text message with a code. There are no other options like send a code to an alternate email. I DON'T HAVE A PHONE.</p>
+<p>SO I AM BLOCKED AGAIN.</p>
+<p>This is just to prove that Microsoft was to eliminate "hotmail" accounts but has not the courage to say so.</p>
+<p>Probably a legal action is necessary.</p>
+<p>
+</p><p>P.S. I can still login in the old hotmail.com is i use the web interface but not the new one.</p>
+<p>
+</p><p>Anyone here who can speak on behalf of Microsoft if they can modify the requirements for the "CODE" to see if this new "hotmail" i created still works.
+</p>
+<p>If I can login then I will delete that account</p>
+<p>thanks</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>
+</p><p>To better help you with your concern, kindly tell us if your account has been validated. If not, we suggest that you validate your Microsoft account and check if the same thing occurs.</p>
+<p>
+</p><p>We are looking forward to your response.</p>
+<p>
+</p><p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>this case can be closed. i was able to get back to the way it was before.</p>
+<p>
+</p><p>One thing Microsoft changes need to be done in a better way to eliminate this kind of problems.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Projected &#37; complete at a future date in MS Project - Microsoft Community</title>
+<h3> colij  say:</h3>
+<h2>            Projected &#37; complete at a future date in MS Project</h2>
+                    I want to produce a report that shows the expected % complete at a defined date in the future, e.g. next month end, or year end.&nbsp; Is there a standard report available or a reasonably quick way to calculate it?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john - project  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Colij,</p>
+<p>When you say "expected % complete", what is that based on? In other words, how would you determine the amount of completeness at any given time? If it is just based on a linear passage of time, that's pretty easy to calculate but it doesn't tell you anything.
+ Why? Because Percent Complete is not a good measure of progress as it is based on duration and duration, (i.e. passage of time), accomplishes nothing. A much better measurement is percent work complete since it measures how much work effort has actually been
+ accomplished compared to the planned effort. </p>
+<p>
+</p><p>The standard method for projected progress is earned value and there is a whole set of metric for that (i.e. BCWS, BCWP, ACWP, etc.). Earned value metrics measure performance compared to the original plan (i.e. baseline).Have you considered using that?</p>
+<p>
+</p><p>John</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rod Gill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RG"); this.style="display: inline-block";'
+<h3> rod gill  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>As John said, earned value can tell you a lot, but only if the original schedule was reasonably accurate and a Baseline taken. Then
+<em>accurate </em>tracking done and the schedule updated to reflect lessons learned. For example if a particular team or contractor just doesn't have the resources expected/promised then future tasks need to reflect this.</p>
+<p>
+</p><p>A good schedule can communicate what needs to be done to achieve success, but cannot really say expected progress at a future date with any realistic accuracy. If management are insistent on getting a value, then I would keep some dice in your pocket to
+ use for <del>guessing</del> estimating expected progress.</p>
+<p>
+</p><p>Good luck!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Trevor Rabey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "TR"); this.style="display: inline-block";'
+<h3> trevor rabey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Start with a complete and correct project plan which has no progress recorded for any tasks at all.</p>
+<p>Set a status date to the end of the first week. Display the status date as a vertical red line on the chart. Select all tasks which are either entirely or partly on the left of the red line and click "mark on track". Note the result and save the file.</p>
+<p>
+</p><p>Then move/reset the status date to the following week, and repeat.</p>
+<p>Then move/reset the status date to the following week, and repeat, etc week after week.</p>
+<p>
+</p><p>Then you will have the forecast progress as at the end of each week of the project. The result will include the progressive % complete, ie the progress of duration, as well as the progressive/incremental work and cost.</p>
+<p>% complete is actual duration/total duration, where total duration is actual + remaining. It has some meaning at the task level, but no real meaning for collective groups of tasks when rolled up to the summary level, and less to zero meaning when rolled
+ up all the way to the project summary.</p>
+<p>
+</p><p>I would not say that it is the "expected" % complete, because my expectation would be that things will not go as planned, but it is useful to forecast the incremental as planned progress in advance.</p>
+<p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Audio option using WhatsApp - Microsoft Community</title>
+<h3> tiny_chef  say:</h3>
+<h2>            Audio option using WhatsApp</h2>
+                    Moved to Phone applications board.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Phone is not recognized by my PC - Microsoft Community</title>
+<h3> kalen delaney  say:</h3>
+<h2>            Windows Phone is not recognized by my PC</h2>
+                    
+<p>I just bought a Samsung Focus and want to use the Zune capabilities and transfer some music, but the device is not recognized. No driver can be found when I plug in the USB cable. I have Zune software already installed, but when I run the step to upgrade
+ it, I get a message that Zune does not support my current OS (Win2008sp2 64-bit).</p>
+<p>Is there any way to get this phone recognized so I can get some music on it?</p>
+<p>Thanks!</p>
+<p>&nbsp;</p>
+<hr />
+HTH, Kalen Delaney www.SQLServerInternals.com
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Paul Adare" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> paul adare  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>On Tue, 11 Jan 2011 18:35:47 +0000, Kalen Delaney [MVP] wrote:</p>
+<blockquote>
+<p>I've got my favorite soundtracks on my phone now, and I started playing one, but I can't find how to STOP IT! I can pause it, but then how do I change the song or album?? (I know, I shouldn't switch topics like this, but the whole point was to be able to
+ play music. :-) )</p>
+</blockquote>
+<p>Yeah its kind of weird that there is no Stop button.</p>
+<p>To play another song on the same album:</p>
+<p>1. Click the Artist/Album title at the top of the screen<br />
+2. Swipe to songs.<br />
+3. Select the track you want to play.</p>
+<p>For any other changes I think you need to use the back button to get back<br />
+to where you can see your collection and then choose from there. I honestly<br />
+haven't done much playing around with the player on the device as of yet.</p>
+<hr />
+<p>Paul Adare<br />
+MVP - Identity Lifecycle Manager<br />
+<a href="http://www.identit.ca" target="_blank" rel="noreferrer nofollow">http://www.identit.ca</a><br />
+<a href="http://lochanlane.wordpress.com/2010/12/22/so-you-want-custom-ring-tones-on-your-windows-phone-7-device" target="_blank" rel="noreferrer nofollow">Want custom ringtones on your Windows Phone 7 device?</a><br />
+This system will self-destruct in five minutes.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Paul Adare" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> paul adare  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>On Tue, 11 Jan 2011 07:57:01 +0000, Kalen Delaney [MVP] wrote:</p>
+<blockquote>
+<p>I just bought a Samsung Focus and want to use the Zune capabilities and transfer some music, but the device is not recognized. No driver can be found when I plug in the USB cable. I have Zune software already installed, but when I run the step to upgrade
+ it, I get a message that Zune does not support my current OS (Win2008sp2 64-bit).</p>
+</blockquote>
+<p>Here's what worked for me (I'm using Windows Server 2008 R2 x64 so YMMV but<br />
+it should work out the same):</p>
+<p>1. Uninstall your current install of Zune.<br />
+2. Download the latest version of the Zune software from<br />
+<a href="http://www.zune.net" target="_blank" rel="noreferrer nofollow">http://www.zune.net</a><br />
+3. Extract the contents of ZuneSetupPkg.exe (I used WinRar for the<br />
+extraction but most archival programs should be able to do this).<br />
+4. Open an administrative command prompt.<br />
+5. Change to &lt;temp_folder&gt;\ZuneSetupPkg\x64\packages.<br />
+6. Run zune-x64.msi.</p>
+<p>You should see the install happening at this point and you won't get any<br />
+notification when it is finished, it will just complete the install.</p>
+<p>7. I then plugged my phone into the computer and started the Zune software<br />
+manually and my device was recognized.</p>
+<p>Hope this helps.</p>
+<hr />
+<p>Paul Adare<br />
+MVP - Identity Lifecycle Manager<br />
+<a href="http://www.identit.ca" target="_blank" rel="noreferrer nofollow">http://www.identit.ca</a><br />
+<a href="http://lochanlane.wordpress.com/2010/12/22/so-you-want-custom-ring-tones-on-your-windows-phone-7-device" target="_blank" rel="noreferrer nofollow">Want custom ringtones on your Windows Phone 7 device?</a><br />
+Any nitwit can understand computers.&nbsp; Many do.&nbsp; -- Ted Nelson</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=accessories">accessories, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook is slow or freeze - Microsoft Community</title>
+<h3> cds1  say:</h3>
+<h2>            Outlook is slow or freeze</h2>
+                    <p><span>Outlook hangs for up to 30 seconds and reports "Outlook is trying to retrieve data from the server Office Exchange".&nbsp; It's intermittent, not all the time, but is sufficiently frequent to be annoying. This started about
+ a week ago. No new software or changes to the machine. Any suggestions</span></p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anna bon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>
+</p><p>This might be an issue with the server or application itself. There are troubleshooting steps that we need to perform to properly isolate the issue. Please perform the step-by-step procedures mentioned on this
+<strong><a href="https://support.office.com/en-us/article/Outlook-not-responding-stuck-at-Processing-stopped-working-freezes-or-hangs-5c313d04-64af-4441-82d2-44e5a43eee5a" target="_blank" rel="noreferrer nofollow">link.</a></strong></p>
+<p><br />
+Please get back to us and let us know the result.</p>
+<p>
+</p><p>
+</p><p>Thank you.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Entering a formula - Microsoft Community</title>
+<h3> pamelarobinson_913  say:</h3>
+<h2>            Entering a formula</h2>
+                    <p>I need to keep a time log.&nbsp; I have created a spreadsheet to keep track of the number of hours and minutes between two times, such as how many hours and minutes from 9:30&nbsp; PM to 7:30 AM? The correct answer, of course, would be 10 hours. I found the formula
+ that calculates the hours and minutes between two times, but it only works from AM to PM. The formula I found is: =TEXT(B2-A2,"h:mm"), which gives me a result of 14 hours. I have tried switching the cells to =TEXT(A2-B2,"h:mm") but then I get an error message.
+ Is there a way to write a formula to do what I need?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tom Ogilvy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "TO"); this.style="display: inline-block";'
+<h3> tom ogilvy  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>PamelaRobinson,</p>
+<p>
+</p><p>this formula gave me 10 hrs.&nbsp; </p>
+<p>
+</p><p>=TEXT(MOD(B2-A2,1),"h:mm")</p>
+<p>
+</p><p>A2:&nbsp; Start Time&nbsp;&nbsp; (9:30 PM)</p>
+<p>B2:&nbsp; End Time&nbsp;&nbsp;&nbsp;&nbsp; (7:30 AM)</p>
+<p>
+</p><p>works for&nbsp; all start and end times as long as the elapsed time is less than 24 hours.
+</p>
+<p>
+</p><p>-- </p>
+<p>Regards,</p>
+<p>Tom Ogilvy</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Another way is through following formula -</p>
+<p>
+</p><p>=TEXT(B2-A2+(A2&gt;B2),"h:mm")</p>
+<p>
+</p><p>I suggest that you don't use Text format but apply your formatting through Custom Format otherwise, this makes your result Text and to use it in further calculations, you will have to convert this appropriately.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ashish Mathur" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "AM"); this.style="display: inline-block";'
+<h3> ashish mathur  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Try this</p>
+<p>
+</p><p>=(B2-A2+(B2&lt;A2))*24</p>
+<p>
+</p><p>Format the cell as General</p>
+<p>
+</p><p>Hope this helps.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="benishiryo" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "BE"); this.style="display: inline-block";'
+<h3> benishiryo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>hi there. &nbsp;like what Vijay mentioned, i think you should keep it as a number and not convert into text. &nbsp;let me explain a little. &nbsp;Excel recognizes dates as integers and time as decimals. &nbsp;type
+<strong>1jan2015 </strong>in A1 and <strong>12 pm</strong> in B1. &nbsp;select both cells and format them as General. &nbsp;you would see 42005 and 0.5 respectively. &nbsp;that actually means 42005th day after 1 jan 1900 for A1 and half of a day for B1. &nbsp;</p>
+<p>
+</p><p>using numbers, it makes sense why you can use A1+1 and give you 2-Jan-15. &nbsp;it also explains to you why you cannot use A2-B2 for your case as there cannot be a negative time. &nbsp;</p>
+<p>
+</p><p>you can have 2 options. &nbsp;if there is a date in another cell that is relating to your time, i suggest you use that. &nbsp;you will not have the negative time problem if you do so. &nbsp;for eg using A1 as
+<strong>2jan2015 </strong>and B1 as <strong>1jan2015</strong>. &nbsp;add them up to A2 and B2. &nbsp;use:<br />
+=SUM(A1:A2)-SUM(B1:B2)</p>
+<p>if you have formatted them as General, it would actually be:<br />
+42006.31 - 42005.9</p>
+<p>notice that it wouldn't pose a problem now as the time of 2-Jan-15 at 7:30am is larger than 1-Jan-15 at 9:30 pm. &nbsp;format your cells to custom:&nbsp;<br />
+h:mm</p>
+<p>
+</p><p>if you do not have dates, you could still simply use:<br />
+=MOD(A2-B2,1)</p>
+<p>then format cells as custom like the above:<br />
+h:mm</p>
+<p>that makes your cells still numbers. &nbsp;the advantage of this is that you can add up another cell where you have such time subtraction and add up the total hours. &nbsp;</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>WINDOWS MOBILE 6.1 PALM TREO UNABLE TO ACCESS MESSAGING - Microsoft Community</title>
+<h3> derekwebb  say:</h3>
+<h2>            WINDOWS MOBILE 6.1 PALM TREO UNABLE TO ACCESS MESSAGING</h2>
+                    AFTER SENDING ONE TEXT FROM MY PALM TREO WHILST IN TURKEY (WINDOWS MOBILE 6.1) I DISCOVERED THAT i COULD NO LONGER ACCESS ANY MESSAGING PROGRAMMES. IS THIS AN ATTEMPT BY THE TELECOMS FOLK TO INCREASE REVENUE BY FORCING USE OF VOICE ONLY? NOW BACK IN UK
+ HOW AM I ABLE TO RESURRECT MY MESSAGING PROGRAMMES, SMS MSN EMAIL?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="ToddAllcock" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "TO"); this.style="display: inline-block";'
+<h3> toddallcock  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>More likely the device messaging database was corrupted somehow. It's happened with my WinMo devices occasionally. Usually a reboot fixes it (with the Treo you'll probably have to remove then reinsert the battery, as Treos have no "off" switch!)</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Email Signature Scroll Bar - Microsoft Community</title>
+<h3> boomeranga  say:</h3>
+<h2>            Email Signature Scroll Bar</h2>
+                    I am having problems with my email signature in Outlook. I see a horizontal scroll bar at the bottom. I am using a macbook. Is there something in the Preferences or Settings which will help me solve this issue.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Anna Ma MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "AM"); this.style="display: inline-block";'
+<h3> anna ma msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi BoomerangA,</p>
+<p>&nbsp;</p>
+<p>Generally, if the signature you are editing is big, or with high resolution or high pixel pictures, the scroll bar will automatically display. According to your description, did you mean you want signature
+ preview in Outlook for Mac not show scroll bars? If so, it is not feasible since there’s no option in Outlook about this settings.</p>
+<p>&nbsp;</p>
+<p>I suggest you may submit a feedback at
+<a href="https://outlook.uservoice.com/forums/293343-outlook-for-mac" target="_blank" rel="noreferrer nofollow">Outlook UserVoice</a> if this settings is important to you. We would love to hear your comments and suggestions.</p>
+<p>&nbsp;</p>
+<p>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/b798672e-834e-4adb-a357-4da6b1723d0d?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/b798672e-834e-4adb-a357-4da6b1723d0d?upload=true" /></a></p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+<p>Anna</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows Calendar Delegate, Mac Chrome Acceptance Notification - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Windows Calendar Delegate, Mac Chrome Acceptance Notification</h2>
+                    
+<p>Here is what I am trying to accomplish:</p>
+<p>Calendar delegate using Office365 on Windows 8 PC is accepting meeting requests for a manager.</p>
+<p>Manager on OSX 10.10.5 Yosemite is using Chrome to view her Office365 email, calendar, etc.</p>
+<p>The manager claims that at her previous job, using the same setup, she was able to get notifications when her assistant accepted meeting requests for her, and she asked me to set that up. I've done some digging and found nothing about Office365 sending out
+ notifications when meetings are accepted.</p>
+<p>Any one have any suggestions?</p>
+<p>Jack</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>hi jack,</p>
+<p>about “calendar delegate”, do you mean the manager shares her calendar with her assistant with delegate permission?<br />
+if yes, by default, you can send an email to the meeting organizer rather than your manager when you accept the meeting request on behalf of the manager.
+<br />
+if you want the notification also to be sent to your manager when you accept the meeting request on behalf of the manager, please follow the steps below:<br />
+1. select the “edit the response before sending” when you accept the meeting request.
+<br />
+<a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=2e5e7e70-7334-46a1-9086-6e4754765ed8" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3d2e5e7e70-7334-46a1-9086-6e4754765ed8" /></a><br />
+2. then cc your manager in the email.</p>
+<p><a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=cbcf9464-1730-4141-b685-c665672d6612" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3dcbcf9464-1730-4141-b685-c665672d6612" /></a></p>
+<p>if anything is misunderstood, please feel free to post back.</p>
+<p>regards,<br />
+poppy</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The manager has granted delegate permission of her calendar to the assistant.</p>
+<p>The manager says that at her previous job she would receive a notification when her assistant accepted a meeting request. This notification was received through Chrome on her Mac. She did not have the Outlook desktop client installed on her machine, nor
+ did was she using the Apple apps Mail, or Calendar.</p>
+<p>However, she also is not an IT person, so maybe one of these apps was running in the background and she did not notice it. &nbsp;She doesn’t know how it was set up, but &nbsp;she says everything happened automatically — her previous assistant was not required to send
+ an acknowledgement email to the meeting organizer, or manually CC anyone. &nbsp;The assistant would simply accept the meeting, and a notification would automatically pop up on the managers desktop.</p>
+<p>I’ve looked for settings within Office365.com, Chrome extensions, and apps from the Apple App Store, but nothing seems to fit the bill.</p>
+<p>To be honest, I’m surprised it isn’t an option easily available since I would assume most managers might want to know what their assistant’s are signing them up for.</p>
+<p>I have asked the requesting manager for more information, and also for permission to contact an IT person at her previous employment, but I’m not sure if that will lead to an answer. So research continues...</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>hi jack,</p>
+<p>based on my tests , if user a grants delegate permission of my calendar to user b with “delegate only, send me notification” by following the&nbsp;<a href="https://support.office.com/en-us/article/calendar-delegation-in-outlook-on-the-web-for-business-532e6410-ee80-42b5-9b1b-a09345ccef1b?ui=en-us&amp;rs=en-us&amp;ad=us" target="_blank" rel="noreferrer nofollow">link</a>
+ as the screenshot below shows, when user c sends a meeting request to user a, user a and user b will both receive the meeting request. then if user b accepts the meeting on behalf of a, user a will not receive a notification.</p>
+<p><a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=0adf902d-b005-4080-9b5f-95fe0d65a5a2" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3d0adf902d-b005-4080-9b5f-95fe0d65a5a2" /></a></p>
+<p>to further investigate the situation, i would like to collect the information below:<br />
+1. about “the assistant would simply accept the meeting”, do you mean the user clicks the “do not send a response” to accept the meeting request?<br />
+<a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=aaea4dd3-ad4a-43aa-939f-89e4c58d86dc" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3daaea4dd3-ad4a-43aa-939f-89e4c58d86dc" /></a><br />
+2. if possible, please send us a screenshot of the notification that manager gets when the assistant accepts a meeting request.</p>
+<p>to upload a picture, please click <strong>use rich formatting</strong> under the reply box and then click the&nbsp;<strong> insert image</strong> icon.</p>
+<p>any update will be appreciated.</p>
+<p>regards,<br />
+poppy</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>We are testing it, but I don't have screen shots just yet. </p>
+<p>1. The assistant is selecting "Send the Response Now". They are selecting neither "Edit the response before sending" nor "Don't send the response".</p>
+<p>2. The manager is getting no response when the calendar is accepted. &nbsp;We tried this with both "Delegate only. Send me notifications" and Both my delegate and me" as the selected options. The event just appears on the calendar, but I can't find any indication
+ that it was added.</p>
+<p>Can you provide a screen shot of the notifications it should be sending to the manager? Keeping in mind that the delegate is using the Outlook desktop on Windows 7 while the manager is accessing their calendar via the web client in Chrome on a Mac.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>hi jack,</p>
+<p>i did a test from my side to let user a get a notification when user b accept the meeting request on behalf of a, here are the steps.<br />
+1. configure user a’s account on the <strong>windows outlook client,</strong> then grant delegate permission to user b by click info&gt;&gt; account settings &gt;&gt;delegate access<br />
+<a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=2b7e6a0b-a8de-4d4c-8f49-af4525d7af0b" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3d2b7e6a0b-a8de-4d4c-8f49-af4525d7af0b" /></a><br />
+2. click add to add user b and grant related delegate permission &gt;&gt;click ok &gt;&gt; select “my delegates only, but send a copy of meeting requests and responses to me (recommanded)”.<br />
+<a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=6cde2157-2c8b-431a-b4ba-b1a0ba9816b1" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3d6cde2157-2c8b-431a-b4ba-b1a0ba9816b1" /></a><br />
+then when user b accept the meeting request on behalf of user a, user a will get an email.<br />
+please note that user a need to grant the delegate permission on the <strong>windows outlook client</strong> not outlook web app (<a href="http://outlook.office.com/owa" target="_blank" rel="noreferrer nofollow">http://outlook.office.com/owa</a> / ).</p>
+<p>if anything is unclear, please feel free to let us know.</p>
+<p>regards,<br />
+poppy</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jack,</p>
+<div>Did you need further assistance? Please share any update when you have time.</div>
+<p>Regards,<br />
+Poppy</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>That is how I have the system currently set up, but no emails.</p>
+<p>So User A is using Chrome on a Mac. </p>
+<p>User B is using the Outlook desktop client on a Windows 7 PC</p>
+<p>No email, not notification, no pop-up message. &nbsp;</p>
+<p>Jack</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jack,</p>
+<p>If user A signs into Outlook Web App and grants delegate permission, there is no option to select the “My delegates only, but send a copy of meeting requests and responses to me (recommanded)”. So, user A won’t receive a notification when user B accepts
+ a meeting request on behalf of user A.</p>
+<p>As I mentioned above,<strong> user A</strong> (the manager) needs to configure his account on the
+<strong>Outlook client</strong> and grants delegate permission to user B with the steps above. Then when user B accepts a meeting request on behalf of user A, user A will receive a notification even she has signed into Outlook Web App in Chrome on a Mac.</p>
+<p>Has the manager followed the steps I mentioned above to grant delegate permission?
+<br />
+If not, please follow the steps to try again.</p>
+<p>Regards,</p>
+<p>Poppy</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> poppyyang_msft6299  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jack,</p>
+<div>Is there any update? Do you need further assistance?</div>
+<p>Thanks,<br />
+Poppy</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2019 - Missing &#34;More settings&#34; button on account - Microsoft Community</title>
+<h3> er_maqui  say:</h3>
+<h2>            Outlook 2019 - Missing &#34;More settings&#34; button on account configuration</h2>
+                    <p>On Outlook 2019, I have multiple IMAP accounts.</p>
+<p>
+</p><p>When I go to "Account Settings" and click to change on any account, I didn't have "More Settings" button.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/6cf2ef76-d625-46bf-b4c4-5980e61c00be?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/6cf2ef76-d625-46bf-b4c4-5980e61c00be?upload=true" /></a></p>
+<p>
+</p><p>"Next" button only show a screen with text: "Account succesfully updated". Apparently, "Reset mail settings" button does nothing (do not show any screen or more information).</p>
+<p>
+</p><p>I need to change server config (for example, smtp server address, or ssl settings). How can I do it?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rick Song MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> rick song msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello Er_Maqui,</p>
+<p>&nbsp;</p>
+<p>The interface has changed since the latest version in Outlook 2016 desktop client.
+</p>
+<p>&nbsp;</p>
+<p>In Account settings, choose the IMAP account and click <strong>Repair</strong>. Click
+<strong>Advanced options</strong> and check <strong>Let m repair my account manually</strong> check box,
+<strong>Repair</strong>. Then you will be able to edit the Incoming server and the Outgoing server settings.
+</p>
+<p>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/34886711-737f-455d-af75-98ab5a17ddd7?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/34886711-737f-455d-af75-98ab5a17ddd7?upload=true" /></a></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/181cd467-605a-4823-85f2-9195624cb274?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/181cd467-605a-4823-85f2-9195624cb274?upload=true" /></a></p>
+<p>
+</p><p>Regards,</p>
+<p>Rick</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 2016 for Mac - Microsoft Community</title>
+<h3> dufault  say:</h3>
+<h2>            Word 2016 for Mac</h2>
+                    <p>Why &nbsp;can't I see quick tables in Word 2016 for Mac? I'm at a loss as what to do- considering I'm a newbie to Mac platform. Any help is greatly appreciated. BTW- this was a cloud purchase/ office365. Not sure of that makes a difference.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="John Korchok" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "JK"); this.style="display: inline-block";'
+<h3> john korchok  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Word for Mac doesn't have the same features as Word for Windows, there is no Quick Tables feature. There's nothing in Quick Tables that you can't create with the standard table tools.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t download previously downloaded apps from OVI - Microsoft Community</title>
+<h3> rapmproductions  say:</h3>
+<h2>            Can&#39;t download previously downloaded apps from OVI</h2>
+                    
+<p>I have a 5800XM phone and I had apps from OVI that I downloaded. I restored it to factory defaults and updated firmware which were both successful. However, now I can't download apps from OVI that I have downloaded before the restoration to factory defaults.
+ I can download other apps from OVI fine. Only the apps that I previously downloaded have the "Download" button disabled or grayed out.</p>
+<p>&nbsp;</p>
+<p>Has anyone experienced this or anyone has an idea why?</p>
+<p>&nbsp;</p>
+<p>Thanks in advance.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> godit  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>i have the same case with you... anybody can help???</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> amblors  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Have you guys tried going to 
+http://www.ovistore.com, sign in and click on "My stuff". the you tick all the apps you previously installed and delete them.<br />
+then try downloading them again.<br />
+you could alternatively send link to your mobile phone from the internet (ovi.com/store) .<br />
+reinstall ovi store if none of these work.<br />
+<br />
+cheers
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cristian_e  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I found a solution, not too elegant, but anyway. In your phone, instead of using the Ovi Store App, use the web browser to go to
+<a href="http://store.ovi.com." target="_blank" rel="noreferrer nofollow">http://store.ovi.com.</a> The web site will suggest you to use the app, just click in the option to continue with the web navigation.</p>
+<p>&nbsp;</p>
+<p>The good news are that when you do this, the already-downloaded validation doesn't work any more, so the bug is gone too. You can go to My stuff and download your apps. The only annoying thing is for every page the ovi store app will start. Just close it
+ and continue.</p>
+<p>&nbsp;</p>
+<p>Cristian</p>
+<p>Chile</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rockstarninja---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I am having the same problem, i had been downloading all of my apps to my memory card, but i had to reformat it today. I actually tried your suggestion already, but even after i delete the apps from hte 'my stuff' list it when i click on the apps it still
+ says that they are downloaded. . ive tired using the ovi app and the store. . if theres some other trick to it, please let me know</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> natemetabolic  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Bump. Having this problem. Uninstalled apps not available for download.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> roshanrims  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Go to my stuff section in ovi store and redownload any app that you've done previously. Redownloading is allowed upto maximum of 5 times. Do not clear the list under my stuff.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> remilan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            how do you redownload apps that you deleted both from phone and My Stuff?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phonehacker  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;</p>
+<blockquote>
+<hr />
+remilan wrote:<br />
+how do you redownload apps that you deleted both from phone and My Stuff?
+<hr />
+</blockquote>
+<p>&nbsp;</p>
+<p>Is this app paid or not? If you had paid for this app, you have to contact Nokia service centre
+<a href="http://support.ovi.com/osc/en_GB/contactus" target="_blank" rel="noreferrer nofollow">
+http://support.ovi.com/osc/en_GB/contactus</a></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> seki2012  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>this is the single biggest issue with a NOKIA phone. The download limit for apps you've paid for have a receipt for are re-installing onto the same IMEI that you previously had it installed on.<br />
+Oh you've reached your download limit .. sorry .. pay again or go through some tortuous process to get the limitation reset. FFS Nokia I've had this issue more than once, I can't possibly recommend your "eco-system" to anyone.<br />
+*sigh*&nbsp;:cursing:</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Adware&#58;MSIL&#47;Wizrem - Microsoft Community</title>
+<h3> rahmathussaini  say:</h3>
+<h2>            Adware&#58;MSIL&#47;Wizrem</h2>
+                    <p>my Internet explorer keeps showing ads and my computer keeps downloading browser games, after some days my windows defender found a virus by the name of Adware:MSIL/Wizrem and I do not have any idea what it is.It is first time that my computer is acting
+ like. This started happening when I downloaded a bluetooth driver and I&nbsp;run that, now I have uninstalled&nbsp;that bluetooth driver but nothing happened. Please help me</p>
+<p>
+</p><p><em>Moved from IE11</em></p>
+<p><em>Original title: virus</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jsssssssss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> jsssssssss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Adware:MSIL/Wizrem</p>
+<p><a href="http://www.microsoft.com/security/portal/threat/encyclopedia/entry.aspx?name=Adware%3aMSIL%2fWizzCaster" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/security/portal/threat/encyclopedia/entry.aspx?name=Adware%3aMSIL%2fWizzCaster</a></p>
+<p>
+</p><p>See this multi-step removal guide: <a href="https://malwaretips.com/blogs/remove-wizzcaster-com-redirect/" target="_blank" rel="noreferrer nofollow">
+https://malwaretips.com/blogs/remove-wizzcaster-com-redirect/</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Chicago 16th edition - Microsoft Community</title>
+<h3> kemalandre  say:</h3>
+<h2>            Chicago 16th edition</h2>
+                    <p>How do you get/update chicago 16th edition in microsoft word 2013?&nbsp;</p>
+<p>Because mine is still 15th edition</p>
+<p>
+</p><p><strong>[Original title: Microsoft Word]</strong></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> germain navas  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Kemalandre !
+<br />16 xx xxx editions belongs to Office 2016 
+<br />15 xx xxxx  editions belongs to Office 2013 
+<br />
+<br />So is not 16 edition for Office 2013 .... sorry... but you can always upgrade...
+<br />
+<br />best regards       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,
+<br />
+<br />See the responses in these two threads, especially the first one.
+<br /><a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_word-mso_other-mso_2010/chicago-style-16th-edition-in-word-2010/f60ac671-6e2e-4cfc-bf87-406d0f634a47?auth=1">https://answers.microsoft.com/en-us/msoffice/fo...</a>
+<br /><a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_word-mso_mac-mso_mac2011/in-need-of-chicago-manual-16th-edition/5f28ef5b-6bbd-4259-8695-97ee9d07bd9c">https://answers.microsoft.com/en-us/msoffice/fo...</a>
+<br />
+<br />It appears you would need a third-party application or add-in.
+<br />
+<br />I hope this information helps. Please let me know if you have any more questions or require further help.
+<br />
+<br />Regards       
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Upgrade version 1511, 10586 - Microsoft Community</title>
+<h3> john369xp  say:</h3>
+<h2>            Upgrade version 1511, 10586</h2>
+                    <p>Update history<br />
+Upgrade to Windows 10 Pro, version 1511, 10586<br />
+Failed to install on 2015-11-12<br />
+Update for Windows 10 (K133106246)<br />
+Successfully installed on 2015-11-12<br />
+Windows Malicious Software Removal Tool for Windows 8, 81 and<br />
+10 - November 2015 (KB890830)<br />
+Successfully installed on 2015-11-12</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current OS</p>
+<p>OS Name&nbsp;Microsoft Windows 10 Pro<br />
+Version&nbsp;10.0.10240 Build 10240<br />
+OS ManufactL.rer&nbsp;Microsoft Corporation<br />
+System Manufacturer&nbsp;System manufacturer<br />
+System Model&nbsp;System Product Name<br />
+System Type&nbsp;X86-based PC</p>
+<p>
+</p><p>I upgraded Windows 7 Pro 32 bit system to Windows 10 Pro 32 bit system.&nbsp; Everything seems to be working OK until the Upgrade version 1511, 10586&nbsp; I received an error that Windows has a problem and needed to restart.&nbsp; When Windows restarted it did something
+ and then restarted, Windows came up normally and I thought all was OK.&nbsp; When I checked the Update history I found that the upgrade had failed to install.&nbsp; I ran Windows updates trouble-shooter and it found some problems which it repaired.&nbsp; I then checked for
+ any updates and it reported that Your device is up to date. Last checked: Today, 8:23 PM.&nbsp; This is What system information tells me
+<br />
+OS Name&nbsp;Microsoft Windows 10 Pro<br />
+Version&nbsp;10.0.10240 Build 10240<br />
+OS Manufacturer&nbsp;Microsoft Corporation<br />
+System Manufacturer&nbsp;System manufacturer<br />
+System Model&nbsp;System Product Name<br />
+System Type&nbsp;X86-based PC<br />
+I don't want to do a clean install and have to install all of the programs that I have installed on my system now.&nbsp; I have searched for the upgrade download and all I can find is the ISO to do a clean install and it does not give me the option to upgrade.&nbsp;
+ I also have looked for a way to delete the message in update history 2015-11-12 had failed.&nbsp; Maybe if I deleted this entry Windows update would again find the upgrade.<br />
+Any Help would be appreciated!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><p><span><span>Hi John,
+</span></span></p>
+<p>
+</p><p><span><span>&nbsp;</span></span></p>
+<p>
+</p><p><span><span>Thank you for posting your query in Microsoft Community.</span></span></p>
+<p>
+</p><p><span><span>I understand your concern and will assist you to resolve this issue&nbsp;</span></span></p>
+<p>
+</p><p><span><span>I suggest you to reset Windows update components and then try to upgrade to Windows 10.</span></span></p>
+<p>
+</p><p><span><span>Resetting Windows Update Components will fix corrupt Windows Update Components and help you to install the Windows Updates. Please follow the below steps to reset
+ the Windows Updates Components manually:</span></span></p>
+<p><span>&nbsp; </span><span>1. Press Windows Key + X on the keyboard and then select “Command Prompt (Admin)” from the menu.</span><span><span>&nbsp;</span>Stop
+ the <strong>BITS, Cryptographic, MSI Installer</strong> and the <strong>Windows Update Services</strong>.
+</span></p>
+<p><span>&nbsp;</span><span><span>To do this, type the following commands at a command prompt. Press the “ENTER” key after you type each command.
+<br />
+<span>&nbsp;</span>a. <strong>net stop wuauserv</strong><br />
+<span>&nbsp;</span>b. <strong>net stop cryptSvc</strong><br />
+<span>&nbsp;</span>c. <strong>net stop bits</strong><br />
+<span>&nbsp;</span>d. <strong>net stop msiserver</strong></span></span></p>
+<p>
+</p><p><span><span>2. Now rename the<strong> SoftwareDistribution</strong> and
+<strong>Catroot2</strong> folder. </span></span></p>
+<p><span><span>You can do this by typing the following commands in the Command Prompt. Press the “ENTER” key after you type each command.
+<br />
+a</span><span><strong>. ren C:\Windows\SoftwareDistribution SoftwareDistribution.old<br />
+</strong>b. <strong>ren C:\Windows\System32\catroot2 Catroot2.old</strong></span></span></p>
+<p>
+</p><p><span><span>Now, let’s restart the <strong>BITS, Cryptographic, MSI Installer</strong> and the
+<strong>Windows Update Services</strong>. </span></span></p>
+<p>
+</p><p><span><span>3.Type the following commands in the Command Prompt for this. Press the ENTER key after you type each command.
+<br />
+</span><span><strong>a. net start wuauserv<br />
+b. net start cryptSvc<br />
+c.<span>&nbsp; </span>net start bits<br />
+d.<span>&nbsp; </span>net start msiserver</strong></span></span></p>
+<p><span><span><br />
+Type <strong>Exi</strong>t in the <strong>Command Prompt</strong> to close it.</span></span></p>
+<p>
+</p><p><span><span>&nbsp;</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Hope this helps. If the issue remains unresolved, please get back to us and we would be happy to help</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john369xp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>This is the steps as you directed.</p>
+Command Prompt/Admin<br />
+<p>C:\&gt;net stop wuausery</p>
+<p>The Windows Update service is stopping.</p>
+<p>The Windows Update service was stopped successfully.</p>
+<p>C:\&gt;net stop cryptSvc</p>
+<p>The Cryptographic Services service is stopping..</p>
+<p>The Cryptographic Services service was stopped successfully.</p>
+<p>C:\&gt;net stop bits</p>
+<p>The Background Intelligent Transfer Service service is stopping..</p>
+<p>The Background Intelligent Transfer Service service was stopped successfully.</p>
+<p>C:\&gt;net stop msiserver</p>
+<p>The Windows Installer service is not started.</p>
+<p>More help is available by typing NET HELPMSG 3521.</p>
+<p>C:\Windows&gt;ren c:\Windows\SoftwareDistribution&nbsp;SoftwareDistribution.old &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; C:\Windows&gt;ren c:\Windows \System32\catroot2 Catroot2.old</p>
+<p>C:\Windows&gt;net start wuausery</p>
+<p>The Windows Update service is starting.</p>
+<p>The Windows Update service was started successfully.</p>
+<p>C:\Windows&gt;net start cryptSvc</p>
+<p>The Cryptographic Services service is starting.</p>
+<p>The Cryptographic Services service was started successfully.</p>
+<p>C:\Windows&gt;net start bits</p>
+<p>The Background Intelligent Transfer Service service is starting.</p>
+<p>The Background Intelligent Transfer Service service was started successfully.</p>
+<p>C:\Windows&gt;net start cryptSvc</p>
+<p>The Cryptographic Services service is starting.</p>
+<p>The Cryptographic Services service was started successfully.</p>
+<p>C:\Windows&gt;net start bits</p>
+<p>The Background Intelligent Transfer Service service is starting.</p>
+<p>The Background Intelligent Transfer Service service was started successfully.</p>
+<p>C:\&gt;net start msiserver</p>
+<p>The Windows Installer service is starting.</p>
+<p>The Windows Installer service was started successfully.</p>
+<p>'C:\&gt;</p>
+<p>Your device is up to date. Last checked: Today, 8:27 PM</p>
+<p>Same as before&nbsp;<span style="color: rgba(51, 51, 51, 1)">Version&nbsp;10.0.10240 Build 10240</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ray a h  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Go to file explore within build 10240 then browse to you iso in dvd drive. You should see setup.exe on the dvd. Run the program and it will upgrade build 10586. This will preserve all your apps/programs and data. You do not have to do a clean install unless
+ want to.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="JoeNamco" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> joenamco  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I noticed that you have a "y" wuauser<span style="text-decoration-line: underline"><strong>y</strong></span>&nbsp; it&nbsp; needs to be&nbsp;a "v'&nbsp;
+<strong>wuauser<span style="text-decoration-line: underline"><em>v </em></span></strong>after you have done all of the steps it will take up to 48 hours to find the upgrade.&nbsp;&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john369xp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for your input. </p>
+<p>This may have worked if the Product ID for Windows 7 Pro 32 Bit had worked. &nbsp;I got a message that the product Key would not work, try again. &nbsp;I check the key to be sure I had entered it correctly several times. &nbsp;But no luck. It will not work and this Windows
+ 10 was upgraded from the Windows 7 Key I entered.</p>
+<p>What Now?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john369xp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for your input. </p>
+<p>I did a screen print with snipping tool. &nbsp;I then used a photo program to reverse the image, Printed it and then did a OCR. &nbsp;I tried to check the file before posting it. &nbsp;I guess I missed the Y for the V. &nbsp;Since everything stopped and started in order it
+ must have been entered correctly.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john369xp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Nov. 16, 2015 the date I reset Windows Update I have not received any updates since.<br />
+OS Name&nbsp;Microsoft Windows 10 Pro 32 Bit<br />
+Version&nbsp;10.0.10240 Build 10240</p>
+<strong>
+<p>VIEW YOUR UPDATE HISTORY<br />
+Uninstall updates<br />
+11/21/15<br />
+Uninstall latest&nbsp;Preview build<br />
+Update history<br />
+No updates have been installed yet</p>
+<p>
+</p><p>Windows Update<br />
+Your device is up to date. Last checked: Today, 11:48 AM<br />
+Check for updates&nbsp;&nbsp; 11-21-15<br />
+Available updates will be downloaded and installed automatically.<br />
+Looking for information about the latest updates?<br />
+Learn more<br />
+Advanced options</p>
+<p>
+</p><p class="contentHeader1">What do I do Now?</p>
+</strong>
+<p>
+</span></p><p>
+</span></p><p>
+</span></p><p>
+</p><p class="contentStandard">
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Azrael&#39;s Kiss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> azrael&#39;s kiss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You could try downloading an iso for build 10586 and do an upgrade from it. &nbsp;Good luck!</p>
+<p>
+</p><p>Have a good one!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john369xp  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have the ISO file and ran it 2 different ways. &nbsp;I booted from the 10586 DVD and could find no way to upgrade. (I may have missed something). &nbsp;I started Windows 10 and searched the DVD for the setup exe and ran it. &nbsp;I entered my Windows 7 Product Key (Which
+ is the OS I had upgraded to 10) it gave me an error that it would not accept the Key Please check you entries. &nbsp;I check the key several times with no luck, so I cancelled. &nbsp;</p>
+<p>
+</p><p>What Can I try now?</p>
+<p>I may have to roll back to 7 and upgrade again. &nbsp;If this will work!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="&#39;Mike P" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "P"); this.style="display: inline-block";'
+<h3> &#39;mike p  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You normally would not need a key&nbsp; - after the initial upgrade to windows 10 your activation is stored online in the Microsoft activation servers.&nbsp; Anytime you see enter a key, the page should also have a skip or do later link and that is what you should
+ choose.</p>
+<p>
+</p><p>Anyhow, windows updates on&nbsp;build&nbsp;10240 wont offer to&nbsp;upgrade for a period of 31 days&nbsp; to the&nbsp;10586 upgrade.&nbsp;&nbsp; That's the way things work there with&nbsp;windows updates.</p>
+<p>
+</p><p>10586 iso has be removed and no longer available on public servers.&nbsp;&nbsp; Rumor is the 10586 is in limbo for any type of upgrades right now.&nbsp;&nbsp; That may be your problem, combined with you entering a key.</p>
+<p>
+</p><p>I would guess you can delete partitions and install fresh ..&nbsp; with no key, from the booted iso you do have... but i'm not 100% positive as I haven't tried this myself since the Microsoft removal of the 10586 iso availability.&nbsp; I have done it while the iso
+ was available with the downloaded iso... didn't have any problems.</p>
+<p>
+</p><p>If you do the fresh install of win7 and activate it and do the automatic&nbsp;upgrade to win10 you will receive 10240.</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to embed a Calendar using the new Outlook.com Set-up&#63; - Microsoft Community</title>
+<h3> djdb10  say:</h3>
+<h2>            How to embed a Calendar using the new Outlook.com Set-up&#63;</h2>
+                    I am just getting started using the new Outlook.com Calendar. I use to be able to embed a Calendar when it was Live.com, but now with this new calendar is only allows me to use links. Is there anyone that can tell me how to embed an Outlook.com Calendar?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> mark dunson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Follow the directions of Marco Mi above. Those worked for me to embed the calendar. To get the size right, I used the following HTML code which I found online.</p>
+<p>&nbsp;</p>
+<p>&lt;style unselectable="on"&gt;<br />
+#wrap {<br />
+width:1000px;<br />
+height:900px;<br />
+padding:0;<br />
+position:relative;<br />
+left:0px;<br />
+top:0px;<br />
+overflow:hidden;<br />
+}</p>
+<p>#frame {<br />
+width:1000px;<br />
+height:900px;<br />
+position:relative;<br />
+left:0px;<br />
+top:0px;<br />
+}</p>
+<p>#frame {<br />
+-ms-zoom:0.7;<br />
+}<br />
+&lt;/style&gt;<br />
+&lt;div id="wrap" unselectable="on"&gt;<br />
+&nbsp;&nbsp;&nbsp; &lt;iframe id="frame" src="<a href="https://cid-97a9c524a0519d5e.calendar.live.com/calendar/private/1599f9f2-4226-47a5-9b1e-a1046c77d424/c50cad10-4155-41ba-a6c7-560a36e553d5/index.html&quot;&gt;&lt;/iframe" target="_blank" rel="noreferrer nofollow"><strong><em>[paste in here the link that outlook.com provides
+ for you ... in between the quotes and without the brackets]</em></strong>"&gt;&lt;/iframe</a>&gt;<br />
+&lt;/div&gt;</p>
+<p>&nbsp;</p>
+<p>I played around with the width, height and position settings. But, it works well.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=calendars_and_tasks">calendars_and_tasks, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Win 10 Mobile Mail and Calendar Incapable of Working with Office 365 - Microsoft Community</title>
+<h3> kjb434  say:</h3>
+<h2>            Win 10 Mobile Mail and Calendar Incapable of Working with Office 365 work accounts</h2>
+                    <p>Ever since my office upgraded to Office 365, my Windows 10 Mobile device has never been able to get the Mail, Calendar, or People apps to work.&nbsp; The mobile apps for OneDrive, Word, Excel, PowerPoint, and Cortana work flawlessly.</p>
+<p>
+</p><p>The error is 0x86000c29:</p>
+<p>Your device does not comply with the security policies set by your email administrator.</p>
+<p>
+</p><p>Please don't tell me to add a pin, encrypt the device, delete the account then reboot, then add back.&nbsp; I run all those scenarios.</p>
+<p>
+</p><p>The IT Admin in charge of Office 365 at my company say that Windows 10 Mobile is not supported by Office 365 which I know is not correct.</p>
+<p>
+</p><p>The IT Admin also said the device is provisioned correctly in the system and the error is on the device.&nbsp; There is nothing they can do.</p>
+<p>
+</p><p>So what is comes down to is that iPhone and Android phones just work with Office 365, but Windows 10 Mobile just doesn't when it's the Mail, Calendar, and People apps.</p>
+<p>
+</p><p>P.S.&nbsp; My office 365 work account works perfectly at home on my Windows 10 PC.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Alan Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AW"); this.style="display: inline-block";'
+<h3> alan wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Kjb434,<br />
+<br />
+I do understand you have tried several methods. In addition, from your description, I know you are using that native mail app of your Windows 10 mobile. Please clarify it if anything is misunderstood.<br />
+<br />
+If so, according to the error message, the issue is more likely to be related to the mobile device access setting or mobile device mailbox policy setting. So, to troubleshoot the issue, we suggest you perform the following steps:<br />
+1.&nbsp;&nbsp; &nbsp;Contact another user to sign into your Windows 10 mobile. This step is to identify whether the issue is related to your mobile device mailbox policy.<br />
+2.&nbsp;&nbsp; &nbsp;Change another Windows mobile if there is one (your colleague or friend). This step is to check whether the issue is related to the restricted mobile access.<br />
+For more information, you can refer to <a href="https://technet.microsoft.com/en-us/library/jj945882(v=exchg.150).aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/en-us/library/jj945882(v=exchg.150).aspx </a>and <a href="https://technet.microsoft.com/en-us/library/dn792010.aspx" target="_blank" rel="noreferrer nofollow">
+https://technet.microsoft.com/en-us/library/dn792010.aspx</a>.<br />
+<br />
+Moreover, you can check the above 2 settings in <a href="https://outlook.office365.com/ecp/" target="_blank" rel="noreferrer nofollow">
+Exchange Admin Center (EAC)</a> (You can contact your admin for help if you are not an admin)&gt; mobile&gt; mobile device access and mobile device mailbox policies. In mobile device access settings, ensure your Windows 10 mobile is not blocked to access. And, in
+ mobile device mailbox policy settings, make sure whether your mailbox (account) is using the default policy or a custom policy (especially, the policy settings details). It is recommended that you upload a screenshot about the mobile device mailbox policy
+ settings (security) for checking.<br />
+<br />
+Regards,<br />
+Alan<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Alan Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AW"); this.style="display: inline-block";'
+<h3> alan wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Kjb434,</p>
+<p>
+</p><p>Please feel free to let me know if you need any further help.</p>
+<p>
+</p><p>Regards,</p>
+<p>Alan</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kjb434  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Alan,</p>
+<p>
+</p><p>Thanks for the response. I used you suggestions and links and sent them over to my IT Admin along with a screenshot of the error from my device.</p>
+<p>
+</p><p>I'll report back with their solution and it is fixed the issue.</p>
+<p>
+</p><p>kjb434</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kjb434  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><br />
+</span></p>
+<p><span>Not a good sign when the IT admin responds with this:</span></p>
+<p>
+</p><p><span>"Have you tried using the Outlook App rather than the native mail app?"<br />
+</span></p>
+<p>
+</p><p>
+</p><p><span>I responded back "On Windows 10 Mobile the native mail app is the Outlook App".</span></p>
+<p>
+</p><p><span>Concerned I just blew their minds.&nbsp; The solution is likely a simple server side fix, but I'm not hopeful they are capable of resolving it even providing the
+</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andy Chen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AC"); this.style="display: inline-block";'
+<h3> andy chen msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Kjb434,<br />
+<br />
+For further troubleshooting, you need to reach out to your admin to check the policies that Alan mentioned above.<br />
+Moreover, did you try the first two suggestions? Besides, try setting up your account to iPhone or Android Outlook to test if it&nbsp; works.<br />
+<br />
+Let us know the outcome at your convenience.<br />
+<br />
+Regards,<br />
+Andy<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Alan Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "AW"); this.style="display: inline-block";'
+<h3> alan wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Kjb434,</p>
+<p>
+</p><p>Please share with us the update you get.</p>
+<p>
+</p><p>Regards,</p>
+<p>Alan</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kjb434  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>IT was unable to help.&nbsp; I solved the problem on my own.&nbsp; Below is how I solved it.</p>
+<p>
+</p><p>IT Admin&nbsp;suggested doing a hard reset which would only set the phone back to the latest version of Windows 10 Mobile I was using.</p>
+<p>
+</p><p><span>Since the factory reset did not work, I used the device recovery tool provided by Microsoft.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>This forces the device to use the last carrier approved build of the OS which is still technically Windows Phone 8.1 and not Windows 10 Mobile.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Once the device was setup on Windows Phone 8.1, I added my work Office 365 account with no issues.&nbsp; The Calendar and Contacts also had no issues. Did some test emails and calendar entries with no
+ problems.&nbsp; </span></p>
+<p><span>&nbsp;</span></p>
+<p><span>After that, I upgraded the phone to Windows Mobile 10.&nbsp; Migrating the accounts in the upgrade worked.&nbsp; Since the Office 365 account was already authorized on Windows Phone 8.1, Windows 10 Mobile accepted
+ account and the device complying with policies in place.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>What I found out is that some Office 365 deployments that migrated on premise Exchange to the cloud are having problems setting up email accounts on Windows 10 Mobile.&nbsp; I lost access to my email and
+ calendar after J|C migrated.&nbsp; When the next time I was required to change my password after the migration, my device lost the authorization and the error occurred.&nbsp; This has been documented in various MS Forums and no full resolution is currently available.</span></p>
+<p />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Is the folder C&#58;&#92;Windows&#92;Migration&#92;WTR a virus - Microsoft Community</title>
+<h3> joel_825  say:</h3>
+<h2>            Is the folder C&#58;&#92;Windows&#92;Migration&#92;WTR a virus</h2>
+                    <p>pls help me why i have this kind of folder C:Windows\Migration\WTR is this virus when i go to windows folder i do find out this without doing anything my windows is 8.1
+</p>
+<p>
+</p><p>Old Title:virus&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rob Koch" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "RK"); this.style="display: inline-block";'
+<h3> rob koch  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The C:\Windows\Migration\WTR folder has been used for years for Windows migration temporary files, though there are very few hits when searching for this online.&nbsp; The couple I found were for a failed&nbsp;Windows Vista to Windows 7 migration and another relating
+ to an MSIE upgrade.</p>
+<p>
+</p><p>If you drill down into the File Information, Windows 8.1 file information section of that update mentioned above, you'll find several files relating to this such as Gwx.exe and&nbsp;Gwxconfigmanager.exe, so the GWXMig.inf file in that folder is clearly just a
+ temporary&nbsp;file used to manage the installation and configuration processes for this migration application.</p>
+<p>
+</p><p><a href="https://support.microsoft.com/en-us/kb/3035583" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-us/kb/3035583</a></p>
+<p>
+</p><p>This all supports what others have already stated, so I'm just adding to this to clarify.</p>
+<p>
+</p><p>Rob</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jsssssssss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> jsssssssss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I don't know but I think GWX stands for <strong>G</strong>et <strong>W</strong>indows
+<strong>X</strong> (10).</p>
+<p>Perhaps the folders which you're seeing were created in connection with update
+<a href="https://support.microsoft.com/en-us/kb/3035583" target="_blank" rel="noreferrer nofollow">KB3035583</a>...?</p>
+<p>
+</p><p><a href="http://www.infoworld.com/article/2922604/microsoft-windows/microsoft-re-re-re-issues-controversial-windows-10-advertising-patch-kb-3035583.html" target="_blank" rel="noreferrer nofollow">http://www.infoworld.com/article/2922604/microsoft-windows/microsoft-re-re-re-issues-controversial-windows-10-advertising-patch-kb-3035583.html</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to Reinstall Internet Explorer 8 - Microsoft Community</title>
+<h3> tomw1948  say:</h3>
+<h2>            How to Reinstall Internet Explorer 8</h2>
+                    In an effort to clean out unnecessary programs, I removed Internet Explorer 8.&nbsp; Now I can't connect to the internet to reload it.&nbsp; I tried dowloading Internet Explorer 8&nbsp;onto a flash drive from another computer and extracting it on the problem PC, but
+ the first thing it tries to do is connect to the intenet for updates.&nbsp; It just spins in place for hours.&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Varnau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> don varnau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Try downloading Firefox to another computer and installing it.</p>
+<p><a href="http://www.mozilla.org/en-US/" target="_blank" rel="noreferrer nofollow">http://www.mozilla.org/en-US/</a></p>
+<p>Then, after connecting to the internet with Firefox, try to download and </p>
+<p>install IE 8 again.</p>
+<p>&nbsp;</p>
+<p>Don</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=windows_xp">windows_xp, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Chromium and all apps using chrome embedded frameworks crash instantly - Microsoft Community</title>
+<h3> aaron you  say:</h3>
+<h2>            Chromium and all apps using chrome embedded frameworks crash instantly</h2>
+                    <p style="color: rgba(0, 0, 0, 1)">Here's the link to the screen recording when I
+<span>replicate the&nbsp;</span><span>issue.</span></p>
+<span>replicate the&nbsp;</span><span>issue.</span></p>
+<p style="color: rgba(0, 0, 0, 1)">
+</p><p style="color: rgba(0, 0, 0, 1)"><a href="https://youtu.be/uIhZKOlvkNY" target="_blank" rel="noreferrer nofollow">https://youtu.be/uIhZKOlvkNY</a><div class="AnswersExternalContent"><div class="video-container"><object aria-label="video player"><param name="movie" value="https://www.youtube.com/v/uIhZKOlvkNY?fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="sameDomain"></param><embed src="https://www.youtube.com/v/uIhZKOlvkNY?fs=1" type="application/x-shockwave-flash" allowscriptaccess="sameDomain" allowfullscreen="true"></embed></object></div></div></p>
+<p style="color: rgba(0, 0, 0, 1)">
+</p><p style="color: rgba(0, 0, 0, 1)">So I updated to Build 17723.rs5_release.180720-1452 two days ago, then I discovered that my chrome is not working and Spotify won't open either. This list has further expended as I realized that all the
+ issue apps are using chromium. I am not sure if other apps that uses Chrome Embedded Framework are using the latest version of chromium like Chrome itself, but none of them opens properly. They all crash when drawing canvas, which is the window appears.
+</p>
+<p style="color: rgba(0, 0, 0, 1)">The issue is definitely introduced in this build because I had no issue asking questions about the 17713-<span>180706-1551</span>&nbsp;<span>leaking graphics device context handles (HDCs) (</span>https://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_desktop-insiderplat_pc/desktop-background-icons-taskbar-icons-become/95aef44a-609d-451e-84fd-21e1ea46581c<span>)
+ on this forum using chrome (derp face).</span></p>
+<p style="color: rgba(0, 0, 0, 1)">The DISM.exe /Online /Cleanup-image /Restorehealth passed with no problem and&nbsp;Windows Resource Protection also did not find any integrity violations.</p>
+<p style="color: rgba(0, 0, 0, 1)"><br />
+32GB Ram</p>
+<p>
+</p><p style="color: rgba(0, 0, 0, 1)">2 x Nvidia GTX-1070</p>
+<p>
+</p><p style="color: rgba(0, 0, 0, 1)">I7-6820HK</p>
+<p>
+</p><p>I don't know why these bugs all appears on my system. I am so excited to use new features but at the same time so frustrated. Well I guess this is what it takes.</p>
+<p>
+</p><p>If you notice in the video that system update is taking a significant amount of CPU, it is because I have just chosen to skip ahead to the next build just to see if this issue has fixed because this bug is hugely impacting my productivity. I will post update
+ whether it has been fixed in the future build.</p>
+<p>
+</p><p>Thanks in advance to people who has solution or simply have the same issue. More people posting seems to make drawing attention from MS a lot easier.&nbsp;</p>
+<p>
+</p><p>*Edit: Typo in title</p>
+<p>*Edit: Hyperlink not working</p>
+<p>*Edit: Hyperlink still not working</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="CrazyKats" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "CR"); this.style="display: inline-block";'
+<h3> crazykats  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm on build 17723 and I use Chrome everyday with no problem.</p>
+<p>I also use AOL Gold which uses the Chromium browser everyday</p>
+<p>with no problems.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aaron you  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            So I have updated my system to 18204, my chrome and chromium apps are all working fine now. I will leave this post here for MS stuff to provide a possible solution for people who may face the same situation as I did but do not feel like skipping ahead
+ to the next build (Huge risk here). I won't be able to provide any testing since I am no longer on the version that I experience this issue on and I don't feel like rolling back to previous version, sorry.
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Getting Automatically logged out of Outlook 365 on all devices - Microsoft Community</title>
+<h3> sean_86  say:</h3>
+<h2>            Getting Automatically logged out of Outlook 365 on all devices</h2>
+                    <p>One of our staff is getting the below issue:</p>
+<p>
+</p><p>Outlook 365 Mail getting logged out randomly multiple times a day on the below devices:</p>
+<p>Web outlook 365 (Internet Explorer 10 and Firefox)</p>
+<p>IOS Outlook mail application</p>
+<p>IOS mail application</p>
+<p>IOS calendar application</p>
+<p>
+</p><p>All applications have been updated and user password reset.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sylvie Liang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "SL"); this.style="display: inline-block";'
+<h3> sylvie liang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span style="color: rgba(0, 0, 0, 1)">Hi Sean_86,</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">Based on your description, may I know whether this happen to only one person in your organization? As far as I know, the Session times for Office 365 is a possible cause. By default, the period
+ for OWA is 6 hours. As an admin, you can change it by using the <em>ActivityBasedAuthenticationTimeoutInterval</em> parameter in the
+<em>Set-OrganizationConfig</em> cmdlet via Windows PowerShell. The max value is 8 hours, please give it a try see if it can help. For your reference:
+<a href="https://docs.microsoft.com/en-us/powershell/module/exchange/organization/Set-OrganizationConfig?view=exchange-ps" target="_blank" rel="noreferrer nofollow">
+Set-OrganizationConfig</a>.</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">If the problem persists, I would like to collect more information for you to check it further:</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">1. When you said “Outlook 365 Mail getting logged out randomly multiple times a day”, may I know what the time interval is? Is it a few minutes or a few hours?</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">2. After automatically logging out, is Outlook asking you to log in again?</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)">Best Regards,</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Sylvie</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Default Edge Browser Homepage Fix &#40;Help&#41; - Microsoft Community</title>
+<h3> mrjynx13  say:</h3>
+<h2>            Default Edge Browser Homepage Fix &#40;Help&#41;</h2>
+                    <p>Installed a video driver..and everyting went south. the edge browser was so gfx glitched it was bad. did some reset and repair got everything working again except ive lost my homescreen (default)</p>
+<p>Ive tried about everyting..</p>
+<p>running insider build win 10 pro16232 rs</p>
+<p>Please help.&nbsp;</p>
+<p>
+</p><p>
+</p><p><em>***Post moved by the moderator to the appropriate forum category.***</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> eric ber  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <br />
+<br />
+A&nbsp; home page or a start page is the initial or main web page of a website or a browser. To change your default home page in Microsoft Edge, kindly follow the steps that are provided on this
+<a href="https://support.microsoft.com/en-au/instantanswers/46fafbed-7ba4-42fb-908a-75664d83c704/change-your-home-page" target="_blank" rel="noreferrer nofollow">
+link</a>.<br />
+<br />
+Should you need further assistance, don't hesitate to get back to us.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=web_and_networks">web_and_networks, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>product key of microsoft office accounting 2007, - Microsoft Community</title>
+<h3> ammarosu  say:</h3>
+<h2>            product key of microsoft office accounting 2007,</h2>
+                    I have lost product key of microsoft office accounting 2007, Can get another another key from Microsoft . Please help me on this issue, I have Lost CD that i Purchased it,&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Office Accounting was withdrawn about 2 years ago.</p>
+<p>If you have proof of purchase ie a physical receipt try</p>
+<p><a href="http://support.microsoft.com/default.aspx?scid=kb;en-us;326246" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/default.aspx?scid=kb;en-us;326246</a></p>
+<p>&nbsp;</p>
+<p>If Accounting is installed on a working PC try Belarc Advisor which can retreive the Key, but you would still need to obtain the installation media</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

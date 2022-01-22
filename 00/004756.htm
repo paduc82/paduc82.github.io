@@ -1,0 +1,2371 @@
+    <title>Recovering data from Switching Data Types in Access 2007 - Microsoft Community</title>
+<h3> evh13  say:</h3>
+<h2>            Recovering data from Switching Data Types in Access 2007</h2>
+                    <p>Hello! </p>
+<p>&nbsp;</p>
+<p>I am trying to switch data types in&nbsp;a very large&nbsp;data sheet, from text to date/time.
+</p>
+<p>&nbsp;</p>
+<p>When&nbsp;I do so, I am prompted with a warning message that says "Microsoft Access encountered errors while converting the data. The contents of fields in 17 records were deleted. Do you want to proceed anyway?"
+</p>
+<p>&nbsp;</p>
+<p>I would like to know which records this warning message is referring to, so I can recover the data.
+</p>
+<p>&nbsp;</p>
+<p>Any suggestions are appreciated! :) </p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Did you keep a backup? I sure hope so...</p>
+<p>&nbsp;</p>
+<p>My guess is that there was text which didn't correspond to an actual date. Access would have stored a null in the field in the converted table; you could create a query based on the table with a criterion of</p>
+<p>&nbsp;</p>
+<p>IS NULL</p>
+<p>&nbsp;</p>
+<p>on this field. However, there might be records which simply didn't have a date in the field at all; there'd be nothing to distinguish records that are NULL because they had bad data from records where there was no data in the first place.</p>
+<p>&nbsp;</p>
+<p>If you still have the original table, you could create a query based on it with a calculated field. Select the primary key (or some field or fields that will let you identify the record) and your text date field, and in a vacant field cell type</p>
+<p>&nbsp;</p>
+<p>BadDate: IsDate([nameofyourfield])</p>
+<p>&nbsp;</p>
+<p>Put a criterion of </p>
+<p>&nbsp;</p>
+<p>False</p>
+<p>&nbsp;</p>
+<p>on this field and you will see those records that Access can't translate.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evh13  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you Mr. Vinson for your reply! <br />
+<br />
+I did indeed back up the database, sorry for not making that clear. <br />
+<br />
+I created a query like you said - in my affected date field, I wrote Is Null as a criteria. Then I make the BadDate: IsDate([nameofyourfield]) in a new field, making False as a criterion.
+<br />
+<br />
+Unfortunately, this query returned only blank records. Did I misunderstand your directions?<br />
+<br />
+Thanks - EV<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            In doing this sort of thing I would recommend a 'no-loss' approach by first adding a new column of date/time data type to the table, and then executing an update query as follows:<br />
+<br />
+UPDATE [YourTable]<br />
+SET [NewDateColumn] = CDATE([OldDateColumn])<br />
+WHERE [OldDateColumn] IS NOT NULL;<br />
+<br />
+You can then check for any which have not updated with:<br />
+<br />
+SELECT *<br />
+FROM [YourTable]<br />
+WHERE [NewDateColumn] IS NULL<br />
+AND [OldDateColumn] IS NOT NULL;<br />
+<br />
+Once you've identified and, where appropriate, corrected the rows returned by the above query you can delete the original column (or rename it so that you keep the old data as a fallback) and rename the new column back to the name of the original column.<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Please post the SQL view of your query. If this is the only field you included in your query you very well might just see blanks (if the date field were blank for example); as far as that goes, it's possible that your table includes records with nothing
+ in ANY field. The conversion to date would fail for such records and you would see them with this query.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evh13  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            here is the SQL view of the query. I got the query to work until I had repaired all but one of the bad dates.<br />
+<br />
+SELECT Season.ID, Season.[Theatre Company], Season.Title, Season.Dateopen, Season.Dateclose, Season.[Specific Date]<br />
+FROM Season<br />
+WHERE (((Season.Dateopen) Is Null) AND ((IsDate([Dateopen]))=False));<br />
+<br />
+Thanks again for your willingness to help! <br />
+<br />
+EV<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evh13  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Right now, it is displaying all records that have no date entry<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Um?</p>
+<p>&nbsp;</p>
+<p>Yes. That's exactly what it should do - those records where Season.DateOpen is NULL.</p>
+<p>&nbsp;</p>
+<p>What do you expect/want the query to show?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evh13  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Sorry for the lack of clarity. I followed the instructions in your original post, but instead of placing IS NULL as a criteria in the date cell, I put IS NOT NULL.
+</p>
+<p>&nbsp;</p>
+<p>This displayed the dates that were a.) not empty and b.) not in proper format.</p>
+<p>&nbsp;</p>
+<p>Thanks for the help! </p>
+<p>&nbsp;</p>
+<p>EV</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>So everything is working correctly now?</p>
+<p>&nbsp;</p>
+<p>Did you change your Forms&nbsp; and Reports to use the new Date/Time field instead of the old text one?</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> evh13  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That's correct. Thanks for your help John!<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Find My phone setup - Microsoft Community</title>
+<h3> jstocco  say:</h3>
+<h2>            Find My phone setup</h2>
+                    <p>My phone recently bricked and then came back to life.. which in itself was pretty annoying as it had been completely wiped when it switched back on.<br />
+</p>
+<p>
+</p><p>I am now having some trouble setting up find my phone. Every time i click on it it gives me the message "We're still setting up Find My Phone. This will take another moment or two to finish. Come back later to make sure it's been set up, then visit windowsphone.com
+ to use it."</p>
+<p>
+</p><p>This message is always there and never goes away.</p>
+<p>
+</p><p>Please help</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi JStocco,</p>
+<p>
+</p><p>Thank you for contacting Microsoft Support.&nbsp; I understand you're having issues with the Find My Phone setup.&nbsp; In order to get a better idea of what's going on, I want to go over a few things with you.</p>
+<ul>
+<li>What is the make and model of your phone?</li><li>On your phone, navigate to Settings&gt;About&gt;More Info.&nbsp; What's the complete OS version number, and firmware revision?</li><li>Is your phone connected to Wi-Fi, or using just cellular data?</li><li>When you login to windowsphone.com, do you see your phone listed under the Account Settings link?</li></ul>
+<p>Feel free to get back to us when you can and we'll go from there.</p>
+<p>
+</p><p>
+</p><p>Regards,</p>
+<p>Chanh S.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jstocco  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>it is a nokia lumia 900</p>
+<p>
+</p><p>it has os version 7.10.8862.144</p>
+<p>firmware: 2175.2905.8858.12480</p>
+<p>
+</p><p>it is connected to wifi and yes when i log into window phone my phone is there</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi JStocco,</p>
+<p>
+</p><p>Thanks for the updated information.&nbsp; I'd like to check some other settings as well.</p>
+<ul>
+<li>Open up Settings&gt;Find My Phone.&nbsp; Is the checkbox here marked in?&nbsp; If not, check it in, and then turn the phone off for about two minutes, and then back on.</li><li>Navigate now to Settings&gt;Email+Accounts, and then tap and hold your finger to your Microsoft Account and tap Sync.</li><li>On the windowsphone.com page, go back to the Account Settings link.&nbsp; Is your phone number up-to-date here?</li><li>Clear the history, temporary files, and cookies for all browsers on your computer.&nbsp; Try using different browsers, like Internet Explorer, Chrome, and Firefox.&nbsp;
+</li></ul>
+<p>Get back to us when you can and we'll go from there.</p>
+<p>
+</p><p>
+</p><p>Regards,</p>
+<p>Chanh S.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> suchitraojha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Please still setting up my phone
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Powerpoint Audio Record Error - Microsoft Community</title>
+<h3> leo k. liu  say:</h3>
+<h2>            Powerpoint Audio Record Error</h2>
+                    i tried to record audio for slides, but the audio's speed sounds very slow, barely can hear clearly
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ty_hell_heaven" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "TY"); this.style="display: inline-block";'
+<h3> ty_hell_heaven  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Adjust the microphone volume or other volume controls you have and check.<br />
+Also try recording sound outside of powerpoint and see how that works.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> leo k. liu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i try the setting of mac, it still doesn't work in Powerpoint record.
+<div>and i try to find the setting control of Powerpoint record itself, but i cannot find it.</div>
+<div>also i try the facetime or outside of powerpoint recording, it works.</div>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>What are tags in Word&#63; - Microsoft Community</title>
+<h3> raymond j  say:</h3>
+<h2>            What are tags in Word&#63;</h2>
+                    <p>I am using Word 2013. When I save my documents I have the option to add tags. What are tags and what do they do? I am trying to add smart tags and search for the tags but I do not see the option to search tags in windows explorer. Im running Windows 10Can
+ I search using tags? ANy help would be greatly appreciated. Thanks in advance</p>
+<p>
+</p><p><strong>[Original title: I am using Word 2013]</strong></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi Raymond,</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Thank you for posting your query on Microsoft Office Community.</span></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>A quick question before we proceed.</span></p>
+<p>
+</p><p><span>Which tag are you referring to? Are you referring to Smart Tags or HTML Tags?</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Please get back to us with necessary information, we’ll be glad to assist you&nbsp;further.
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>"Tags" is a file property (click File | Info and then click the option to show all properties). It is the same as "Keywords" which you can insert into a document via Insert | Quick Parts | Document Property.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> raymond j  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for getting back to me. It must be smart tags. When I save a file at the bottom right it says "Tags" So could you please tell me what they do and how they work? Thanks in advance Raymond<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The tags in the save dialog are file properties.&nbsp; In theory they allow you to more easily search for the file using these tags.
+</p>
+<p>
+</p><p>If you look in windows Explorer, there is an optional column you can display to show these tags. You are supposed to be able to search by them.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> raymond j  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            OK thank you for the information. In Windows 10 how do I access Windows Explorer and how do I set it to search for tags?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I use &lt;WIN&gt;&lt;E&gt; to open Explorer.</p>
+<p>
+</p><p>In the View tab &gt;&nbsp; Current View group you can click on the "Add columns" drop down. In there you can turn on the "tags" column.&nbsp;
+</p>
+<p>
+</p><p>In the upper right corner of Explorer, there is a "Search documents" box. You can type file names, or tags or body text.</p>
+<p>
+</p><p>In theory, you can also search for tags using the Win 10 search function. I have not tested this myself.</p>
+<p>
+</p><p>Personally, I gave up on the tags feature years ago because I could not get it to work to my satisfaction.&nbsp; Instead, I have been adding "tags" to my file names.&nbsp; I put a tag a the start of the file name so that the files are grouped together in explorer.&nbsp;
+ I also add the date to the file name so I can see which files are "most current".&nbsp; If I want to add more tags, I will often add them to the end of the file name ie</p>
+<p>
+</p><p>tag1 2016 03 03- filename1.doc</p>
+<p>tag1 2016 03 04- filename 2- tag2 tag3.html</p>
+<p>tag4 2015 01 01- filename 3.xlsx</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for the tip on using these file properties for searching.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> raymond j  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am reffering to smart tags specifically that you add to word documents. PLease advise<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>OK, that is a totally different question. </p>
+<p>
+</p><p>Short form that type of Smart tag is a way of automating actions, ie</p>
+<p>&lt;snip&gt;</p>
+<p>Smart tags are strings of text that have type information attached to them; when a text string that matches the criteria appears in a document, it is recognized and the user can perform actions appropriate for that type of string. For example, you could
+ create a smart tag that recognizes stock symbols. When the user types an uppercase string of four letters, you could provide a list of stock-related actions, such as looking up a stock price on the Internet.</p>
+<p>&lt;/snip&gt;</p>
+<p>
+</p><p>Here is a google search I did that has many hits providing detailed explanations about smart tags, how to create and use them:
+</p>
+<p>https://www.google.ca/search?q=word+smart+tags&amp;ie=utf-8&amp;oe=utf-8&amp;gws_rd=cr&amp;ei=dLT1Vv_qKMa7ePzphpAB</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>NSU fails to load - Microsoft Community</title>
+<h3> grimreaper---01  say:</h3>
+<h2>            NSU fails to load</h2>
+                    this has maybe been asked before but i've been searching the net for days &amp; acnnot find an answer/solution.<br />
+<br />
+everytime i start the updater it fails to go any further than the initial screen. it satys there for a while &amp; then an error message pops up "network connection lost check your network connection or whether a firewall is preventing the application from working
+ properly"<br />
+<br />
+i've tried un-installing/ re-installing, disabling firewalls, removing firewall/anti virus software completely &amp; constant re-boots.<br />
+<br />
+any help would be greatly appreciated as it's driving me mad. been trying to update my n95-1 for the last couple of weeks now &amp; i've just got an n95-2 8gb which has version 10!!!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grimreaper---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i forgot to say. i'm running vista home premium
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> al_eebee  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry, this is not much help to you, but I have the same problem unless I temporarily disable Norton Internet Security, even when I have told Norton to let the NSU connect
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> delixis---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you use Norton Internet Security, go to Personal Firewall setting, then set it to allow 3 programs that start with nsu_. You should allow all programs that have a name imply to NSU or Nokia. If you cannot find one then you have to add your programs
+ manually by using "add" button under your setting window.<br />
+<br />
+If you use different firewall program, you should find something similar to those I mentioned.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>import main identity from another Mac computer&#39;s Outlook 11 to new - Microsoft Community</title>
+<h3> christinegandel  say:</h3>
+<h2>            import main identity from another Mac computer&#39;s Outlook 11 to new Mac computer</h2>
+                    I have moved from an company email (Windows Exchange) to a personal one. &nbsp;IT helped me try to export Outlook11 data from the company system. &nbsp;Had no trouble getting the email messages and personal folders exported, but the contacts would not export - kept
+ erroring out. &nbsp;So, they had me store the Main Identity folder to an external drive. &nbsp;When I tried to put the work email Main Identity file on the new computer, it tells me that that it can't open the files in the work email Main Identity folder are not associated
+ with the default identity in my Outlook11 on the new computer. &nbsp;How do I fix this so I can recover my contacts in addition to the InBox email messages, archives, and .pst' files? &nbsp;I don't care about calendar or notes. &nbsp;Thx.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="cortig" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "CO"); this.style="display: inline-block";'
+<h3> cortig  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That warning means that Office is not up to date on this Mac. The application should be in version 14.1.3. Maybe you’ve forgotten to run the updates?
+<div><br />
+<div>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Corentin</div>
+<div><br />
+<div><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel and circular reference error - Microsoft Community</title>
+<h3> jimmyroeder  say:</h3>
+<h2>            Excel and circular reference error</h2>
+                    <p>I am trying to do a win-loss-tie setup.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/17b7b4bb-ab95-46f0-9f1a-0eef3a46f42b?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/17b7b4bb-ab95-46f0-9f1a-0eef3a46f42b?upload=true" /></a></p>
+<p>I am trying to have it to where I change the values in the first 3 cells and they are added to the values in the next 3 cells, which are a season-long running total, then do a win %.</p>
+<p>I am having trouble with getting around the circular reference error.&nbsp;</p>
+<p>
+</p><p>Help, please.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jasles  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What’s your formula? Where is the error? Can you include the rows and columns in the screenshot?       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jimmyroeder  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><a href="https://filestore.community.support.microsoft.com/api/images/a6eda6e1-fbf6-4d9e-9b0b-dd47f00f6962?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/a6eda6e1-fbf6-4d9e-9b0b-dd47f00f6962?upload=true" /></a></p>
+<p>So, I tried&nbsp;</p>
+<p>
+</p><p>&nbsp; &nbsp; &nbsp; =sum(E2,A2) in cell E2</p>
+<p>but it will give circular&nbsp;reference error.</p>
+<p>
+</p><p>I want to change the values in cells A2, A2, and A2 weekly and keep a running total in cells E2, F2, and G2.</p>
+<p>So each week I would add the value in E2 to A2 and then update the value in E2.<br />
+</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jasles  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can’t have E2 adding to itself without causing a circular reference error.       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Jimmy
+<br />
+<br />A circular reference is when a formula in a cell references itself
+<br />
+<br />So your formula =sum(E2,A2) in cell E2 will add A2 to E2 and then repeatedly try to do that every time the value changes - basically a loop - Excel will not allow you to do that
+<br />
+<br />Put the formula into a different cell and it will work . ..       
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to recover e-mails&#63; - Microsoft Community</title>
+<h3> clairlowe  say:</h3>
+<h2>            How to recover e-mails&#63;</h2>
+                    <p>Hello,</p>
+<p><br />
+</p>
+<p>I think my account was hacked recently and some e-mails have gone missing. How do I recover them?</p>
+<p><br />
+</p>
+<p>Thanks</p>
+<p><br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Claire<br />
+<br />
+If you have access to your account<br />
+<br />
+<div><strong>To recover your email do the following</strong><br />
+<span>1. Sign in to your Outlook.com account (via a Computer/Laptop).</span><br />
+<span>2. Go to your Deleted folder (found on the left pane under Folders).</span><br />
+<span>3. Look for "Lost a message?", and click "recover deleted messages".</span><br />
+<br />
+<span>You can also check out the following article for more information on how to recover lost/deleted messages from your Outlook.com account:</span><br />
+<span>What should I do if email messages are missing from my Outlook.com account?</span><br />
+<a href="http://windows.microsoft.com/en-US/hotmail/how-recover-deleted-messages" target="_blank" rel="noreferrer nofollow"><b>http://windows.microsoft.com/en-US/Outlook.com/how-recover-deleted-messages&nbsp;</b></a><span><span>&nbsp;</span>Don’t
+ forget to click on Show All to see all the recommendations in the article</span><br />
+<span><strong><br />
+<font color="#FF0000">We can only recover recently deleted emails, specifically not more than 5 days old. Beyond that won't be possible.</font></strong></span><font color="#FF0000"><br />
+<span><em><strong>Outlook
+ will recover as many messages as possible and put them in your Deleted folder. If you don't see the deleted messages that you wanted, it means they are permanently lost</strong></em></span></font></div>
+<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>fixed-height text box - Microsoft Community</title>
+<h3> xiao chuan sun  say:</h3>
+<h2>            fixed-height text box</h2>
+                    is there a way to get fixed height text box? There is one option in PP2010, however the text is vertical instead of horizontal.&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="David Marcovitz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "DM"); this.style="display: inline-block";'
+<h3> david marcovitz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Here are a couple of possibilities for you:<br />
+<br />
+(1) If you adjust the height of the text box using the Format tab of the ribbon AFTER you type the text, the new height will stick, but it will revert to variable height if you try to change the text.<br />
+<br />
+(2) If you draw a regular rectangle, it will not vary the height. You can set the rectangle to have all the same appearance features as a text box (even no fill and no line if you want).<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="John SR Wilson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> john sr wilson  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            As David says<span style="font-weight: bold"> then</span> RIGHT click &gt; Format shape &gt;Choose Text box
+<br />
+Set to Do NOT autofit OR "Shrink text on overflow" depending on your need.<br />
+<br />
+That should get you close.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Modified BY&#34; column update without making changes - Microsoft Community</title>
+<h3> stowe447  say:</h3>
+<h2>            &#34;Modified BY&#34; column update without making changes</h2>
+                    <span style="color: rgba(0, 51, 153, 1)">When I opened and closed a file in SharePoint, it automatically showed me as the last person who edited the file even though I did not change anything</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cliff Gu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "CG"); this.style="display: inline-block";'
+<h3> cliff gu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Stowe,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>I can’t reproduce the issue in SharePoint Online in our environment.
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>What are you using, SharePoint Online or SharePoint Server 2013/2016? If you are using SharePoint Server 2013/2016, I suggest you post a new thread on our
+<a href="https://social.technet.microsoft.com/Forums/en-US/home?forum=sharepointgeneral%2CSP2016&amp;filter=alltypes&amp;sort=lastpostdesc" target="_blank" rel="noreferrer nofollow">
+TechNet forum</a> for expert help. </span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If you are using SharePoint Online, I’d like you to confirm whether the issue happens in a specific list, a specific library or a specific site. If you go to the classic SharePoint interface, click on
+ the affected file&gt;File&gt;Version History, are there some history records showing that the file is edited by you?</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thanks,</span></p>
+<p><span>Cliff</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="webbrewers3" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "WE"); this.style="display: inline-block";'
+<h3> webbrewers3  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Is the file getting checked out?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cliff Gu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "CG"); this.style="display: inline-block";'
+<h3> cliff gu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Stowe,</span></p>
+<p>
+</p><p><span>May I know if you need further help on this issue?</span></p>
+<p>
+</p><p><span>Thanks,</span></p>
+<p><span>Cliff</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> trishaohland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> trishaohland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            A user is having the same problem in our area. Any resolutions?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cliff Gu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "CG"); this.style="display: inline-block";'
+<h3> cliff gu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Trisha</span><span>,</span></p>
+<p>
+</p><p><span>As similar issues may have different root causes, I suggest you post a new thread on our forum for expert help.</span></p>
+<p>
+</p><p><span>Thanks,</span></p>
+<p><span>Cliff</span></p>
+<p>
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=sharepoint">sharepoint, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Duplicate files when saving&#63;&#33;&#63; - Microsoft Community</title>
+<h3> gemilie  say:</h3>
+<h2>            Duplicate files when saving&#63;&#33;&#63;</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I am working on a microsoft word document and each time i quit and save changes i made it creates a duplicate with old version... How do i change this?</p>
+<p>
+</p><p>Thank you</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rich Michaels - MVP &#40;greatcirclelearning.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RM"); this.style="display: inline-block";'
+<h3> rich michaels - mvp &#40;greatcirclelearning.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>That's a setting in Word &gt; Preferences &gt; Save to always create a backup. Before saving over the previous saved version it renames the file.</p>
+<p>
+</p><p>It's a very worthwhile option but if you think you don't want it then you can elect to turn it off.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> gemilie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for your answer but it is unchecked!?!? Also, when i open the app it opens ALL the files i've been working on recently!?! Can you help me fix this? Thank you
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Phillip M Jones" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "PM"); this.style="display: inline-block";'
+<h3> phillip m jones  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>That Possibly is due to two setting from the OSX operating system</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/073bc61a-1625-4a63-9cf9-86a90c14a54b" height="344" width="462" style="margin-left: auto; margin-right: auto" /></p>
+<p>
+</p><p>And</p>
+<p>
+</p><p style="text-align: center"><img src="https://filestore.community.support.microsoft.com/api/images/623b22b9-fc3d-42d9-ae9e-63df341ec2d8" /></p>
+<p style="text-align: center">
+</p><p style="text-align: left">This window shows up&nbsp; as you are restarting, or closing down computer.</p>
+<p style="text-align: left">
+</p><p style="text-align: left">See if that stops files opening </p>
+<p style="text-align: left">
+</p><p style="text-align: left"><strong>__________</strong><br />
+<strong>Disclaimer: </strong><em>The opinions &amp; replies are solely mine and mine alone, and do not necessarily reflect upon my position as a Community Moderator.</em><br />
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Error d000f001 - Microsoft Community</title>
+<h3> mariematt  say:</h3>
+<h2>            Error d000f001</h2>
+                    <p>Good day!</p>
+<p>
+</p><p>&nbsp;I have some problem fixing error ''d000f001, I tried everything but the problem seemed to be difficult,&nbsp; I can't download any apps as well as install new updates. Please help!&nbsp;</p>
+<p>
+</p><p>
+</p><p><br />
+<em>***Moved from: (Windows / Windows 7 / Install, upgrade, &amp; activate / Download and install )***</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> martin bar  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Marie,<br />
+<br />
+Corrupted system files are one of the possible reasons why this issue is happening. We need to further isolate your concern to provide the best possible solution. Are you using a Windows phone? If yes, what is the model of the phone?<br />
+<br />
+We'll keep an eye out for your response.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danielipkiss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Htc td2</p>
+<p>
+</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=other_windows_mobile_devices">other_windows_mobile_devices, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=windows_phone_7">windows_phone_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Easy Transfer Wizard, - Microsoft Community</title>
+<h3> smitty59  say:</h3>
+<h2>            Easy Transfer Wizard,</h2>
+                    Easy Transfer Wizard,&nbsp; often corrupts the Outlook Profile. Uninstall any Office trial on the new PC prior to
+<span>to installing your retail version of Office. I got this info. from another question I asked on this forum. Is it true?<br />
+<span>to installing your retail version of Office. I got this info. from another question I asked on this forum. Is it true?<br />
+Thanks!&nbsp;</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yes, its true, you should backup your Outlook Personal Folders separately:</p>
+<p>0x8004010F: Outlook data file cannot be accessed - Microsoft Support</p>
+<p>http://support.microsoft.com/kb/2289904 </p>
+<p>http://www.outlook-tips.net/howto/ol2000_win7.htm</p>
+<p>------------------------------------</p>
+<p>http://www.howto-outlook.com/howto/backupandrestore.htm</p>
+<p>Using the Microsoft Outlook Personal Folders Backup tool</p>
+<p>http://office.microsoft.com/en-us/outlook/ha010875321033.aspx</p>
+<p>Back up Outlook e-mail messages</p>
+<p>http://office.microsoft.com/en-us/outlook/HA011030811033.aspx</p>
+<p>Outlook 2007/2003/2002 Add-in: Personal Folders Backup</p>
+<p>http://www.microsoft.com/downloads/details.aspx?FamilyId=8B081F3A-B7D0-4B16-B8AF-5A6322F4FD01&amp;displaylang=en</p>
+<p>"The Personal Folders Backup download creates backup copies of your .PST files at regular intervals, in Outlook 2002 and later versions, making it easy to keep all of your Outlook folders safely backed up."</p>
+<p>OUTLOOK™ BACKUP TUTORIAL</p>
+<p>http://www.sitedeveloper.ws/tutorials/outlook.htm</p>
+<p>Outlook Password</p>
+<p>http://support.microsoft.com/kb/290684</p>
+<p>Credit: JW Stuart</p>
+<p>Also:</p>
+<p>Back up the folder Outlook located under:</p>
+<p>C:\Documents and Settings\Account_Name\Local Settings\Microsoft\Outlook</p>
+<p>When you migrate to Windows 7 and reinstall Microsoft Office, just copy back the contents of the Outlook folder to the following location:</p>
+<p>C:\Users\Account_Name\AppData\Local\Microsoft\</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>16gb micro sd in my nokia 6120 classic - Microsoft Community</title>
+<h3> allblack8  say:</h3>
+<h2>            16gb micro sd in my nokia 6120 classic</h2>
+                    Hello<br />
+I have a nokia 6120 classic and I want to get a bigger memory card so i can watch movies. Will my phone support the memory card. I heard that people have had it work but im not sure.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grayburn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It does say on the specs that it takes up to 2GB micro SD cards but i'm sure if it's on the latest software then it should be able to take the 16GB card.<br />
+<br />
+Do you knwo anyone who has one that you could try in your handset before purchasing one?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grschinon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<blockquote>
+<hr />
+<span>01-Dec-2008</span> <span>09:53 AM</span><br />
+grayburn wrote:<br />
+It does say on the specs that it takes up to 2GB micro SD cards but i'm sure if it's on the latest software then it should be able to take the 16GB card.<br />
+<hr />
+</blockquote>
+</blockquote>
+<br />
+If the original did only accept cards of up to 2GB then the phone isn't fitted with an SDHC reader. In this case no amount of software updates will change that, meaning that the limit is and always will be 2GB.<br />
+<br />
+However, if the original accepted cards of 4GB, then it has an SDHC reader and larger capacity cards may become compatible with firmware updates.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grayburn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for that mate.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=accessories">accessories, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I save a template with only the envelope&#63; - Microsoft Community</title>
+<h3> chris69600  say:</h3>
+<h2>            How do I save a template with only the envelope&#63;</h2>
+                    <p>Thanks a lot Philip, it works. Now to make it fully operational, I need to save this as a template. I did it but then the printer wants to systematically print a blank A4 (= legal) size page with every envelope I print. Is there a way to save the template
+ with only the envelope ? </p>
+<p><br />
+</p>
+<p>[New follow-up question split by moderator from <a href="http://answers.microsoft.com/en-us/mac/forum/macoffice2011-macword/print-envelopes-with-logo/5771dca8-41eb-49ec-aa27-e0e118aaf021">
+this answered question</a>]</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> chris69600  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks Philip, however it seems I can't save a template through the envelope manager on Mac. But I found another way around anyway (created a blank document with the envelope format, and then pasted all the data I have previously prepared with your tips
+ - then saved as template). Thanks again for your help.
+<div><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Frequent Windows Media Player crashes during closing - Microsoft Community</title>
+<h3> johnnygui  say:</h3>
+<h2>            Frequent Windows Media Player crashes during closing</h2>
+                    <div>
+<p>Hello,</p>
+<p>
+</p></div>
+<div>
+<p>Since the half of august I noticed many APPCRASH events of Windows Media Player (WMP) in the Reliability History. They seem to happen when I'm closing WMP itself. I don't notice the crash of the program itself, it closes normally. But during closing I can
+ see the cursor showing a loading sign next to it.</p>
+<p>
+</p><p>It doesn't seem to be linked to my library, since this problem also occurs when WMP doesn't contain any songs and is started for the first time.</p>
+<p>
+</p><p><strong>Here's the log (Dutch):</strong></p>
+</div>
+<div>
+<p>Naam van probleemgebeurtenis: APPCRASH<br />
+Naam van de toepassing: wmplayer.exe<br />
+Versie van toepassing: 12.0.17134.1<br />
+Tijdstempel van toepassing: 854a1b2d<br />
+Naam van foutmodule: combase.dll<br />
+Versie van foutmodule: 10.0.17134.112<br />
+Tijdstempel van foutmodule: cdc43ef4<br />
+Uitzonderingscode: c0000005<br />
+Uitzonderingsmarge: 000f19ef<br />
+Versie van besturingssysteem: 10.0.17134.2.0.0.256.48<br />
+Landinstelling-id: 1043<br />
+Aanvullende informatie 1: f07b<br />
+Aanvullende informatie 2: f07ba5a3b1acaf0f571ec0abb76b0d76<br />
+Aanvullende informatie 3: 2fc0<br />
+Aanvullende informatie 4: 2fc08081dc2041665a1ee531e6562af0<br />
+Extra informatie over het probleem<br />
+Bucket-id: 50f73f2ab19318a86442962490a4081b (1459894313011120155)</p>
+<p>
+</p></div>
+<div>
+<p>I've tried the following but none of them fixed the issue:<br />
+- Run the <strong>Troubleshooter of Windows Media Player Settings and Windows Media Player library</strong><br />
+-<strong> Delete the Media Player cache folder</strong> in %LOCALAPPDATA%\Microsoft
+</p>
+<p>- <strong>Delete cache and history </strong>files in the WMP settings</p>
+<p>- Run <strong>sfc /scannow</strong>; didn't show any integrity violations<br />
+- <strong>Disabling and enabling WMP</strong> (a reboot in between) in the Windows Features settings<br />
+- <strong>Clean installed Windows 10 Pro 64x</strong></p>
+<p>
+</p><p>I have Windows 10 Pro x64 version 1803 with the latest updates.</p>
+<p>
+</p></div>
+<div>Anyone else experiencing this when closing down WMP?</div>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>Hi. <br />
+<br />
+Download these links and execute them one by one: <br />
+<a href="http://aka.ms/diag_wmpc10" target="_blank" rel="noreferrer nofollow">http://aka.ms/diag_wmpc10</a>
+<br />
+<a href="http://aka.ms/diag_wmpl10" target="_blank" rel="noreferrer nofollow">http://aka.ms/diag_wmpl10</a>
+<br />
+<a href="http://aka.ms/diag_wmpdvd10" target="_blank" rel="noreferrer nofollow">http://aka.ms/diag_wmpdvd10</a>
+<br />
+<br />
+Standard Disclaimer: This is a non-Microsoft website. The page appears to be providing accurate, safe information. Watch out for ads on the site that may advertise products frequently classified as a PUP (Potentially Unwanted Products). Thoroughly research
+ any product advertised on the site before you decide to download and install it.
+</blockquote>
+<p>
+</p><p>I already ran the first 2 troubleshooters as mentioned in my OP, they reset the library and WMP settings but it didn't fix the issue. As for the 3rd one for fixing DVD playing issues, I don't have a DVD drive.</p>
+<p>
+</p><p>The issue is now occurring&nbsp;<em>every</em> time I close WMP. Before that, it occurred sometimes. This even happens when no other thrid party software is installed.&nbsp;</p>
+<p><br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>Check these other links. <br />
+<br />
+<a href="http://go.microsoft.com/?linkid=9775982" target="_blank" rel="noreferrer nofollow">http://go.microsoft.com/?linkid=9775982</a>
+<br />
+<br />
+<a href="https://www.microsoft.com/en-us/download/details.aspx?id=48231" target="_blank" rel="noreferrer nofollow">https://www.microsoft.com/en-us/download/detail...</a>
+</blockquote>
+<p>
+</p><p>Will the second link also install WMP for non-N versions?</p>
+<p>
+</p><p><span>Question, since it's happening every time I<em> close</em> WMP, does it have something to do with cleaning temp or cache files?</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>Ok I understand, you can execute these steps to repair multiple Windows errors.
+<br />
+<br />
+Open Start, type: CMD <br />
+Right click CMD <br />
+Click Run as administrator <br />
+<br />
+Type in at the prompt OR Copy and Paste these one at a time : (Hit enter after each)
+<br />
+<br />
+Dism /Online /Cleanup-Image /CheckHealth <br />
+<br />
+Dism /Online /Cleanup-Image /ScanHealth <br />
+<br />
+Dism /Online /Cleanup-Image /RestoreHealth <br />
+<br />
+Also run the System File Checker utility: <br />
+Open Start, type: CMD <br />
+Right click CMD <br />
+Click Run as administrator <br />
+<br />
+At the Command Prompt, type: sfc /SCANNOW <br />
+This will check for any integrity violations <br />
+<br />
+Restart your system </blockquote>
+<p>
+</p><p>No storage corruption detected and no integrity violations found. Issue is still there.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>Ok I understand, these steps are to repair multiple errors in Applications
+<br />
+<br />
+1) launch powershell <br />
+2) Set-ExecutionPolicy Unrestricted <br />
+3) Get-AppXPackage -AllUsers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\AppXManifest.xml"}
+</blockquote>
+<p>
+</p><p>Ok, just finished it and rebooted. The problem is still occurring. It seems to be something with Windows itself..</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>Ok I understand, the last thing I can recommend is to repair Windows completely, check this link.
+<br />
+<br />
+<a href="https://www.intowindows.com/repair-windows-10-install-without-losing-apps-data/" target="_blank" rel="noreferrer nofollow">https://www.intowindows.com/repair-windows-10-i...</a>
+<br />
+<br />
+Standard Disclaimer: This is a non-Microsoft website. The page appears to be providing accurate, safe information. Watch out for ads on the site that may advertise products frequently classified as a PUP (Potentially Unwanted Products). Thoroughly research
+ any product advertised on the site before you decide to download and install it.
+</blockquote>
+<p>
+</p><p>Isn't this basically the same as clean installing Windows without installing any other software as I already tried?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            
+<p>
+</p><blockquote>if that's basically that, but you should try, of course downloading the Windows ISO again, sometimes it happens that the Windows is not installed properly
+</blockquote>
+<p>I'm sorry but I have actually tried clean installing twice and it didn't resolve anything. It seems that the cause lies somewhere else.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Carmack - Windows MVP 2010-2020" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GC"); this.style="display: inline-block";'
+<h3> greg carmack - windows mvp 2010-2020  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Johnny. 
+<br />
+<br />You've tried almost everything I'd suggest, but how about when you did the reinstall.  Did you happen to notice when the problem started, as it could be due to a program conflict that might arise when the program is installed.  
+<br />
+<br />It could also be because said program is starting with WIndows so establish a completely clean boot from Step 4 here:  <a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-performance/windows-10-performance-and-install-integrity/75529fd4-fac7-4653-893a-dd8cd4b4db00">http://answers.microsoft.com/en-us/windows/wiki...</a>.  After running for awhile only add back the startups you absolutely need starting with WIndows which is never any Updaters or driver software except Flash Player updater or driver software that holds specific settings you need invoked when Windows starts.  
+<br />
+<br />This also makes me suspicious that your other unsolved case could be due to something conflicting, either a setting, modifications you made, a program or even a bad driver.  What I do in cases like these that are defying troubleshooting with all known fixes is to do a diagnostics install where plenty of time is given to monitor for the issue after each group of Updates, program install, settings change, modifcations of any sort.  This should allow you to pinpoint what's causing it.  If the problem is there when you first install with nothing added, then hardware is immediately suspect, but it could be something not yet installed that's needed like an update, program patch, etc.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>Hi Johnny. <br />
+<br />
+You've tried almost everything I'd suggest, but how about when you did the reinstall. Did you happen to notice when the problem started, as it could be due to a program conflict that might arise when the program is installed.
+<br />
+<br />
+It could also be because said program is starting with WIndows so establish a completely clean boot from Step 4 here:
+<a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-performance/windows-10-performance-and-install-integrity/75529fd4-fac7-4653-893a-dd8cd4b4db00">
+http://answers.microsoft.com/en-us/windows/wiki...</a>. After running for awhile only add back the startups you absolutely need starting with WIndows which is never any Updaters or driver software except Flash Player updater or driver software that holds specific
+ settings you need invoked when Windows starts. <br />
+<br />
+This also makes me suspicious that your other unsolved case could be due to something conflicting, either a setting, modifications you made, a program or even a bad driver. What I do in cases like these that are defying troubleshooting with all known fixes
+ is to do a diagnostics install where plenty of time is given to monitor for the issue after each group of Updates, program install, settings change, modifcations of any sort. This should allow you to pinpoint what's causing it. If the problem is there when
+ you first install with nothing added, then hardware is immediately suspect, but it could be something not yet installed that's needed like an update, program patch, etc.
+</blockquote>
+<p>
+</p><p>Thanks for the extensive info.</p>
+<p>
+</p><p>A diagnostic install is indeed the best thing to figure out the cause. It's unfortunately so time consuming to clean install Windows again. The things I have installed when I tried out WMP are the latest Cumulative Update along with Chipset, Intel ME, Realtek
+ Audio and Nvidia drivers (from the manufacturer's website). I didn't have any songs copied whatsoever. I find it weird though that drivers would be able to cause such an isolated issue in WMP like this.</p>
+<p>
+</p><p style="color: rgba(0, 0, 0, 1)">I'll try Step 4 from the link and see what can make out of it.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnnygui  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>Hi Johnny. <br />
+<br />
+You've tried almost everything I'd suggest, but how about when you did the reinstall. Did you happen to notice when the problem started, as it could be due to a program conflict that might arise when the program is installed.
+<br />
+<br />
+It could also be because said program is starting with WIndows so establish a completely clean boot from Step 4 here:
+<a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-performance/windows-10-performance-and-install-integrity/75529fd4-fac7-4653-893a-dd8cd4b4db00">
+http://answers.microsoft.com/en-us/windows/wiki...</a>. After running for awhile only add back the startups you absolutely need starting with WIndows which is never any Updaters or driver software except Flash Player updater or driver software that holds specific
+ settings you need invoked when Windows starts. <br />
+<br />
+This also makes me suspicious that your other unsolved case could be due to something conflicting, either a setting, modifications you made, a program or even a bad driver. What I do in cases like these that are defying troubleshooting with all known fixes
+ is to do a diagnostics install where plenty of time is given to monitor for the issue after each group of Updates, program install, settings change, modifcations of any sort. This should allow you to pinpoint what's causing it. If the problem is there when
+ you first install with nothing added, then hardware is immediately suspect, but it could be something not yet installed that's needed like an update, program patch, etc.
+</blockquote>
+<p>
+</p><p>Ok, so I did step 4 from your link (disabling all non-Microsoft services) and WMP still crashes when I close it. Heck, I even uninstalled the Nvidia driver and WMP still has this issue.</p>
+<p>
+</p><p>I'm starting to wonder if this is a problem with Windows itself (or with one of its updates) and if someone else can try and test this out to see if it's reproducible.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Carmack - Windows MVP 2010-2020" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GC"); this.style="display: inline-block";'
+<h3> greg carmack - windows mvp 2010-2020  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I haven't seen this exact problem, but am seeing other WMP issues recently. 
+<br />
+<br />I'd run a Repair Install which reinstalls WIndows while keeping your files, programs and most settings in place,  by installing the Media Creation Tool, open the tool and choose Upgrade This PC Now.  This will solve most problems and also bring it up to the latest version which you need anyway and by the most stable method.   <a href="http://windows.microsoft.com/en-us/windows-10/media-creation-tool-install" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/windows-10/m...</a>       
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=music,_movies_&#38;_tv">music,_movies_&#38;_tv, </a> <br>
+<a href="/search?q=windows_media_player">windows_media_player, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>My ipaq won&#39;t respond after syncing - Microsoft Community</title>
+<h3> sharoncu  say:</h3>
+<h2>            My ipaq won&#39;t respond after syncing</h2>
+                    I just synced my ipaq with my computer and now the ipaq won't respond.&nbsp; I can't turn it off, I can't get out of the screen.&nbsp; I can't do anything.&nbsp; Can someone help me????<br />
+<br />
+-Sharon<br />
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            remove the battery and put it back. to determine the problem, provide as much info as you can. what is the model of your device, the os on your pc and the version of activesync? Have you recently installed any apps on your device?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sharoncu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That worked!&nbsp; Thank you!<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            you're welcome <img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2fforums.microsoft.com%2fMSDN%2femoticons%2femotion-1.gif" />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Test Tenant for O365 - Microsoft Community</title>
+<h3> abhishekroy8514  say:</h3>
+<h2>            Test Tenant for O365</h2>
+                    
+<p>We have our Production O365 up and running. We need to setup a test Tenant. We have acquired the test tenant from Microsoft as well.</p>
+<p>we have name it as XXXXTest</p>
+
+<p>Our Test AD Domain name is &nbsp;something like ABC.PQRS.com&nbsp;and UPN as NTID@&nbsp;ABC.PQRS.com</p>
+
+<p>Is there any dependency on the domain name that we register for federated domain with UPN?</p>
+<p>E.g. If we register domain as XXXXTest can we still use UPN as NTID@&nbsp;ABC.PQRS.com??</p>
+
+<p>Regards,</p>
+<p>Abhishek</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ericyang_msft6286  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Abhishek,</p>
+<p>Yes. You can add the custom domain to Office 365 later and then create new users on that domain or change existing on to that domain. For detailed steps, you can refer to:
+<a href="https://support.office.com/en-us/article/Add-your-users-and-domain-to-Office-365-6383f56d-3d09-4dcb-9b41-b5f5a5efd611" target="_blank" rel="noreferrer nofollow">
+Add your users and domain to Office 365</a>.</p>
+<p>Thanks,<br />
+Eric Yang</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhishekroy8514  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>ok So if I understand correctly My tenant name is TPAKTEST.onmicrosoft that come and I can add my domain ABC.PQRS.com as the custom domain to it.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ericyang_msft6286  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Abhishek,</p>
+<p>Yes, it is correct. Note that you need to add the root domain first before adding a sub domain.</p>
+<p>Thanks,</p>
+<p>Eric Yang</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jaredcheng_msft1034  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Abhishek,<br />
+&nbsp;<br />
+Have you added the test domain successfully? Can you share any update with us? <br />
+&nbsp;<br />
+Regards,<br />
+Jared</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>My antivirus software is blocking Outlook.com. - Microsoft Community</title>
+<h3> oscarfc  say:</h3>
+<h2>            My antivirus software is blocking Outlook.com.</h2>
+                    <p>Whenever I try to open my email (was hotmail now outlook) my anti virus comes up with several threat warnings and I have to close the email.&nbsp; Is there an issue with outlook at the moment?</p>
+<p>&nbsp;</p>
+<p>Original Title: Outlook email threat warning</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lf79  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am having the same problem!
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hello OscarFC and LF79,</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">Welcome to the Microsoft Community Forum and it's a pleasure assisting you both today with your concern regarding getting warnings from your antivirus softwares when accessing Outlook.com.</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span style="color: rgba(0, 0, 0, 1)">Please provide us the antivirus software that you are using and a
+<font color="#333333">This will help&nbsp;facilitate our actions regarding&nbsp;the&nbsp;issue. </font>
+</span></span><span style="color: rgba(0, 0, 0, 1)"><span style="color: rgba(0, 0, 0, 1)">Just click on<strong><i>"You have a private reply to this message"</i></strong> link just above your post to view the message.</span></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span style="color: rgba(0, 0, 0, 1)">You have to be<span style="color: rgba(51, 51, 51, 1)"><font> signed in to this website in order to see the Private Message tab. We need you to reply back to this post if you've already provided the information
+ on the private data area. </font></span></span></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">In the meantime, please add Outlook.com to the list of safe domains for your antivirus software. To learn how to do this, refer to the documentation of your security tools and refer to your antivirus software's support. They are
+ also the<span style="color: rgba(0, 0, 0, 1)">&nbsp;resource/people that could best help you.</span></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span style="color: rgba(0, 0, 0, 1)">Your cooperation is highly appreciated regarding this matter and I'm looking forward to your responses.</span></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><span style="color: rgba(0, 0, 0, 1)">Thank you.&nbsp;</span></span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><br />
+<br />
+</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook junk email settings - Microsoft Community</title>
+<h3> me_5555  say:</h3>
+<h2>            Outlook junk email settings</h2>
+                    <p>As a company we're looking to utilize Exchange Online Protection to detect spam.&nbsp; I see there are some per-user settings available in Outlook that controls what level of detection is implemented.&nbsp; What settings take precedence between the global EOP spam
+ settings and the Outlook user configurable ones?&nbsp;&nbsp; </p>
+<p>
+</p><p>Additionally, can you direct me to a support page that details what these Outlook settings do?&nbsp; I've reviewed this page, but it is not clear what the impact is of changing these settings when using EOP.</p>
+<p>https://support.office.com/en-us/article/Change-the-level-of-protection-in-the-Junk-Email-Filter-ef21aec7-6eb5-4457-8b94-93f13fc275cb?CorrelationId=7d183b1a-4092-4c80-9508-0d2dfb199435&amp;ui=en-US&amp;rs=en-US&amp;ad=US&amp;ocmsassetID=HA102748928</p>
+<p>
+</p><p>I also realize we can use a GPO to disable the users' ability to change these options, but before I do that I would like to better understand how changing these settings impact email handling when also using EOP.</p>
+<p>
+</p><p>Regards, ME.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Monique Tang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "MT"); this.style="display: inline-block";'
+<h3> monique tang msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi ME,</span></p>
+<p>
+</p><p><span>The protection level is set to<span>&nbsp;</span></span><span>Low</span><span><span>&nbsp;</span>to catch only the most obvious spam emails.</span><span>
+</span><span>Low level is recommended if you receive quite few unsolicited emails.</span></p>
+<p>
+</p><p><span>Setting protection level to<span>&nbsp;</span></span><span>High</span><span><span>&nbsp;</span>is often considered the best practice to obtain the maximum protection. However, along with spam it may also misidentify legitimate messages and move them to Junk.
+ So, if you opt for the High level, don't forget to periodically review your Junk mail folder.</span></p>
+<p>
+</p><p><span>Outlook Junk Email Filter protects against much of the spam sent to you, no filter is smart enough to catch every unsolicited email, even if set to the high level.</span></p>
+<p>
+</p><p><span>Regarding the deeper information which is not officially released, </span>
+<span>it involves confidential information and we cannot deliver the information which is not released publicly. We
+</span><span>truly appreciate your kind understanding</span><span>.</span></p>
+<p>
+</p><p><span>If you have any other requirements, please let us know. We are glad to assist you further.</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Monique</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Hey Cortana&#34; - Not working on build 10162 - Microsoft Community</title>
+<h3> a japanese dream  say:</h3>
+<h2>            &#34;Hey Cortana&#34; - Not working on build 10162</h2>
+                    She listens to all my questions and commands once I tap on the mic icon however she will not activate by voice.&nbsp; I have the proper "optional addons" installed and the option for "Hey Cortana" is in fact on.&nbsp; So I'm not sure what else to try and how to
+ get her to respond to this command.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you for posting your query on Microsoft Community.</span></p>
+<p>
+</p><p><span>From issue description, I understand that&nbsp;you are facing issues with using Cortana. we are sorry for the inconvenience caused to you. We will help you to resolve the issue.
+</span></p>
+<p>
+</p><p><span>First of all, I suggest you to enable Cortana on the computer. You can refer to the suggestion by john Rubdy from the following link and check if it helps.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><a href="http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_cortana/how-to-enable-cortana-in-build-10041-in-chinese/4e79ee06-dd46-48b6-937c-5dff966248b6?tm=1427148740859">http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_cortana/how-to-enable-cortana-in-build-10041-in-chinese/4e79ee06-dd46-48b6-937c-5dff966248b6?tm=1427148740859</a></span></p>
+<p>
+</p><p><span>You&nbsp;can also refer to the&nbsp;suggestion by&nbsp;Greg81. for more information.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><a href="http://answers.microsoft.com/en-us/winphone/forum/wp8-wpcortana/cortana-not-responding-to-voice-commands/936e965b-5304-4dc4-971b-42920939a94a">http://answers.microsoft.com/en-us/winphone/forum/wp8-wpcortana/cortana-not-responding-to-voice-commands/936e965b-5304-4dc4-971b-42920939a94a</a></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>If still the issue persist then update to the latest build 10166.</span></p>
+<p><span>Hope this helps.</span></p>
+<p>
+</p><p><span>Please post back with the status of the issue and we will be glad to assist you further.
+</span></p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=cortana_and_search">cortana_and_search, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote ipad 2 error codes. crashing within minutes of opening. - Microsoft Community</title>
+<h3> krasdmd  say:</h3>
+<h2>            OneNote ipad 2 error codes. crashing within minutes of opening. Running latests version</h2>
+                    <p>Error code: 0xE4010644 - can't sync section: Onenote_recyclebin/deleted pages</p>
+<p>
+</p><p>Error code: 0xE0000007</p>
+<p>
+</p><p>
+</p><p>Using the latest version of OneNote (16.7), on an Ipad pro running the latest operating system update(11.1.2).&nbsp;</p>
+<p>Tried signing out and back in. Tried killing the app and restarting it. Tried un-installing the app and re-installing.&nbsp;</p>
+<p>
+</p><p>Once I open OneNote on my Ipad, it immediately begins to sync as it should. Within a minute or two the words across the top will change to could not sync, the screen will flicker very quickly, then the app will crash. It is making it so OneNote is unusable.&nbsp;</p>
+<p>
+</p><p>Anyone run into this problem and have a solution?</p>
+<p>
+</p><p>Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> krasdmd  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Also, even though the app is saying couldn't sync. It is still syncing my notes to my Mac.&nbsp;</p>
+<p><br />
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dann ave  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>We would like to know more about what happened. Kindly answer the following questions:</p>
+<p>
+</p><ul>
+<li>When did this concern started to happen?</li><li>Were there any updates or changes on the affected device before this started to happen?</li><li>Are you able to access OneNote.com through the device's mobile browser?</li><li>Have you performed any troubleshooting steps?</li></ul>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 calendar and contacts went missing - Microsoft Community</title>
+<h3> kathy and jon carver  say:</h3>
+<h2>            Outlook 2016 calendar and contacts went missing</h2>
+                    <p>I recently upgraded to windows 10 and my email is IMAP.&nbsp; I had issues with syncronization with my Internet provider (TWC).&nbsp; After working with Microsoft Support and TWC support, all seemed well, but now my contacts and calendar are both empty.&nbsp; My emails
+ and folders are all still there, and after working with MS support, they showed me the contacts were visible, but unfortunately after working with TWC I did not verify same.</p>
+<p>
+</p><p>I am resigned that I have simply lost these items and need to manually recreate since I cannot find a backup anywhere.&nbsp; My real questions are:</p>
+<p>1) what could have gone wrong to lose just calendar entries and contacts, but not email</p>
+<p>2) how can I insure my outlook items are backed up in the future</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Depends what support did with the mail account</p>
+<p>In an IMAP mail account, Contacts/Calendar entries are stored in the IMAP data file and they show in Outlook as "This PC only" which means if the mail account is reset they are all lost.</p>
+<p><a href="https://www.msoutlook.info/question/754" target="_blank" rel="noreferrer nofollow">https://www.msoutlook.info/question/754</a></p>
+<p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Quick Access Toolbar Styles Option - Microsoft Community</title>
+<h3> caremedicmac  say:</h3>
+<h2>            Quick Access Toolbar Styles Option</h2>
+                    I added the Styles option to the Quick Access Toolbar. How can I remove styles from this list?&nbsp;Several styles I do not recognize or want are listed (e.g., Colorful Grid, Colorful List, Light List). These styles do not appear in the list of styles for the
+ document&nbsp;that I access&nbsp;through the Styles option on the Ribbon.&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span><br />
+The <strong>Style</strong> option that you are referring to in the quick access toolbar will show all the styles available in word 2007, which will include a combination of
+<strong>Styles available in Home Tab</strong> and <strong>Table Styles available in The Design Tab</strong>.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>To view the rest of the styles that show in quick access tool bar,
+<strong>draw a table</strong> and <strong>place the insertion point within the table</strong>. The
+<strong>Design Tab</strong> Shows up in the <strong>Ribbon</strong> and you will find the Styles that referring to in
+<strong>Table Style Options</strong>. To Modify Table Style right click the style and modify it.</span></p>
+<hr />
+Girish M,
+Microsoft Answers Support Engineer.
+<br />
+<div>• We appreciate your participation in MS Forums, Help us understand your needs better. To share your valuable Feedback please Click
+<u><a href="http://social.answers.microsoft.com/Forums/en-US/answersfeedback/threads/" target="_blank" rel="noreferrer nofollow">here</a></u>.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I am using Outlook 2007, getting an error 0X8007000E &#34;Out of - Microsoft Community</title>
+<h3> stanlewy  say:</h3>
+<h2>            I am using Outlook 2007, getting an error 0X8007000E &#34;Out of Memory or system resources&#34;.  C</h2>
+                    <span>
+                    <span>
+<p><strong>Remember - This is a public forum so never post private information such as email or phone numbers!</strong></p>
+<p>Ideas:</p>
+<ul>
+<li>Programs you are having problems with </li><li>Error messages </li><li>Recent changes you made to your computer </li><li>What you have already tried to fix the problem </li></ul>
+</span>I tried running Outlook Diagnostics and there were no issues either memory or otherwise. Then I closed all but system files and still it would not load either the Contacts or the Calender. I have two personal system files, Outlook1 and Outlook1backup.
+ I dont know how to load the backup file. I suspect that the Outlook1 file has become corrupted, what can I do?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Doing a google search on 0x8007000E will return a large number of results.</p>
+<p>Two of those that may be relevant to your case are:</p>
+<p>Office &amp; productivity software forum: Outlook 2007 error 0x8007000e out of memory or system resour<br />
+<a href="http://forums.cnet.com/7723-6129_102-347850.html" target="_blank" rel="noreferrer nofollow">http://forums.cnet.com/7723-6129_102-347850.html</a></p>
+<p>"out of memory" error (0x8007000E) when sending e-mail<br />
+<a href="http://www.office-outlook.com/outlook-forum/index.php/m/191499/#msg_191499" target="_blank" rel="noreferrer nofollow">http://www.office-outlook.com/outlook-forum/index.php/m/191499/#msg_191499</a></p>
+<p>In both cases the resolution was to recreate the profile but there are other causes for this error.</p>
+<hr />
+Karl Timmermans - The Claxton Group<br />
+<a href="http://www.contactgenie.com/blog/" target="_blank" rel="noreferrer nofollow">Outlook Import/Export Hints/Tips</a><br />
+Contact import/export/data management tools for Outlook '2000/2010 - <a href="http://www.contactgenie.com" target="_blank" rel="noreferrer nofollow">
+ContactGenie.com</a>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

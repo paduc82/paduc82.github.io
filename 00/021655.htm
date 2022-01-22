@@ -1,0 +1,2217 @@
+    <title>Check box to populate order sub form - Microsoft Community</title>
+<h3> tommy gunub  say:</h3>
+<h2>            Check box to populate order sub form</h2>
+                    <p>
+I have Access 2010. I have developed order forms that have a Form for vendor info, then a subform for order details. The Order detail subform is linked to a product table. The subform is a table from which there's a dropdown to select &nbsp;product and a field to
+ enter a quantity. This is current state.&nbsp;</p>
+<p>
+<br />
+I would like to develop something,whether that be another subform or an addition to the existing ome , that would populate the products field of subform using check boxes with the most frequently orders products listed and a default to a quantity of 1, Again
+ what is checked would populate the subform with the product checked and default quantity of 1. The original subform would still be usable with the drop down for less frequently ordered products. . It would speed up data entry dramatically. But I"m not sure
+ if this is possible, much less where to start. Advice?<br />
+</p>
+<p>
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I would do this differently. I would set Rowsource of the combobox on your subform to a filtered list of the most commonly ordered products. And set the Default value of the Quantity control to 1. I would then have an unbound checkbox on the form to select
+ All. This would modify the RowSource to remove the filter.&nbsp;</p>
+<p>
+</p><p>So the RowSource might look like this:</p>
+<p>
+</p><p>SELECT ProductID, ProductName FROM tblProducts WHERE Common = True ORDER BY ProductName;</p>
+<p>
+</p><p>Then in the After Update event of that checkbox have code like:</p>
+<p>
+</p><p>If Me.chkAll Then</p>
+<p>&nbsp; &nbsp; &nbsp;Me.cboProduct.RowSource = "SELECT ProductID, ProductName FROM tblProducts ORDER BY ProductName;"</p>
+<p>End If</p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tom van Stiphout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "TV"); this.style="display: inline-block";'
+<h3> tom van stiphout  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Rather than checkboxes I would use buttons, per best practices of using the appropriate control for the indended action.</p>
+<p>In a fancy system which products the buttons would be about is driven by actual sales, e.g. the top 6 products on the 6 buttons. For now we will hard-code with some flexibility in mind.</p>
+<p>When clicking a button what will happen is that you run a parameterized&nbsp;Append query to add a row to OrderDetails, then Requery the subform so the new item appears.</p>
+<p>
+</p><p>(of course I will have to guess at your exact object names)</p>
+<p>The append query will be something like:</p>
+<p>(this is from Northwind; I don't advocate using spaces or other funny characters in object names - they may cause notational difficulties down the road)</p>
+<p>INSERT INTO [Order Details] ( [Order ID], [Product ID], Quantity )<br />
+SELECT [parOrderID] AS Expr1, [parProductID] AS Expr2, 1 AS Expr3;</p>
+<p>
+</p><p>To run it, use:</p>
+<p>dim qd as dao.querydef</p>
+<p>set qd=currentdb.querydefs("myQuery")</p>
+<p>qd!parOrderID=Me.OrderID</p>
+<p>qd!parProductId=123&nbsp;&nbsp; 'Whatever number goes with this button</p>
+<p>qd.execute dbFailOnError</p>
+<p>
+</p><p>To refresh the subform is a one-liner:</p>
+<p>Me.mySubformControl.Requery</p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Tom's suggestion is very workable. Not my preference (I would prefer to preserve screen real estate) but workable. A lot of these interface design issues are personal preference. But he makes one point that enhances my suggestion. I was assuming that the
+ most common products were a set grouping. But lets say you want those products to be your top sellers. So using a RowSource like:</p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">SELECT TOP 6 ProductID, ProductName FROM qrySales ORDER BY TotalSales, Productname;</span></p>
+<p>where qrySales is a query that calculates total sales.</p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Makes the combobox dynamic to always show your most popular products. You can adjust the TOP predicate as needed. TOP 10 will show only the top 10 products. Or you can use TOP 10% to
+ limit it to the top 10% of products.</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            First define <em>'most frequently ordered'</em>.&nbsp; If you simply want to select these manually then add a Boolean (Yes/No) column such as&nbsp; FrequentPurchase to the Orders table.&nbsp; Using Northwind as an example (note Tom's caveat about Northwind's bad object
+ naming) a query would be like this:<br />
+<br />
+SELECT [Product ID], [Product Name]<br />
+FROM [Order Details] INNER JOIN Products<br />
+ON [Order Details].[Product ID] = Products.ID<br />
+WHERE FrequentPurchase<br />
+ORDER BY [Product Name];<br />
+<br />
+If you mean the product with the highest number of orders irrespective of quantity, the you can return these with a query like this:<br />
+<br />
+SELECT TOP 6 [Product ID], [Product Name]<br />
+FROM [Order Details] INNER JOIN Products<br />
+ON [Order Details].[Product ID] = Products.ID<br />
+GROUP BY [Product ID],&nbsp; [Product Name]<br />
+ORDER BY COUNT(*) DESC;<br />
+<br />
+If you mean the products with the highest total quantities ordered, with a query like this:<br />
+<br />
+SELECT TOP 6 [Product ID], [Product Name]<br />
+FROM [Order Details] INNER JOIN Products<br />
+ON [Order Details].[Product ID] = Products.ID<br />
+GROUP BY [Product ID],&nbsp; [Product Name]<br />
+ORDER BY SUM(Quantity) DESC;<br />
+<br />
+In the latter two cases you might want it to be the highest COUNTs or SUMs in relation to the current customer's orders only, in which case you'd restrict the queries by a WHERE clause which references the current CustomerID in the parent form as a parameter.<br />
+<br />
+Whichever of these is appropriate one way of selecting them would be to pop up a dialogue form from a button on the main form.&nbsp; The dialogue form would contain a multi-select list box based on one of the above queries, in which as few or as many of the products
+ can be selected.&nbsp; In the code behind a Confirm button on the form you'd loop through the list box's ItemsSelected collection and, at each iteration of the loop, build and execute an INSERT INTO statement to insert a row into OrderDetails, inserting the selected
+ ProductID, the current CustomerID and 1 as the Quantity.&nbsp; Then requery the subform to show the new rows, and close the dialogue form.<br />
+<br />
+Note BTW that TOP 6 will return more than 10 if the COUNT or SUM operations return two or more rows which tie for 6th place.<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>On checking msconfig startup entries, have found luaRT, what is - Microsoft Community</title>
+<h3> tricky dicky uk  say:</h3>
+<h2>            On checking msconfig startup entries, have found luaRT, what is it&#63;</h2>
+                    <p><em>Original Title: msconfig startup </em></p>
+<p>
+</p><p>On checking msconfig startup entries, have just found luaRT, unknown publisher. HKCU\software\microsoft\windows\currentversion\run.</p>
+<p>Has anybody got any idea what this is, where its come from and if I should get rid of it. Only thing that I can really find on google is that it ? could be ad-ware but essentials hasn't found anything on doing a full scan</p>
+<p>
+</p><p>
+</p><p><em>&lt;Moved from Windows\Security Privacy &amp; Accounts&gt;</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bill Smithers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> bill smithers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>&nbsp;</p>
+<p>Here is more about PUPs:</p>
+<p>&nbsp;</p>
+<p><a href="http://malwaretips.com/blogs/pup-optional-luart-a-removal/" target="_blank" rel="noreferrer nofollow">http://malwaretips.com/blogs/pup-optional-luart-a-removal/</a></p>
+<p>&nbsp;</p>
+<p>_____________________________________</p>
+<p>&nbsp;</p>
+<p>"How to use MSCONFIG in Windows Vista"</p>
+<p><a href="http://www.netsquirrel.com/msconfig/msconfig_vista.html" target="_blank" rel="noreferrer nofollow"><font color="#0072c6">http://www.netsquirrel.com/msconfig/msconfig_vista.html</font></a></p>
+<p>&nbsp;</p>
+<p>You can also use this free Programs which gives a wider rangr to&nbsp;take Entries out of Startup:</p>
+<p>"Autoruns for Windows v11.32"</p>
+<p><a href="http://technet.microsoft.com/en-us/sysinternals/bb963902.aspx" target="_blank" rel="noreferrer nofollow"><font color="#0072c6">http://technet.microsoft.com/en-us/sysinternals/bb963902.aspx</font></a></p>
+<p>&nbsp;</p>
+<p>Cheers.</p>
+<p>.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_vista">windows_vista, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 build 9926&#58; Start Menu not working - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Windows 10 build 9926&#58; Start Menu not working</h2>
+                    <p>Hi,</p>
+<p>&nbsp;&nbsp; I am running Windows 10 x64 Build 9926. When I click on the Windows button, I cannot see Start Menu. This has been happening from 2 days.&nbsp; Please help me with this problem. I also have issues with Windows Store apps in the same computer. I posted it in
+ Microsoft Community at <a href="http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_store/unable-to-uninstall-windows-10-apps-in-the-build/bb48fcfc-8c9e-4b25-8be2-1c368ff85196" title="Unable to uninstall Windows 10 apps in the build 9926.">
+http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_store/unable-to-uninstall-windows-10-apps-in-the-build/bb48fcfc-8c9e-4b25-8be2-1c368ff85196</a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>We appreciate your interest in Windows 10 Technical Preview.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>This issue can be fixed by Windows Updates. Please refer to the suggestions by Sharath Srinivasa replied
+</span></p>
+<p><span>On January 23, 2015 in the link given below.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span><a href="http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_search/start-menu-doesnt-appear/a7c56613-277c-4993-bb74-08650dce7b21"><span style="color: rgba(0, 102, 204, 1)">http://answers.microsoft.com/en-us/insider/forum/insider_wintp-insider_search/start-menu-doesnt-appear/a7c56613-277c-4993-bb74-08650dce7b21</span></a>
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Hope this information is helpful. Feel free to get back to us for any further assistance.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=personalization_and_ease_of_access">personalization_and_ease_of_access, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Find the missing contacts - Microsoft Community</title>
+<h3> lo_y_h  say:</h3>
+<h2>            Find the missing contacts</h2>
+                    <p>
+</p><p>Hello,</p>
+<p>Since we can't log in Skype with Facebook, I can't find the contacts in that account.</p>
+<p>How can I get the contact information in that account?</p>
+<p>I want to add all of the contact people in my new account.</p>
+<p>
+</p><p>Besides, what is the outcome about the account which is logged with Facebook?</p>
+<p>Can I ask for deleting all the record on the net? Or it will alive till the end.&nbsp;</p>
+<p>
+</p><p>&nbsp;<br />
+</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> van_m  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span><span>Hi
+</span><a href="https://answers.microsoft.com/en-us/profile/44128059-e597-4a95-9632-04ab8929f0b3" title="Lo_Y_H"><span style="color: rgba(5, 99, 193, 1)">Lo_Y_H</span></a><span>,</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Unfortunately, there’s no option to check on the contacts in the account created using Facebook. You will need to manually search and add the contacts
+ to the newly created account. Accounts created using Facebook credentials, will be deactivated in time. There’s just no exact time frame on when will it be deleted.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Hope this information helps.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Thanks.</span></span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=account_and_paid_services">account_and_paid_services, </a> <br>
+<a href="/search?q=account_setup_and_maintenance">account_setup_and_maintenance, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 2013 won&#39;t run. - Microsoft Community</title>
+<h3> veldom  say:</h3>
+<h2>            Office 2013 won&#39;t run.</h2>
+                    <p>I have a HUP copy of office 2013 installed on my win8 PC currently none of the suit of office applications will open, nothing happens when I click to run any of them. If I try to open a document that I have already created I get an error message tell me
+ that there was a problem while sending the command to the program. </p>
+<p>&nbsp;</p>
+<p>I tried both the online &amp; offline repair options &amp; neither worked. Normally I would uninstall &amp; reinstall at this point but being a HUP copy it was a digital download so I have no physical copy to reinstall it from. Any idea how I can get it to work again?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Srinivasu Guntimadugu" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SG"); this.style="display: inline-block";'
+<h3> srinivasu guntimadugu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hi,</font></font></font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>Thank you for choosing Microsoft Office Community and thanks for providing us an opportunity to assist you.
+</font></font></font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>It looks like Office 2013 has been corrupted due to which you are unable to access any Office applications in spite of performing Quick and online repair.
+</font></font></font></p>
+<p>&nbsp;</p>
+<p><font color="#000000">As you have purchased Office 2013 HUP online, you may login to
+</font><a href="http://www.office.com/myaccount" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">www.office.com/myaccount</font></a><font><font><font color="#000000"> with the same Live ID which was used to purchase Office 2013 HUP and install it.
+</font></font></font></p>
+<p>&nbsp;</p>
+<p><font color="#000000">Incase if you do not have any information on </font><a href="http://www.office.com/myaccount" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">www.office.com/myaccount</font></a><font><font color="#000000"><font>
+<span>&nbsp;</span>or the option to install Office 2013 Pro plus HUP copy, contact the Benefit Administrator for more help.
+<br />
+The Benefit Administrator is the admin of your company who places bulk order of Office 2013 Pro plus HUP for the employees in an organization.</font></font></font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>Let us follow the steps to re-install Office 2013 HUP.
+</font></font></font></p>
+<p>&nbsp;</p>
+<p><font color="#000000"><font><font><b>Step 1</b>:<br />
+Follow the <b>Method 1</b> to <span>remove any traces of </span><b>Office 2013 installation files
+</b>using the <b>Microsoft Troubleshooter </b>from the following article on your home computer</font></font></font><b><font color="#000000">:<br />
+</font></b><a href="http://support.microsoft.com/kb/2739501" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://support.microsoft.com/kb/2739501</font></a></p>
+<p>&nbsp;</p>
+<p><font color="#000000"><font><font><b>Step 2</b>:<br />
+Restart the computer in Clean Boot and install Office 2013. Follow the steps:<br />
+</font></font></font><a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://support.microsoft.com/kb/929135</font></a></p>
+<p>&nbsp;</p>
+<p><font><font><font color="#000000"><b>Note</b>: After you have finished troubleshooting in clean boot, ensure you restart the computer in normal mode.</font></font></font></p>
+<p>&nbsp;</p>
+<p><font color="#000000">Login to </font><a href="http://www.office.com/myaccount" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">www.office.com/myaccount</font></a><font><font><font color="#000000"> with the same Live ID which was used to purchase Office 2013 Home
+ &amp; Business and click <b>Install Office</b>.</font></font></font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>I hope the steps provided helps in installing Office 2013 HUP. If the issue persists, reply with additional information so that we can proceed further.</font></font></font></p>
+<p>&nbsp;</p>
+<p><font><font color="#000000"><font>Thank You</font></font></font></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Issue trying to install January build of Office 2016 - Microsoft Community</title>
+<h3> danxav  say:</h3>
+<h2>            Issue trying to install January build of Office 2016</h2>
+                    <p>Hi </p>
+<p>
+</p><p>I am having an issue trying to install Office 2016 c2r. Earlier today I downloaded all the files using the deployment tools etc.
+</p>
+<p>All the Office 2016 (16.0.6366.2056) files seemed to download ok, however when I ran the setup.exe /configure configuration.xml something started but then a window pops up saying "Something went wrong. Sorry, we ran into a problem" Error Code: 30068-4 (1715)</p>
+<p>I have checked and double checked the xml along with my work colleague and we still cannot get it to work.</p>
+<span>
+<span>
+<p>
+
+</p><p>I thought maybe the files were corrupted so I started to download them all again...however the files downloaded show build version 16.0.6001.1054!!</p>
+<p>Not sure what is going on. Is there an issue in the backend MS side?</p>
+<p>
+</p><p>Please help.</p>
+<p>
+</p><p>Thanks</p>
+<p>Br.</p>
+<p>Dan</p>
+<p /></span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>If using the deployment tool re-post to MS Technet forums</p>
+<p>Current 2016 branch is 16.0.6366.2036</p>
+<p>And if 2016 installed, in say Word&gt;File&gt;Account&gt;Office Update Options&gt;Update Now, and see where that gets you</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>System Resource Exceeded&#34; error message when you perform a query - Microsoft Community</title>
+<h3> jobush  say:</h3>
+<h2>            System Resource Exceeded&#34; error message when you perform a query in Access 2010</h2>
+                    <p>Hi I am receiving this error "System Resource Exceeded" when open a query, the table for this query in the BE opens fast and is ok. But in the query and form it will not open..</p>
+<p>
+</p><p>Can anyone help please.</p>
+<p>
+</p><p>Kind regards</p>
+<p>
+</p><p>Jo</p>
+<p>
+</p><p><span style="font-style: italic">&lt;The thread has been moved to the correct category by forum moderator&gt;</span></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gina Whipp" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GW"); this.style="display: inline-block";'
+<h3> gina whipp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Please post the SQL for the query?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jobush  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Gina</p>
+<p>Thank you for your reply I have been working on the table adding zero's in the empty fields because of another query I was doing didn't like the blanks, but since then I am having this issue, not sure if its related or not.</p>
+<p>Also there are 23974 records in the table but the query only shows 21205 records? I cannot see that I have requested to not show certain items so I dont see why there is a shortfall of records showing in the query?</p>
+<p>
+</p><p>Here is the SQL:</p>
+<p>SELECT OuterRingData.OuterID, OuterRingData.ODType, OuterRingData.InspectedBy, OuterRingData.Capabilty, OuterRingData.Channel, OuterRingData.[ODDate/Time], OuterRingData.[Ae'-Ae'], OuterRingData.Vre, OuterRingData.[Rade(1)], OuterRingData.[Rade(2)], OuterRingData.[Rade(3)],
+ OuterRingData.[Rade(4)], OuterRingData.[Rade(5)], OuterRingData.[Rade(6)], OuterRingData.VDe, OuterRingData.V3De, OuterRingData.TSLL, OuterRingData.TSLM, OuterRingData.TSLH, OuterRingData.TSLMax, OuterRingData.Rm1, OuterRingData.Rm2, ([Rade(1)]+[Rade(2)]+[Rade(3)]+[Rade(4)]+[Rade(5)]+[Rade(6)])/6
+ AS AvgRade, IIf([Vre]=0,0,IIf([Vre]&lt;=[TVreMax],1,0)) AS VreResult, IIf([ODType]="BS2-6020",1,IIf([AvgRade]&lt;=[CRadeMax] And [AvgRade]&gt;=[CRadeMin],1,0)) AS RadeResult, IIf([VreResult]=1,IIf([RadeResult]=1,IIf([TICKVDe]=1,IIf([TickV3De]=1,IIf([TickTSLL]=1,IIf([TickTSLM]=1,IIf([TickTSLH]=1,IIf([TickTSLMax]=1,IIf([TickVEe]=1,IIf([TickAe'-Ae']=1,IIf([TickRm1]=1,"APPROVED","NOT
+ APPROVED"))))))))))) AS Result, OuterRingData.[Station/Mc], OuterRingData.Vre2, OuterRingData.[2VEe], OuterRingData.[2Ae'-Ae'], OuterRingData.[Rade2(1)], OuterRingData.[Rade2(2)], OuterRingData.[Rade2(3)], OuterRingData.[Rade2(4)], OuterRingData.[Rade2(6)],
+ OuterRingData.[Rade2(5)], OuterRingData.[2VDe], OuterRingData.[2V3De], OuterRingData.[2TSLL], OuterRingData.[2TSLM], OuterRingData.[2TSLH], OuterRingData.[2TSLMax], ([Rade2(1)]+[Rade2(2)]+[Rade2(3)]+[Rade2(4)]+[Rade2(5)]+[Rade2(6)])/6 AS AvgRade2, IIf([ODType]="BS2-6020",1,IIf([Rade2(1)]=0,0,IIf([AvgRade2]&lt;=[CRadeMax]
+ And [AvgRade2]&gt;=[CRadeMin],1,0))) AS RadeResult2, IIf([Vre2]=0,0,IIf([Vre2]&lt;=[TVreMax],1,0)) AS Vre2Result, IIf([Rade2(1)]=0,"2nd Ring data required",IIf([Vre2Result]=1,IIf([RadeResult2]=1,IIf([Tick2VDe]=1,IIf([Tick2V3De]=1,IIf([Tick2TSLL]=1,IIf([Tick2TSLM]=1,IIf([Tick2TSLH]=1,IIf([Tick2TSLMax]=1,IIf([Tick2VEe]=1,IIf([Tick2Ae'-Ae']=1,IIf([TickRm2]=1,"APPROVED","NOT
+ APPROVED")))))))))))) AS Result2, IIf([Result] And [Result2]="Approved","ROUTINE APPROVED","STOP PROCESS") AS RingAppr, IIf([CheckChoice]=1 And [RingAppr]="Routine Approved","FIRST OFF APPROVED",[Ringappr]) AS Stamp, Date() AS TodaysDate, IIf([TodaysDate]-[ODDate/Time]&gt;10,1,0)
+ AS ExpireDate, IIf(IsNull([Result2]),"NOT APPROVED",[Result2]) AS Resultb, IIf(IsNull([Result]),"NOT APPROVED",[Result]) AS Resulta, IIf([OuterID]&lt;28140,1,IIf([Channel]&lt;&gt;2,1,IIf([Rm1]&lt;=[CRM],1,0))) AS TickRm1, IIf([OuterID]&lt;28140,1,IIf([Channel]&lt;&gt;2,1,IIf([Rm2]&lt;=[CRM],1,0)))
+ AS TickRm2, IIf([VDe]=0,0,IIf([VDe]&lt;=[TVDe],1,0)) AS TickVDe, IIf([V3De]=0,0,IIf([V3De]&lt;=[COV3DmAX],1,0)) AS TickV3De, IIf([TSLL]=0,0,IIf([TSLL]&lt;=[TTSL L],1,0)) AS TickTSLL, IIf([ODType]="BS2-6020",1,IIf([TSLM]=0,0,IIf([TSLM]&lt;=[TTSL M],1,0))) AS TickTSLM,
+ IIf([ODType]="BS2-6020",1,IIf([TSLH]=0,0,IIf([TSLH]&lt;=[TTSL H],1,0))) AS TickTSLH, IIf([ODType]="BS2-6020",1,IIf([TSLMax]=0,0,IIf([TSLMax]&lt;=[TTSL Iw],1,0))) AS TickTSLMax, IIf([2VDe]=0,0,IIf([2VDe]&lt;=[TVDe],1,0)) AS Tick2VDe, IIf([2V3De]=0,0,IIf([2V3De]&lt;=[COV3DmAX],1,0))
+ AS Tick2V3De, IIf([2TSLL]=0,0,IIf([2TSLL]&lt;=[TTSL L],1,0)) AS Tick2TSLL, IIf([ODType]="BS2-6020",1,IIf([2TSLM]=0,0,IIf([2TSLM]&lt;=[TTSL M],1,0))) AS Tick2TSLM, IIf([ODType]="BS2-6020",1,IIf([2TSLH]=0,0,IIf([2TSLH]&lt;=[TTSL H],1,0))) AS Tick2TSLH, IIf([ODType]="BS2-6020",1,IIf([2TSLMax]=0,0,IIf([2TSLMax]&lt;=[TTSL
+ Iw],1,0))) AS Tick2TSLMax, IIf([Rade(1)] And [Rade2(1)]&gt;0,1,0) AS 2RingChk, IIf([VEe]=0," ",IIf([VEe]&lt;=[TVEe],1,0)) AS TickVEe, IIf([2VEe]=0," ",IIf([2VEe]&lt;=[TVEe],1,0)) AS Tick2VEe, IIf([ODType]="BS2-2217-2CS/VQ666",1,IIf([Ae'-Ae']&lt;=[TAe'-Ae'],1,0)) AS [TickAe'-Ae'],
+ IIf([ODType]="BS2-2217-2CS/VQ666",1,IIf([2Ae'-Ae']&lt;=[TAe'-Ae'],1,0)) AS [Tick2Ae'-Ae'], IIf([Status]&gt;0,1,IIf([MWA D]&lt;=[MWA TSLDe MAX] And [MWA D]&gt;=[mwa tslde min],1,0)) AS TickMWA, OuterRingData.VEe, OuterRingData.CheckChoice, OuterRingData.Variant, OuterRingData.[PGI
+ No], OuterRingData.Comment, OuterRingData.[MWA D], Tolerances.SFRadeMin, Tolerances.SFRadeMax, Tolerances.TVreMin, Tolerances.TVreMax, Tolerances.TVDe, Tolerances.TV3De, Tolerances.[TTSL L], Tolerances.[TTSL M], Tolerances.[TTSL H], Tolerances.[TTSL Iw], Tolerances.TVEe,
+ Tolerances.[TAe'-Ae'], Tolerances.[TAe'-Ae'Min], Tolerances.[MWA TSLDe Min], Tolerances.[MWA TSLDe Max], OuterRingData.Status, Tolerances.CRadeMax, Tolerances.CRadeMin, [Concession1]+[Concession2] AS Concession, IIf([AvgRade]&gt;[SFRadeMax] And [AvgRade]&lt;=[CRadeMAX],1,IIf([AvgRade]&lt;[SFRadeMin]
+ And [AvgRade]&gt;=[CRadeMIN],1,IIf([V3De]&gt;[TV3DA] And [V3De]=[COV3DMax],1,IIf([Rm1]&gt;[TRm],1,0)))) AS Concession1, IIf([AvgRade2]&gt;[SFRadeMax] And [AvgRade2]&lt;=[CRadeMAX],1,IIf([AvgRade2]&lt;[SFRadeMin] And [AvgRade2]&gt;=[CRadeMIN],1,IIf([V3De]&gt;[TV3DA] And [V3De]=[COV3DMax],1,IIf([Rm2]&gt;[TRm],1,0))))
+ AS Concession2, Tolerances.SFVdMin, Tolerances.SFVdMax, Tolerances.CoV3DMax, Tolerances.CoV3DMin, Tolerances.TRm, Tolerances.CRm<br />
+FROM Tolerances INNER JOIN OuterRingData ON Tolerances.Type = OuterRingData.ODType;<br />
+</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jobush  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Gina&nbsp;</p>
+<p>
+</p><p>Was you able to take a look at this issue&nbsp; of :</p>
+<p><span>System Resource Exceeded</span></p>
+<p>
+</p><p>I am finding that the query will work one day then not another very strange?</p>
+<p>
+</p><p>Hope you can help&nbsp;</p>
+<p>
+</p><p>Jo</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gina Whipp" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GW"); this.style="display: inline-block";'
+<h3> gina whipp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Well, this query speaks to table or tables that are not normalized.&nbsp; While it is strange that it will work one day and not the other for that query it is not surprising.</p>
+<p>
+</p><p>You are using an INNER join which will only show results if the data is in BOTH tables which is why it returns less records than you expect.</p>
+<p>
+</p><p>Queries open the tables included within when they run and your is opening tables AND *thinking* about each row of data each time it runs which would explain the error.&nbsp; You are asking it to do too much.&nbsp; I would strongly recommend you break this up into
+ two separate queries (or more).&nbsp; If attached to a Form or a Report then consider a From\Subform or Report\Subreport scenario.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jobush  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Gina&nbsp;</p>
+<p>Thank you or your reply,&nbsp;</p>
+<p>So because I'm thinking this Table/Query/Form/Report has been running ok for the last 8 years and only gone wrong since filling the blanks with zero (for the benefit of another query).</p>
+<p>I started thinking maybe with all the different scenarios within the SQL and so many records that the was the reason it was having "System Resource Exceeded".</p>
+<p>
+</p><p>So I copied the table at the BE and with the original table I deleted 2000 records to see if that made a difference which it did not. So I thought OK that don't work so I best keep the original table which was now called CopyofOuterRingData, I renamed this
+ table to it orginal name of&nbsp;OuterRingData and clicked OKbut in the mist of doing this I see something mention about relationships but I had already clicked OK to continue and since doing this everything working as normal?&nbsp;</p>
+<p>So maybe something changed with the relationships?</p>
+<p>
+</p><p>Kind regards</p>
+<p>Jo</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gina Whipp" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GW"); this.style="display: inline-block";'
+<h3> gina whipp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hmm, I would say yes it was the relationships which are probably now *broken*.&nbsp; However, only time will tell and I will suggest you consider breaking that query apart so it doesn't have to *work* so hard across so many tables.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can i Undo the update for Skype . - Microsoft Community</title>
+<h3> saleem &#35; 1  say:</h3>
+<h2>            How can i Undo the update for Skype .</h2>
+                    seriously tho , How ?&nbsp;&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> elbab  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi there!<br /><br />You can stop ihe updates<br /><br />“Automatic updates are the easiest way to keep of Skype for Windows desktop up-to-date. They’re turned on by default, but if you need to disable them:<br />* 		Sign in to Skype.<br />* 		In the menu bar, select Tools &gt; Options....<br />* 		In the Advanced tab, select Automatic updates.<br />* 		Click Turn off automatic updates.<br />* 		Click Save.<br />You can enable the automatic updates again whenever you like. Simply, click the Turn on automatic updates button under Advanced &gt; Automatic updates.”<br /><br />See more here: <a href="https://support.skype.com/en/faq/FA12096/how-do-i-turn-off-automatic-updates-in-skype-for-windows-desktop" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA12096/how-do...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Reynaldo Ugarte" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "RU"); this.style="display: inline-block";'
+<h3> reynaldo ugarte  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello. I'm Rey, a Community Expert willing to help the users.
+<br />
+<br />If you want to go back to previous Skype version you can download it from here:
+<br />
+<br /><a href="https://go.skype.com/classic.skype" target="_blank" rel="noreferrer nofollow">https://go.skype.com/classic.skype</a> 
+<br />
+<br />Best Regards       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="5653" role="img">
+<h3> 5653  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            They didn't ask for Skype classic they asked to UNDO the update. Something I'd also like to know how to do.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="5653" role="img">
+<h3> 5653  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That's good to know for the future. But how do I undo the newest update?
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_skype_for_mac">&#40;archived&#41;_skype_for_mac, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+<a href="/search?q=download,_install_and_upgrade">download,_install_and_upgrade, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>SSL Certificate Error on Android Hotmail App - Microsoft Community</title>
+<h3> aminlakhani1  say:</h3>
+<h2>            SSL Certificate Error on Android Hotmail App</h2>
+                    Hi,
+<div>I get "SSL Certificate Error" on Android Hotmail App when I try to sync via mobile data..</div>
+<div>I found solution but it's for old hotmail website and I cant find those options on my new Outlook themed hotmail site!!</div>
+<div><br />
+</div>
+<div>the solution is as following:</div>
+<div>
+<p>1. Sign in on your account on the web using a computer and go to your&nbsp;<strong>Inbox</strong>.</p>
+<p>2. Go to&nbsp;<strong>Options&nbsp;</strong>&gt;&nbsp;<strong>More options.</strong></p>
+<p>3. Under&nbsp;<strong>managing your account</strong>, go to&nbsp;<strong>account details.&nbsp;</strong>It will prompt you to enter your password again.</p>
+<p>4. On the page that will be shown, go to the lower part and locate&nbsp;<strong>Other Options.</strong></p>
+<p>5. Click on&nbsp;<strong>Connect with HTTPS&nbsp;</strong>and then select&nbsp;<strong>Don't use HTTPS automatically.</strong></p>
+<p>6. Click on<strong>&nbsp;Save</strong>.</p>
+<p><br />
+</p>
+<p>but to try this i need to find step 5 and 6.. can anyone tell me where these options are on hotmail's new look??</p>
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michael-au  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Anyone had any luck finding a solution to change hotmail to&nbsp;<strong>Don't use HTTPS automatically</strong>&nbsp;?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> randomhc  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,<br />
+<br />
+I was having the same trouble with this and eventually came across the same article, and couldn't find the "HTTPS" options.<br />
+<br />
+Had a play myself and found that you need to go to <b>Options &gt; More Options</b>. Then under
+<b>Customizing Hotmail</b> select <b>Advanced Privacy Settings</b>. <br />
+<br />
+On the next page click the link <b>Go to HTTPS settings</b>. This screen allows you to turn on the HTTPS settings.
+<br />
+<br />
+After saving this, I had to remove my account from my Android and then re-add and test.<br />
+<br />
+Hope this helps!<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> general specific  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Hi,<br />
+<br />
+I was having the same trouble with this and eventually came across the same article, and couldn't find the "HTTPS" options.<br />
+<br />
+Had a play myself and found that you need to go to <b>Options &gt; More Options</b>. Then under
+<b>Customizing Hotmail</b> select <b>Advanced Privacy Settings</b>. <br />
+<br />
+On the next page click the link <b>Go to HTTPS settings</b>. This screen allows you to turn on the HTTPS settings.
+<br />
+<br />
+After saving this, I had to remove my account from my Android and then re-add and test.<br />
+<br />
+Hope this helps!<br />
+</blockquote>
+<div>Try this From another member</div>
+<div><br />
+<div>
+<p>1. Sign in on your account on the web using a computer and go to your&nbsp;<strong>Inbox</strong>.</p>
+<p>2. Go to&nbsp;<strong>Options&nbsp;</strong>&gt;&nbsp;<strong>More options.</strong></p>
+<p>3. Under&nbsp;<strong>managing your account</strong>, go to&nbsp;<strong>account details.&nbsp;</strong>It will prompt you to enter your password again.</p>
+<p>4. On the page that will be shown, go to the lower part and locate&nbsp;<strong>Other Options.</strong></p>
+<p>5. Click on&nbsp;<strong>Connect with HTTPS&nbsp;</strong>and then select&nbsp;<strong>Don't use HTTPS automatically.</strong></p>
+<p>6. Click on<strong>&nbsp;Save</strong>.</p>
+<p><br />
+</p>
+<p>after doing the steps above&nbsp;</p>
+<p>do the following steps on your phone</p>
+<p>7. R<b>emove&nbsp;</b>your email account from the&nbsp;Hotmail&nbsp;app.</p>
+<p>8.&nbsp;<b>Add&nbsp;</b>the account in again
+<b>On Mobile data not wifi</b>.</p>
+<p>9. It should give you the following message "The server is using a self-signed&nbsp;authentication&nbsp;certificate. Do you want to login anyway?"&nbsp;<b>Click Accept</b></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi everyone,</p>
+<p>&nbsp;</p>
+<p>Please try the suggestion of General Specific and check if the issue still occur.</p>
+<p>&nbsp;</p>
+<p>If the issue persists, please provide us your impacted email account. This will help us to investigate the issue.</p>
+<p>&nbsp;</p>
+<p>Thanks!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jonw9  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I don't find any of these options, using Hotmail in Outlook (https://blu002.mail.live.com) with Windows 7.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raymond_M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "RA"); this.style="display: inline-block";'
+<h3> raymond_m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi JonW9,<br />
+<br />
+Are you also encountering the SSL Certificate error on your&nbsp;Android Hotmail App? If yes, then try this
+<a href="https://account.live.com/managessl?ru=https%3a%2f%2fmail.live.com%2fdefault.aspx%3frru%3dInbox%26fssl%3d1&amp;MSPPError=-2147217396" target="_blank" rel="noreferrer nofollow">
+link</a>&nbsp;<span>(you may be asked to sign in again)&nbsp;</span>to directly go to the webpage to
+<span>disable the HTTPS settings of your account. Once done, proceed to steps 7&nbsp;to 9. If the problem persists then provide your impacted email address for investigation.<br />
+</span><br />
+Thanks!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> janholzberg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry but I tried all this but it is still not working with the Android outlook.com app Please help
+<div>Thx</div>
+<div><br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)">Hi JanHolzberg,</span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000">To continue with the investigation, please confirm the following information:
+</font></span></p>
+<ul>
+<li><span><font color="#000000">The affected email account. Note that this will be masked for seucrity purposes.</font></span>
+</li><li><span><font color="#000000">The device that you're using.
+</font></span></li><li><span><font color="#000000">The OS version of your device.
+</font></span></li><li><span><font color="#000000">The synchronization app that you're using on your mobile device.</font></span></li></ul>
+</span><span style="color: rgba(51, 51, 51, 1)">Thank you.</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jules f  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi
+<div>not sure this thread is still alive but have had the same problem since updating to ice cream sundae.
+<div>I'm on an Xperia U&nbsp;</div>
+<div>Thx</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lawrence hassall  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Found this thread after posting on another.&nbsp; Same SSL error setting up a UK Samsung Galaxy S3 on Android 4.1.2.&nbsp; No issue on an old HTC Desire running 2.3.<br />
+<br />
+Just tried the instructions above, disable HTTPS and setup over mobile network... Can't even get past the login page, either stalls or claims no network connection.<br />
+<br />
+I think it's ridiculous this can't be resolved properly, instead of expecting people to find some hidden page in their email settings to work around it (which doesn't even work for me).<br />
+<br />
+Just look at the number of one star recent reviews for the Outlook.com version.&nbsp; A sloppy untested Android app is just going to push people to Gmail not Windows Phone.<br />
+<br />
+Sorry for the rant but I work in software!<br />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>What happens when I have a confirmed reservation but enrolled in the - Microsoft Community</title>
+<h3> rivercrossing  say:</h3>
+<h2>            What happens when I have a confirmed reservation but enrolled in the Window Insider Preview and have build 10240 running already&#63;</h2>
+                    <p>I have multiple devices and downloaded earlier builds in 2 of the devices. For the 3rd device, I reserved a copy of Windows 10 upon launch. I then, some days later, put this 3rd device under Windows Insider and downloaded the latest build at that time (10130
+ I think).</p>
+<p>
+</p><p>Its now running build 10240, same with the other 2 devices, and I was wondering what will happen on July 29.</p>
+<p>
+</p><p>Thanks for the assistance.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="&#39;Mike P" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "P"); this.style="display: inline-block";'
+<h3> &#39;mike p  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>On July 29th, its a Wednesday.</p>
+<p>Many physicians take half or the whole day off on Wednesdays.</p>
+<p>
+</p><p>So you don't want to&nbsp;have any panic attacks or worsening health&nbsp;leading up to the excitements&nbsp;&amp; shocks that windows 10 brings.&nbsp;&nbsp; Your doctor might be out fishing on&nbsp;that day with his physician buddies&nbsp;&amp; you might need his approval&nbsp;prior to&nbsp;going to the emergency
+ room to have your insurance&nbsp;quickly qualified for&nbsp;you &amp;&nbsp;possibly cover that bill, minus your deductibles of course.&nbsp;
+</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ray a h  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Your answer will come in 8 days. &nbsp; &nbsp; &nbsp; &nbsp;
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you create a running total across different sheets in the same - Microsoft Community</title>
+<h3> stephdoig  say:</h3>
+<h2>            How do you create a running total across different sheets in the same workbook&#63;</h2>
+                    HI,<br />
+<br />
+I have a work book with multiple sheets within it all labelled by the months of the year. How do I create a running total across all of them? So for example January's sheet shows figure 234 in cell H28, in Feb's sheet I'd like cell H28 to show the total of
+ cell H28 from Jan + cell H20 from Feb. In March I need cell H28 to show the total of cell H28 from Feb + cell H20 from March and in April I'd like cell H28 to show the total of cell H28 March + cell H20 from April. Does this make any sense? If I can't do it
+ then no problems. It would just make my life abit easier when working on the sheets.<br />
+<br />
+Thanks!<br />
+<br />
+:o)<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="j.e. mcgimpsey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> j.e. mcgimpsey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can do it on individual sheets using something like:
+<div><br />
+<div>Feb!H28: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span> </span>=Jan!H28 + H20</div>
+<div>Mar!H28:<span>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</span>=Feb!H28 + H20</div>
+<div><br />
+<div>If you're looking for an automated way to refer to the previous (i.e., one to the left) sheet, one way would be to use a User Defined Function like one shown here:</div>
+<div><br />
+<div>&nbsp; &nbsp;&nbsp;<a href="http://mcgimpsey.com/excel/udfs/prevsheet.html" target="_blank" rel="noreferrer nofollow">http://mcgimpsey.com/excel/udfs/prevsheet.html</a></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>New , yet frustrated , is there a way to turn off ads &#63; completely - Microsoft Community</title>
+<h3> robertfein  say:</h3>
+<h2>            New , yet frustrated , is there a way to turn off ads &#63; completely &#63;</h2>
+                    <p>I would like to have the ability to turn off , disable , etc... all ads bing , google .. is that wrong ?</p>
+<p>Thank You </p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="BingAdsElyse" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "BI"); this.style="display: inline-block";'
+<h3> bingadselyse  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p><span>Hi Robert,</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>You’re welcome, it is my pleasure to provide assistance!
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Unfortunately, we do not have the ability to turn off the ads that are displayed when you use the Bing search engine. Depending on what browser you are using, there are steps that you can follow to
+ block pop-ups however, when it comes to the paid ads that show on Bing, we have no way of turning those off.
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Although I can’t guarantee anything, you may be able to find a solution or work around by clicking on the feedback button at the bottom of
+</span><a href="https://www.bing.com/?FORM=Z9FD1" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">Bing.com</span></a></p>
+<p><span>&nbsp;</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Please let me know if you have any additional questions or concerns, I’m happy to help!</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Sincerely,</span></p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Problems With Odd and Even Number Headers From a Specific Point - Microsoft Community</title>
+<h3> rick ab  say:</h3>
+<h2>            Problems With Odd and Even Number Headers From a Specific Point</h2>
+                    Hello to all the MS WORD experts,<br />
+<br />
+I am in the process of formatting a novel for publishing and I am running into some issues. I am using MS Word 2010<br />
+<br />
+First I need to insert headers with book title on even number pages, and headers with author's name on odd pages. I have been able to do that but the problem I have been facing is how to stop it from including the previous pages that include content, intro,
+ etc.<br />
+<br />
+Also, for the first ten pages I removed any numbering, These ten pages consist of the contents, intro etc. as I stated above. I need to number these ten pages in Roman numerals. I know how to do that, but I don't know how to make it stop at the page prior to
+ the start of the first chapter.The first chapter begins the normal page numbering from 1 to the end.<br />
+<br />
+Any help would be much appreciated as I am getting a bit frustrated.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>See <span><a href="http://www.word.mvps.org/FAQs/Formatting/front_matter_2007.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://www.word.mvps.org/FAQs/Formatting/front_matter_2007.htm</span></a>.</span></p>
+<p>
+</p><p><span>Edit: That article has now been updated at </span><span><a href="http://wordfaqs.mvps.org/FrontMatterRibbon.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://wordfaqs.mvps.org/FrontMatterRibbon.htm</span></a>.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Typing the URL in the address bar brings up search results . - Microsoft Community</title>
+<h3> tgsixstring  say:</h3>
+<h2>            Typing the URL in the address bar brings up search results .</h2>
+                    <p>original title: address bar problems</p>
+<p>when i type in url it does not go to web site only brings up search results ?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="David Vinod" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> david vinod  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+<span><span>1.<span>&nbsp;&nbsp;&nbsp;
+</span></span></span>Have you made any changes to the computer prior to the issue?</p>
+<p>
+<span><span>2.<span>&nbsp;&nbsp;&nbsp;
+</span></span></span>Does this issue occur when you try to access a particular webpage or happens with all the webpages?</p>
+<p>&nbsp;</p>
+<p><span><strong>Method 1:&nbsp;</strong>Follow the steps provided in the link given below and check if that helps.</span></p>
+<p><a href="http://www.microsoft.com/security/resources/hijacking-whatis.aspx" target="_blank" rel="noreferrer nofollow"><span>http://www.microsoft.com/security/resources/hijacking-whatis.aspx</span></a></p>
+<p>
+<b><span>&nbsp;</span></b></p>
+<p>
+<span><strong>Method 2:&nbsp;</strong>I</span><span> would also suggest you to run a full system scan using Microsoft Security Scanner and check
+ if that helps.</span></p>
+<p>
+&nbsp;</p>
+<p><a href="http://www.microsoft.com/security/scanner/en-us/default.aspx" target="_blank" rel="noreferrer nofollow"><span>http://www.microsoft.com/security/scanner/en-us/default.aspx</span></a></p>
+<p><b><span>Note:</span></b><span> Any data files that are infected may only be cleaned by deleting the file entirely,
+ which means there is a potential for data loss.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=windows_vista">windows_vista, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can I access .atomsvc file with Office 365 Online apps&#63; - Microsoft Community</title>
+<h3> chris_simon  say:</h3>
+<h2>            Can I access .atomsvc file with Office 365 Online apps&#63;</h2>
+                    I need access to the data in an .atomsvc file from a third-party provider. All the research I've done suggests the quickest and most efficient way (using Microsoft products on Windows) to access the data in an .atomsvc file is with Microsoft Excel's Power
+ Pivot feature (see links below).
+<p>
+</p><p>I have Office 2013, but so far my attempts to add the Power Pivot to Office 2013 have been unsuccessful (see links below).</p>
+<p>
+</p><p><em>Can I use Office 365 Online to access .atomsvc files?</em></p>
+<p>
+</p><p>
+</p><p class="contentHeader2"><strong>Access ATOMSVC file with Excel</strong></p>
+<p>
+</p><p><a href="https://www.lifewire.com/atomsvc-file-2622689" target="_blank" rel="noreferrer nofollow">What Is an ATOMSVC File?
+</a></p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/get-data-from-a-data-feed-in-power-pivot-e0ce7c2a-ded7-4322-866d-04fbcba684ee" target="_blank" rel="noreferrer nofollow">Get data from a data feed in Power Pivot</a></p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/import-data-from-a-reporting-services-report-6c196bd9-05ee-4759-99c9-ac10d57260a1#__save_an_atom" target="_blank" rel="noreferrer nofollow">Save an Atom service document (.atomsvc) file for future import operations</a></p>
+<p>
+</p><p><a href="https://docs.microsoft.com/en-us/previous-versions/sql/sql-server-2012/ee210637(v=sql.110)" target="_blank" rel="noreferrer nofollow">PowerPivot Data Feeds</a></p>
+<p>
+</p><p class="contentHeader2"><strong>PowerPivot and Excel 2013</strong></p>
+<p>
+</p><p><a href="https://support.office.com/en-us/article/Start-the-Power-Pivot-add-in-for-Excel-a891a66d-36e3-43fc-81e8-fc4798f39ea8" target="_blank" rel="noreferrer nofollow">Start the Power Pivot add-in for Excel</a></p>
+<p>
+</p><p><a href="http://www.bradleyschacht.com/powerpivot-for-excel-2013/" target="_blank" rel="noreferrer nofollow">PowerPivot for Excel 2013</a></p>
+<p>
+</p><p><a href="http://www.bradleyschacht.com/powerpivot-for-excel-2013/" target="_blank" rel="noreferrer nofollow">Excel 2013 PowerPivot or PowerView add-ins are not available</a></p>
+<p>
+</p><p><a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_excel-mso_winother-mso_2013_release/powerpivot-for-microsoft-excel-2013-32-bit-part-of/2e58ad6b-b6e7-4f4d-adfa-576fc71aba1e">PowerPivot for Microsoft Excel
+ 2013 32-bit (Part of Office Home and Business 2013)</a></p>
+<p>
+<br />
+</p><p>
+</p><p><br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Tim Liu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "TL"); this.style="display: inline-block";'
+<h3> tim liu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Simon, </p>
+<p>
+</p><p>My understanding is that Excel Online doesn't have all features that contains in Excel desktop app. Excel Online supports files like .xlsx, .xls, .xlsb, .ods, .xlsm. The PowerPivot feature is only supported with Excel desktop app. It isn't supported in Excel
+ Online. Below are two articles for your reference. Hope they can help you understand more about Excel Online.
+</p>
+<p><a href="https://support.office.com/en-us/article/differences-between-using-a-workbook-in-the-browser-and-in-excel-f0dc28ed-b85d-4e1d-be6d-5878005db3b6" target="_blank" rel="noreferrer nofollow">Differences between using a workbook in the browser and in Excel</a></p>
+<p><a href="https://technet.microsoft.com/en-us/library/excel-online-service-description.aspx" target="_blank" rel="noreferrer nofollow">Excel Online</a></p>
+<p>
+</p><p>Regards,</p>
+<p>Tim</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Recover bulk deleted emails in Outlook.com &#40;Hotmail&#41; account - Microsoft Community</title>
+<h3> bgflorida  say:</h3>
+<h2>            Recover bulk deleted emails in Outlook.com &#40;Hotmail&#41; account</h2>
+                    Hi, I accidentally deleted my entire Inbox in my Outlook web account. &nbsp;All 7,000+ email messages that were in my Inbox are still in my Deleted folder. &nbsp;I understand how to recover individual emails from the Deleted folder but don't see a way to "Select
+ All" so I can recover all of the emails in one step rather than having to go through and select each email message individually. &nbsp;I tried to click the first email and then held down the shift key and selected the last email but that didn't work. Any suggestions
+ on how to do a bulk email recovery? Thanks in advance for any assistance!!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>I understand the inconvenience you are facing. We will help you.</p>
+<p>
+</p><p>You should regularly backup the content that you store on the services. Having a regular backup plan and following it can help you prevent loss of your content.</p>
+<p>
+</p><p>If you have lost the emails in Inbox Folder then I suggest you to refer the below link and check if it helps you recover the emails.</p>
+<p>
+</p><p><strong>"You may have to select one by one which is important for you to restore and recover from the deleted mails."
+</strong></p>
+<p>
+</p><p>Outlook.com will recover as many messages as possible and put them in your <strong>
+Deleted</strong> folder. When they're back in your <strong>Deleted</strong> folder, move the important ones back to your inbox or other personal folder because the
+<strong>Deleted</strong> folder gets cleaned out periodically.</p>
+<p>
+</p><p><strong>Refer</strong>: <strong><a href="http://windows.microsoft.com/en-us/windows/outlook/recover-deleted-messages" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">Restore deleted email messages in Outlook.com</span></a></strong></p>
+<p>
+</p><p>Please post to us with more information to help you better.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;This tab has been recovered. A problem with this webpage caused - Microsoft Community</title>
+<h3> outers  say:</h3>
+<h2>            &#34;This tab has been recovered. A problem with this webpage caused Internet Explorer to close and reopen the tab.&#34;</h2>
+                    
+<p>Original Title:&nbsp;<strong>"Problem: When I authorise IE to install a new add-on ("Oracle JInitiator from Oracle Corporation"), then I receive from IE 8 this msg: "This tab has been recovered. A problem with this webpage caused Internet Explorer to close and
+ reopen the tab.""</strong></p>
+<p>When I authorise IE to install a new add-on ("Oracle JInitiator from Oracle Corporation"), then I receive from IE 8 this msg: "This tab has been recovered. A problem with this webpage caused Internet Explorer to close and reopen the tab."</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gokul T" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "GT"); this.style="display: inline-block";'
+<h3> gokul t  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Outers,<br />
+<br />
+- What’s the operating system you’re using?<br />
+<br />
+</span></p>
+<p><span>The issue could be caused due to incompatible/outdated add-ons. You may want to first run Internet Explorer in no add-ons mode and check if that
+ fixes the issue. </span></p>
+<p><span>&nbsp;</span></p>
+<p>
+<span>To start Internet Explorer without add-ons,</span></p>
+<p>
+<span>&nbsp;</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span><span>Click the&nbsp;<strong>Start</strong> button, and select
+<strong>All Programs</strong>.</span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span><span>Click&nbsp;<strong>Accessories</strong>, and select
+<strong>System Tools.</strong></span></p>
+<p>
+<span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span><span>Click&nbsp;<strong>Internet Explorer (No Add-ons)</strong>.</span></p>
+<p>
+<span>&nbsp;</span></p>
+<p>
+<span>If disabling all add-ons solves the problem, you might want to use Add-on Manager to disable all add-ons and then turn on add-ons only as you need them. This will allow you to figure out which
+ add-on is causing the problem.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>I’d recommend you to refer the following articles and follow the methods mentioned in the order of appearance to fix the issue:</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>How to optimize Internet Explorer</span></p>
+<p><span><a href="http://support.microsoft.com/kb/936213" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/936213</span></a></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Tips for solving problems with Internet Explorer</span></p>
+<p><span><a href="http://windows.microsoft.com/en-US/windows-vista/Tips-for-solving-problems-with-Internet-Explorer" target="_blank" rel="noreferrer nofollow"><span>http://windows.microsoft.com/en-US/windows-vista/Tips-for-solving-problems-with-Internet-Explorer</span></a></span></p>
+<p><span>&nbsp;</span></p>
+<p><strong><span>Note:</span></strong><span> The above article applies to Internet Explorer 7
+ and Internet Explorer 8.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Hope this information helps.</span></p>
+<hr />
+Gokul - Microsoft Support <br />
+<br />
+[If this post was helpful, please click the "Vote as Helpful" (green triangle) button. If it helps in resolving your issue, click "Propose As Answer" or "Mark as Answer" button. By proposing/marking a post as Answered, or Helpful you help others find the answer
+ faster.]
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Text symbols - Microsoft Community</title>
+<h3> jrj1040  say:</h3>
+<h2>            Text symbols</h2>
+                    I am using Word 2010 editing a document.&nbsp; The document uses a symbol I have never seen, a small square.&nbsp; It evidently is some sort of pagination symbol.&nbsp; I don't know what to use in FIND/REPLACE to make a change.&nbsp; I need delete the unknown symbol.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Can you provide screen shot of the symbol.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Does the symbol print? If not, and if it is a small black square in the left margin, it probably indicates one or more of the options on the
+<strong>Line and Page Breaks</strong> tab of the <strong>Paragraph</strong> dialog. For more, see
+<span><a href="http://wordfaqs.mvps.org/NonprintChars.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://wordfaqs.mvps.org/NonprintChars.htm</span></a></span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jrj1040  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Does the symbol print? If not, and if it is a small black square in the left margin, it probably indicates one or more of the options on the
+<strong>Line and Page Breaks</strong> tab of the <strong>Paragraph</strong> dialog. For more, see
+<span><a href="http://wordfaqs.mvps.org/NonprintChars.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://wordfaqs.mvps.org/NonprintChars.htm</span></a></span>
+</blockquote>
+<p>Yes, a Line and Page Break.&nbsp; I can now identify it.&nbsp; But how do I delete it? ^j?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can't delete the symbol itself (which does not print). You can hide it (by not displaying nonprinting marks), or you can change the formatting of the paragraph
+<strong>not</strong> to have the "Page break before," "Keep with next," "Keep lines together," or "Suppress line numbers" property.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jrj1040  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I guess I'm obtuse, but you say I cannot remove (edit) the symbol, but I can change it????&nbsp; HOW?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The symbol (if in fact it is the small black square in the margin that does not print) is just an indication that certain properties have been applied to the paragraph. If you double-click the square, the
+<strong>Paragraph</strong> dialog will open to the <strong>Line and Page Breaks</strong> dialog. The only way to get rid of the square is to disable the properties that cause it to be displayed.</p>
+<p>
+</p><p>If this is some other kind of symbol, then we do need a screen shot sample document to see what you're talking about.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to insert chapter and page numbers in ms word 2007footer - Microsoft Community</title>
+<h3> haroldk82  say:</h3>
+<h2>            how to insert chapter and page numbers in ms word 2007footer</h2>
+                    how to insert chapter and page numbers in ms word 2007footer
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jeeped" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JE"); this.style="display: inline-block";'
+<h3> jeeped  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If your document numbering conforms to accepted standard&nbsp;practices, you should find the instructions for what you require here,<br />
+<br />
+<a href="http://support.microsoft.com/kb/290953" target="_blank" rel="noreferrer nofollow">How to number chapters, appendixes, and pages in documents that contain both chapter and appendix headings in Word</a>&nbsp;(<a href="http://support.microsoft.com/kb/290953" target="_blank" rel="noreferrer nofollow">KB290953</a>)
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Page numbers: insert tab / Header Footer group /&nbsp;Footer drop down. Pick a footer style, some already include the page number.
+</p>
+<p>You will now see the Header and Footer Design conditional tab. Select the Insert group / Quick Parts drop down / Field command. I prefer to work with the "All" category, You can find several dates, like CreateDate, Date,
+</p>
+<p>In the fields list you wil also find Pages and NumPages, I like to create "Page" of "NumPages"</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Show underlying data in pivot table - Microsoft Community</title>
+<h3> chrisobc  say:</h3>
+<h2>            Show underlying data in pivot table</h2>
+                    I know that by double clicking in any of the pivot table cells, it opens a new worksheet which displays the underlying data related to that cell, but how do I do this for several cells or all of them (so that the data is still on one worksheet)?<br />
+<br />
+Thanks<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ashish Mathur" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "AM"); this.style="display: inline-block";'
+<h3> ashish mathur  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>&nbsp;</p>
+<p>If you double click on the Grand Total, you will get all the underlying data foe data displayed on the pivot table.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>G Suite to O365 Migration - Microsoft Community</title>
+<h3> krishnary  say:</h3>
+<h2>            G Suite to O365 Migration</h2>
+                    <p>Hi Microsoft,&nbsp;</p>
+<p>
+</p><p>Is there a doc(PDF or PPT) on how life of end users will change post migration from G suite to O365? Or like benefits of O365 over Gsuite?</p>
+<p>
+</p><p>Regards,</p>
+<p>Krishna</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rick Song MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> rick song msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello Krishna,</p>
+<p>&nbsp;</p>
+<p>Office 365 for Business mainly includes Enterprise, Small Business and Education plans. Based on the detailed type, it provides many useful applications and services. For example, Word, Teams, Exchange Online, Skype for Business Online
+ and so on. They are included in the Office 365 for Business subscription to help you schedule daily works and communicating with co-workers. It has many differences with G suite. So I will provide some articles for your reference. If you have any concerns
+ or problems, please feel free to let us know. We are pleased to help you. </p>
+<p>1. <a href="https://docs.microsoft.com/en-us/office365/servicedescriptions/office-365-service-descriptions-technet-library" target="_blank" rel="noreferrer nofollow">
+Office 365 Service Descriptions</a>. </p>
+<p>2. <a href="https://docs.microsoft.com/en-us/office365/admin/admin-overview/get-started-with-office-365?view=o365-worldwide" target="_blank" rel="noreferrer nofollow">
+Get started with Office 365 for Business</a>. </p>
+<p>&nbsp;</p>
+<p>Besides, you can sign up for a one-month free trial subscription via the following link and experience it by yourself:
+<a href="https://products.office.com/en-sg/business/compare-more-office-365-for-business-plans" target="_blank" rel="noreferrer nofollow">
+https://products.office.com/en-sg/business/compare-more-office-365-for-business-plans</a>
+</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<span>Rick</span>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sylvie Liang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "SL"); this.style="display: inline-block";'
+<h3> sylvie liang msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hello Krishna,</span></p>
+<p>
+</p><p><span>I am monitoring this thread by now. Sorry for the delay reply. For your concern, Microsoft does have the related document about migrate G Suite mailboxes to Office 365. For your reference:</span></p>
+<p>
+</p><p><span><a href="https://docs.microsoft.com/en-us/exchange/mailbox-migration/migrating-imap-mailboxes/migrate-g-suite-mailboxes" target="_blank" rel="noreferrer nofollow">Migrate G Suite mailboxes to Office 365</a>.
+</span></p>
+<p>
+</p><p><span>If you need any further assistance, please feel free to let me know.</span></p>
+<p>
+</p><p><span>Best Regards,</span></p>
+<p><span>Sylvie</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>HTC PRO -WINDOWS MOBILE - OUTLOOK- USB - Microsoft Community</title>
+<h3> spiritual warrior  say:</h3>
+<h2>            HTC PRO -WINDOWS MOBILE - OUTLOOK- USB</h2>
+                    
+<p>Hello- I Have a windows vista laptop running microsoft office 2007 ,I Had to reinstall windows vista and after that ,the windows mobile does not sync
+<br />
+with the htc pro .I INSTALL IT and reinstall it again,restarted the laptop .The phone tells me that I NEED to have active sync 4.5 or later on the pc but I ALREADY have windows smobile install but it does not read it .sprirnt can`t help with this situation
+ and there is not aa number for any one of us to call, can soe help me.<br />
+&nbsp;thanks for the help....</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>With the device connected to your PC, open Device Manager and see where it is listed.&nbsp; Remove it from Devie Manager.<br />
+<br />
+Disconnect your device<br />
+<br />
+Open Activesync on your device and if there are any partnerships, delete them .... now soft reset<br />
+<br />
+Open WMDC on your PC.&nbsp; I am assuming there are NO partnerships but if there are, delete them and reboot.<br />
+<br />
+Now connect your device.&nbsp; The drivers will reload and hopefully WMDC will begin.&nbsp; When you connect, listen for the connection sound.&nbsp; Keep an eye on your hard drive ... it the light is blinking, it is thinking.&nbsp; A second sound should be heard and the process
+ will begin ..... (fingers are crossed)</p>
+<hr />
+http://experiencemobility.net http://mobilitysite.com
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I bring back the running apps on the left edge&#63; - Microsoft Community</title>
+<h3> scubadog2008&#40;2&#41;  say:</h3>
+<h2>            How do I bring back the running apps on the left edge&#63;</h2>
+                    Has anyone figured out how to bring back the left edge bar showing the apps that are running?&nbsp; It's ridiculous that I can't hover my thumb or mouse there to see the apps that are running and be able to flip through them.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chrisgault  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>all apps whether they are desktop or modern show in the task bar ... this was an upgrade back in 8.1</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> paul_salter  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>all apps whether they are desktop or modern show in the task bar ... this was an upgrade back in 8.1</p>
+</blockquote>
+<p>That was an option in 8.1</p>
+<p>
+</p><p>Show store apps on taskbar which could be disabled</p>
+<p>
+</p><p>Mouse to the top left always showed what store apps where running in 8/8.1 and has now been removed</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Mohamed Jalali" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "MJ"); this.style="display: inline-block";'
+<h3> mohamed jalali  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I am missing the app switcher, it was in Windows 8.1 for a reason and must stay in Windows 10 too. Switching between recent apps must be possible in W10 'cause i found it easier than the taskbar, It must be there an option in W10 to show apps in the taskbar
+ or not: simply like Windows 8.1<br />
+If someone wants the taskbar he will choose it and if another one wants the app switcher he can choose it even with a non touch screen.<br />
+I don't like an OS very Desktop-oriented. And if Windows 10 didn't get all feautures I liked in W8.1 I won't upgrade to it.<br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Ronnie Vernon" role="img">
+<h3> ronnie vernon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Has anyone figured out how to bring back the left edge bar showing the apps that are running?&nbsp; It's ridiculous that I can't hover my thumb or mouse there to see the apps that are running and be able to flip through them.
+</blockquote>
+<p>
+</p><p>Hi</p>
+<p>
+</p><p>The Running Apps menu is disabled in this version of the Preview.</p>
+<p>
+</p><p>Press the WinKey+Tab to see all of the running apps on the screen. You can switch to any of those apps by clicking the app. You can&nbsp;Exit any of the those apps by hovering over the app and&nbsp;clicking the 'X' Close button.</p>
+<p>
+</p><p>Regards</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ScubaDog2008&#40;2&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scubadog2008&#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am using Windows 8.1 U1 on all my other machines, and running Metro apps plus the desktop are still accessible via the left bar.&nbsp; I do not use the Task Bar at all.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Ronnie Vernon" role="img">
+<h3> ronnie vernon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>I am missing the app switcher, it was in Windows 8.1 for a reason and must stay in Windows 10 too. Switching between recent apps must be possible in W10 'cause i found it easier than the taskbar, It must be there an option in W10 to show apps in the taskbar
+ or not: simply like Windows 8.1<br />
+If someone wants the taskbar he will choose it and if another one wants the app switcher he can choose it even with a non touch screen.<br />
+I don't like an OS very Desktop-oriented. And if Windows 10 didn't get all feautures I liked in W8.1 I won't upgrade to it.<br />
+</p>
+</blockquote>
+<p>
+</p><p>Hi Mohamed</p>
+<p>
+</p><p>Since most of the Windows 8x feedback was focused on Desktop features, this version of the Preview is focused on Desktop/Keyboard/Mouse users.</p>
+<p>
+</p><p>The touch oriented features will be showcased in future versions.</p>
+<p>
+</p><p>Regards</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Mohamed Jalali" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "MJ"); this.style="display: inline-block";'
+<h3> mohamed jalali  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Ronnie<br />
+The feedback focused on desktop features was from Windows 7 users and not from 8.x ones for the simple reason that nothing can force someone to stay 3 years (even one month) with an OS&nbsp;that he doesn't like.<br />
+But I understand from your reply that will be there a future version focused on Metro, it's the consumer preview of W10 or it will be later (Windows 11 or 12.. etc) ?<br />
+I notice that I use W8/8.1 since 2012 preview and I found it the best Windows yet even with my non touch screen, there are millions of people like me of W8 users and MS souldn't let them go down.<br />
+Best regards.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ScubaDog2008&#40;2&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scubadog2008&#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            That's an unacceptable method, being forced to use a keyboard when I could accomplish it much quicker with a finger or mouse.&nbsp; This is just one more reason to hate Windows 10.&nbsp; I certainly hope this is fixed by the time the consumer preview comes out.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="ScubaDog2008&#40;2&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scubadog2008&#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have liked Windows 8 from the start as well.&nbsp; And, frankly, if Windows 10 won't allow me to configure the system to work like Windows 8 does now, I will not be upgrading.&nbsp; So far, I'm so disgusted with how 10 is on my testing machine I'm ready to throw
+ it at everyone who actually LIKES Windows 10.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Ronnie Vernon" role="img">
+<h3> ronnie vernon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>I have liked Windows 8 from the start as well.&nbsp; And, frankly, if Windows 10 won't allow me to configure the system to work like Windows 8 does now, I will not be upgrading.&nbsp; So far, I'm so disgusted with how 10 is on my testing
+ machine I'm ready to throw it at everyone who actually LIKES Windows 10. </blockquote>
+<p>
+</p><p>Hi</p>
+<p>
+</p><p>You need to remind yourself <strong>THIS IS A PREVIEW</strong> that is designed to be tested, evaluated, and changed according to the testers feedback.</p>
+<p>
+</p><p>Making a decision at this point would be like deciding that you will not buy a new Ferrari because you did not like the Model T? :))</p>
+<p>
+</p><p>Be patient, wait for the next build of the preview to be installed. Test the changes and keep your feedback coming.</p>
+<p>
+</p><p>
+</p><p>Regards</p>
+<p>
+</p><p />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=personalization_and_ease_of_access">personalization_and_ease_of_access, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>error messageThis operation has been canceled due to restrictions in - Microsoft Community</title>
+<h3> dickgordon  say:</h3>
+<h2>            error messageThis operation has been canceled due to restrictions in effect on this computer. Please contact your system administrator</h2>
+                    
+<p>When clicking on a hyperlink in both worh an excel I get the following error message</p>
+<p><span>This operation has been canceled due to restrictions in effect on this computer. Please contact your system administrator</span></p>
+<p><span>This problem started last week and before that I was able to use hyperlinks</span></p>
+<p><span>My system is windows vista home premium with service pack 2 64 bit system and I'm using word 2007 home and student edition.</span></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Shane Devenshire" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "SD"); this.style="display: inline-block";'
+<h3> shane devenshire  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>This article discusses this issue:</p>
+<p><a href="http://support.microsoft.com/kb/325478/en-us" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/325478/en-us</a></p>
+<p>see if it helps</p>
+<hr />
+If this answer solves your problem, please check Mark as Answered. If this answer helps, please click the Vote as Helpful button. Cheers, Shane Devenshire
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>AUTO ANSWER GONE&#33;&#33;&#33; - Microsoft Community</title>
+<h3> johnvicze  say:</h3>
+<h2>            AUTO ANSWER GONE&#33;&#33;&#33;</h2>
+                    Can anyone tell me how to turn on auto answer? I need this to call my invalid father, he can't use the computer due to medical issues
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> karen_&#91;01&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><p>Thank you for the response.</p>
+<p>
+</p><p>To turn on the auto answer in the new Skype, please follow the steps below:</p>
+<p>
+</p><ul>
+<li>Select your <strong>avatar</strong>.</li><li>Scroll to <strong>Calling</strong>.</li><li>Enable <strong>Answer incoming call automaticall</strong>y.</li><li>Optionally you can set <strong>Start my video automatically</strong> as a secondary option.</li></ul>
+<p>
+</p><p>For more information, please see <a href="https://support.skype.com/en/faq/FA34825/accessibility-features-in-the-new-skype-for-windows-mac-and-linux?q=auto+answer" target="_blank" rel="noreferrer nofollow">
+Accessibility features in the new Skype for Windows, Mac and Linux</a></p>
+<p>
+</p><p>
+</p><p>Let me know if you have questions and clarifications.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_mac">skype_for_mac, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=audio_and_video">audio_and_video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

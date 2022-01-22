@@ -1,0 +1,1729 @@
+    <title>Within a macro - Paste a value into the &#34;Go To&#34; Dialog box. - Microsoft Community</title>
+<h3> danno2cu2  say:</h3>
+<h2>            Within a macro - Paste a value into the &#34;Go To&#34; Dialog box.</h2>
+                    <span>
+                    <span>
+<p>Hello,</p>
+<p>I am trying to build a macro that copies a random number value from a cell and then pastes that value into the reference field of the "Go To" dialog box each time it is run. &nbsp;</p>
+<p>When I record the macro it works fine just but when I run the macro a second time it continues to paste the original value (from when the macro was recorded) into the goto dialog box and not the new value that was copied during the running of the macro.
+ &nbsp;Attached is the code created when the macro was recorded.</p>
+<p>______________________ &nbsp;Macro Code Begining ______________</p>
+
+<p>Sub buildserialnumberlisting()</p>
+<p>'</p>
+<p>' buildserialnumberlisting Macro</p>
+<p>' Macro recorded 9/3/2010</p>
+<p>'</p>
+<p>' Keyboard Shortcut: Ctrl+m</p>
+<p>'</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveCell.Offset(1, 11).Range("A1").Select</p>
+<p>&nbsp;&nbsp; &nbsp;Calculate</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.Copy</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveCell.Offset(1, 0).Range("A1").Select</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _</p>
+<p>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;:=False, Transpose:=False</p>
+<p>&nbsp;&nbsp; &nbsp;Application.CutCopyMode = False</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.Copy</p>
+<p>&nbsp;&nbsp; &nbsp;Application.Goto Reference:="R795C1"</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveCell.Range("A1:B1").Select</p>
+<p>&nbsp;&nbsp; &nbsp;Application.CutCopyMode = False</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.Copy</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveSheet.Next.Select</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _</p>
+<p>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;:=False, Transpose:=False</p>
+<p>&nbsp;&nbsp; &nbsp;Selection.PasteSpecial Paste:=xlPasteFormats, Operation:=xlNone, _</p>
+<p>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp;SkipBlanks:=False, Transpose:=False</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveCell.Offset(1, 0).Range("A1").Select</p>
+<p>&nbsp;&nbsp; &nbsp;ActiveSheet.Previous.Select</p>
+<p>&nbsp;&nbsp; &nbsp;Range("A1").Select</p>
+<p>End Sub</p>
+
+<p>______________________ &nbsp;Macro Code End ______________</p>
+<p>&nbsp;</p>
+<p>I do not know VB so please dummy down your answers for me with cut &amp; paste type of stuff.</p>
+<p>Kind regards &amp; many thanks,&nbsp;</p>
+<p>Dan</p>
+<ul>
+</ul>
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JLLatham" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "JL"); this.style="display: inline-block";'
+<h3> jllatham  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hopefully I've interpreted your excellent description properly:</p>
+<p>Two sheets involved: [Master Listing] with entries from row 13&nbsp;down through row 4715 in columns&nbsp;A and B.&nbsp; From this list you must choose 46 entries at random and copy them, values and formats over to the second sheet [Serial Number Selections].</p>
+<p>Now, I have assumed that you do this at one sitting rather than picking 5 one week, 5 more on some other week, etc until you have 46 chosen for the quarter.</p>
+<p>If that's true, then&nbsp;I think you'll find this macro will do the job very well for you.&nbsp; You'll notice there are a group of<strong>Const</strong> values at the beginning of the Sub, and those are values you can change to adapt the code to any changing requirements
+ for this process in the future.&nbsp; I think you'll see the relevance of each of them to what you're doing at this time.</p>
+<p>This process uses worksheet objects and range objects (references to cells) to get the job done without you having to do anything other than run the macro.&nbsp; No more having to copy and paste from L# into the Edit --&gt; Goto box.&nbsp; I think we could have taken
+ care of the .PasteSpecial with one line of code, but I played it safe and went with 2 lines.&nbsp; Give it a try and let me know if I've helped or just confused you.</p>
+<p>Sub Select46AtRandom()<br />
+&nbsp; 'change these sheet names if you need to<br />
+&nbsp; Const mstrSheetName = "Master Listing"<br />
+&nbsp; Const snsSheetName = "Serial Number Selections"<br />
+&nbsp; Const firstColToCopy = "A"<br />
+&nbsp; Const lastColToCopy = "B"<br />
+&nbsp; Const firstDataRow = 13<br />
+&nbsp; Const lastDataRow = 4715<br />
+&nbsp; Const PickMax = 46</p>
+<p>&nbsp; Dim masterSheet As Worksheet<br />
+&nbsp; Dim serialSheet As Worksheet<br />
+&nbsp; Dim rowsUsed() As Long<br />
+&nbsp; Dim LC As Integer ' to loop through rowsUsed()<br />
+&nbsp; Dim alreadyUsedFlag As Boolean<br />
+&nbsp; Dim dataToCopy As Range<br />
+&nbsp; Dim nextToCopy As Long<br />
+&nbsp; Dim whereToPaste As Range<br />
+&nbsp; Dim PLC As Long ' pick loop counter</p>
+<p>&nbsp; 'some preparation<br />
+&nbsp; Set masterSheet = ThisWorkbook.Worksheets(mstrSheetName)<br />
+&nbsp; Set serialSheet = ThisWorkbook.Worksheets(snsSheetName)<br />
+&nbsp; ReDim rowsUsed(1 To PickMax)<br />
+&nbsp; 'help assure random series<br />
+&nbsp; Randomize<br />
+&nbsp; 'to improve performance speed<br />
+&nbsp; Application.ScreenUpdating = False<br />
+&nbsp; 'clear any old information on the [Serial Number Selections] sheet<br />
+&nbsp; serialSheet.Cells.Clear<br />
+&nbsp; For PLC = 1 To PickMax ' loop 46 times<br />
+&nbsp;&nbsp;&nbsp; 'choose a row number not yet used<br />
+&nbsp;&nbsp;&nbsp; alreadyUsedFlag = False<br />
+&nbsp;&nbsp;&nbsp; 'this will pick a random number and make sure <br />
+&nbsp;&nbsp;&nbsp; 'that it hasn't been used already during this "pick 46" sequence<br />
+&nbsp;&nbsp;&nbsp; Do While Not alreadyUsedFlag<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; same as RANDBETWEEN(13,4715)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nextToCopy = Int((lastDataRow - firstDataRow + 1) * Rnd + firstDataRow)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'see if this number has already been used<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For LC = 1 To PLC<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If rowsUsed(LC) = nextToCopy Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; alreadyUsedFlag = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit For<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Not alreadyUsedFlag Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rowsUsed(PLC) = nextToCopy<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Loop<br />
+&nbsp;&nbsp;&nbsp; 'get the data to be copied: cells A &amp; B on the random number row<br />
+&nbsp;&nbsp;&nbsp; Set dataToCopy = masterSheet.Range(firstColToCopy &amp; nextToCopy &amp; ":" &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp; lastColToCopy &amp; nextToCopy)<br />
+&nbsp;&nbsp;&nbsp; dataToCopy.Copy ' place onto the clipboard<br />
+&nbsp;&nbsp;&nbsp; 'copy the data over to the [Serial Number Selections] sheet<br />
+&nbsp;&nbsp;&nbsp; 'PLC will point to the row we need to paste it into<br />
+&nbsp;&nbsp;&nbsp; Set whereToPaste = serialSheet.Range(firstColToCopy &amp; PLC)<br />
+&nbsp;&nbsp;&nbsp; whereToPaste.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:= _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; False, Transpose:=False<br />
+&nbsp;&nbsp;&nbsp; whereToPaste.PasteSpecial Paste:=xlPasteFormats, Operation:=xlNone, SkipBlanks:= _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; False, Transpose:=False<br />
+&nbsp; Next ' end of PLC loop<br />
+&nbsp; 'housekeeping and cleanup<br />
+&nbsp; Set dataToCopy = Nothing<br />
+&nbsp; Set whereToPaste = Nothing<br />
+&nbsp; Set masterSheet = Nothing<br />
+&nbsp; Set serialSheet = Nothing<br />
+&nbsp; 'inform user work is finished<br />
+&nbsp; MsgBox PickMax &amp; " Random entries have been selected and copied.", vbOKOnly, "Task Complete"<br />
+End Sub<br />
+&nbsp;</p>
+<hr />
+I am free because I know that I alone am morally responsible for everything I do. R.A. Heinlein
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Digital Signature support in PowerPoint from Office for Mac 2011&#63; - Microsoft Community</title>
+<h3> kevino&#39;learyva  say:</h3>
+<h2>            Digital Signature support in PowerPoint from Office for Mac 2011&#63;</h2>
+                    In PowerPoint 2013 (and earlier versions) on Windows, it is possible to digitally sign a presentation so that others who open it know that it is authentic and unaltered from the original.&nbsp; Is that capability available in the Office for Mac 2011 version,
+ and if so please point me to documentation on how it is done.&nbsp;&nbsp; Thanks.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Although Joe's response implied the answer I don't believe it actually stated one :-). The Mac version of Office does not include the ability to apply proprietary digital signatures.<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rich Michaels - MVP &#40;greatcirclelearning.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "RM"); this.style="display: inline-block";'
+<h3> rich michaels - mvp &#40;greatcirclelearning.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Adding to Bob's response. Neither is there a feature which prevents opening presentations that do not have a signed certificate attached. Apple does have a code signing method for files and applications but PowerPoint does not make use of it.</p>
+<p>
+</p><p>All the end user can do is either open the presentation or not, and get warned or not if the presentation contains macros... but that's it.</p>
+<p>
+</p><p>If your presentation contains macros you can lock them with a password and provide descriptive information about the project/file that the user can access and read, but unfortunately that will only be available to them after they have already opened the
+ file. With that said, you can provide some "Comment" information that will be viewable with Finder's Get Info function.</p>
+<p>
+</p><p>Hope that helps</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Mic not working despite &#62;Settings &#62; Privacy &#62; Microphone - Microsoft Community</title>
+<h3> douglassmicks  say:</h3>
+<h2>            Mic not working despite &#62;Settings &#62; Privacy &#62; Microphone On</h2>
+                    <p>Detection shows my Mic Device is not working.&nbsp; It works for every other program including Skype for Business.</p>
+<p>I have changed the Settings &gt; Privacy &gt; Microphone to be On and the problem persists.&nbsp;&nbsp;</p>
+<p>I have scanned the help issues related to Calls and searched for 'mic' and don't see anything listed.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> josephv_a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/32aa864d-ccef-424d-b5a5-396542fd810a" title="DouglasSmicks">
+<p>
+</p><p>
+</p><p>Thank you for reaching out to us. </p>
+<p>
+</p><p>Kindly proceed with <strong>uninstalling </strong>and <strong>reinstalling </strong>
+your Skype application. </p>
+<p>
+</p><p>
+</p><p>Let us know of the results. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> douglassmicks  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No Change
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brucepeterson2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Same problem with recording videos. Camera is detected but mic and speakers are not. Worked fine last week. Also, video recording is now 20 seconds instead of 3 minutes. Again, worked fine before the Update.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> josephv_a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello guys, </p>
+<p>
+</p><p>
+</p><p>Kindly try the following: </p>
+<p>
+</p><p>To control which apps can use the microphone:</p>
+<p>
+</p><ol>
+<li>Go to <strong>Start</strong>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/7fd2666a-0d8e-4ee3-88b7-b746358d10c1?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/7fd2666a-0d8e-4ee3-88b7-b746358d10c1?upload=true" /></a>,
+ then select <strong>Settings</strong>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/7618dfa3-b758-4812-b75c-403dc8d5e063?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/7618dfa3-b758-4812-b75c-403dc8d5e063?upload=true" /></a>
+ &gt; <strong>Privacy</strong> &gt; <strong>Microphone</strong>.</li><li>Choose your preferred setting for <strong>Allow apps to access your microphone</strong>.</li><li>Under <strong>Choose which apps can access your microphone</strong>, turn on or off the individual settings for apps and services.</li></ol>
+<p>
+</p><p>Let us know of the results. </p>
+<p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brucepeterson2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This was already done. Skype and other apps are good for Microphone. Still no sound. And video is still a useless 20 seconds recording time.
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=skype_to_skype_calls">skype_to_skype_calls, </a> <br>
+<a href="/search?q=skype_for_windows">skype_for_windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#8217;t connect securely to this page - Microsoft Community</title>
+<h3> bruceyz  say:</h3>
+<h2>            Can&#8217;t connect securely to this page</h2>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Can’t connect securely to this page
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> naveen_m  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Bruce,</p>
+<p>
+</p><p>Thank you for writing to Microsoft Community Forums.</p>
+<p>
+</p><p>I understand how difficult it is, when the device or apps doesn't work in the way it should. For us to isolate the issue and to assist you better, we'd like to ask you a few questions.</p>
+<p>
+</p><p>1. Is this issue website specific?</p>
+<p>2. Have you tried accessing the site using Microsoft Edge?</p>
+<p>3. Do you have any third party anti-virus installed on your computer?</p>
+<p>4. Do you have a VPN connection?</p>
+<p>5. Is your system connected to domain network?</p>
+<p>
+</p><p>We can try a few steps and check if we can fix this.</p>
+<p>
+</p><p><strong>Method 1:</strong> <strong>Reset Internet Explorer settings</strong>.</p>
+<p>
+</p><p>Refer this article on <a href="https://support.microsoft.com/en-us/help/17441/windows-internet-explorer-change-reset-settings" target="_blank" rel="noreferrer nofollow">
+Change or reset Internet Explorer settings</a> and reset IE settings.&nbsp;</p>
+<p>
+</p><p>Note: The Reset Internet Explorer Settings feature might reset security settings or privacy settings that you added to listed of Trusted Sites. The Reset Internet Explorer Settings might also reset parental control settings. We recommend that you note these
+ sites before you use the Reset Internet Explorer Settings feature.</p>
+<p>
+</p><p>Try to access the site. If the issue persists, try method 2.</p>
+<p>
+</p><p><strong>Method 2:</strong> <strong>Enable TLS 1.0, 1.1, and 1.2 and disable SSL 3.0.</strong></p>
+<p>
+</p><p>1. Press <strong>Windows key + R</strong> together to open <strong>Run</strong>.</p>
+<p>2. Type<strong> inetcpl.cpl</strong> and press <strong>Enter</strong>.</p>
+<p>3. Go to <strong>Advanced</strong> tab.</p>
+<p>4. Make a check on <strong>Use TLS 1.0, Use TLS 1.1, </strong>and<strong> Use TLS 1.2</strong></p>
+<p>5. Uncheck <strong>Use SSL 3.0</strong></p>
+<p>6. Click on <strong>Apply</strong> and <strong>OK</strong>.</p>
+<p>
+</p><p>If the issue persists, follow method 3.</p>
+<p>
+</p><p><strong>Method 3: Reset network configuration settings.</strong></p>
+<p>
+</p><p>Refer this article on <a href="https://support.microsoft.com/en-in/help/10741/windows-fix-network-connection-issues" target="_blank" rel="noreferrer nofollow">
+Fix network connection issues in Windows</a> and try the suggestions showing under the
+<strong>Run the Network troubleshooter followed by network commands</strong> section and update us on the result.</p>
+<p>
+</p><p>We'll be waiting for your response.</p>
+<p>
+</p><p>Regards,</p>
+<p>
+</p><p>Naveen M</p>
+<p>Microsoft Community - Moderator</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Missing mail folders from Mac &#40;iCloud&#41; email account on my - Microsoft Community</title>
+<h3> berrywg  say:</h3>
+<h2>            Missing mail folders from Mac &#40;iCloud&#41; email account on my Outlook for Mac 2011 sidebar</h2>
+                    I have MS Outlook for Mac 2011 (version 14.1.4), which I use to sync with my Mac email account (now iCloud).&nbsp;
+<div><br />
+</div>
+<div>The syncing works great except that not all of my mailbox folders appear in my Outlook sidebar (ie, a few folders are missing). I've tried deleting the account and re-adding it, but the same folders are missing. Any ideas or recommendations on how to fix
+ this? </div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="dianeoforegon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DI"); this.style="display: inline-block";'
+<h3> dianeoforegon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I suggest you first turn off Group folders.&nbsp; Under Outlook in the Menu bar select Preferences (Cmd,). You can turn group folders back on after you refresh list.<br />
+<br />
+Uncheck "Group similar folders..."<br />
+<br />
+Next, Control-Click (Right-click) on the iCloud header.<br />
+Select <span style="text-decoration-line: underline">Refresh Folder List</span><br />
+<br />
+If this fails, open Schedules in Outlook Preferences.<br />
+Select your iCloud account in <span style="text-decoration-line: underline">Send &amp; Receive All</span>
+<br />
+Select "Click here for account options"<br />
+Check folders you want to sync. <a href="http://www.flickr.com/photos/dianeross/5572221199/" target="_blank" rel="noreferrer nofollow">
+See example </a><br />
+<br />
+Note: Outlook for Mac does not sync to iCloud's Contacts or Calendars. You will have to use Apple's iCal and Address Book for iCloud sync. If you want to use iTunes to sync to your phone, uncheck Contacts and Calendars in System Preferences &gt; iCloud.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook - Attach file from websites - Microsoft Community</title>
+<h3> suzanne trimble  say:</h3>
+<h2>            Outlook - Attach file from websites</h2>
+                    <p>Can someone assist in rectifying issue with Outlook 2016 - when I select New Email and select Attach File, Browse Web locations and the try and connect to SharePointsites, I get a list of recent folders I have gone to in SharePoint but am not able to browse
+ to other sites in my SharePoint.&nbsp; This is the same as if I use OWA - I go Attach file but only get recent folders and no ability to browse to other locations.&nbsp; Can someone assist in what I need to do to rectify this please.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Barry Xie MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "BX"); this.style="display: inline-block";'
+<h3> barry xie msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Suzanne,</p>
+<p>&nbsp;</p>
+<p>If you want to attach the file in SharePoint documents, I recommend that you sync SharePoint files with OneDrive sync client. After that, you can click Attach File &gt; Browse This PC… and then choose the attachments in the SharePoint like this:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/8a00f2ea-24e0-4028-b1f8-b17c2a4c3684" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/8a00f2ea-24e0-4028-b1f8-b17c2a4c3684" /></a><br />
+</p>
+<p>Here is an article about the detailed steps for your reference: <a href="https://support.office.com/en-us/article/Sync-SharePoint-files-with-the-new-OneDrive-sync-client-6de9ede8-5b6e-4503-80b2-6190f3354a88?ui=en-US&amp;rs=en-US&amp;ad=US&amp;fromAR=1" target="_blank" rel="noreferrer nofollow">
+https://support.office.com/en-us/article/Sync-SharePoint-files-with-the-new-OneDrive-sync-client-6de9ede8-5b6e-4503-80b2-6190f3354a88?ui=en-US&amp;rs=en-US&amp;ad=US&amp;fromAR=1</a></p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Barry</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>can&#39;t format 5300 xpressmusic - Microsoft Community</title>
+<h3> nemo_205  say:</h3>
+<h2>            can&#39;t format 5300 xpressmusic</h2>
+                    
+<p><font>Hi,i need to Format my 5300 XpressMusic.....I TRIED TO UPDATE THE SOFTWARE FROM NOKIA BUT IT DIDN'T WORK</font></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grschinon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You cannot reformat the 5300XM since it is a java-based S40 phone. Only Symbian S60 phones offer this possibility.<br />
+<br />
+What you can do, though, is reinstall the same firmware version using NSU.<br />
+<br />
+Failing that, your only option is to take the phone to your nearest Nokia Care Point for them to reflash the phone.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 using Office 13 error messages at log in using outlook - Microsoft Community</title>
+<h3> howardwcrawford  say:</h3>
+<h2>            Windows 10 using Office 13 error messages at log in using outlook</h2>
+                    <p>"Configuration Initialization Failed registry2.key_error[RegOpenKeyEx0 failed:key Community" (2)&nbsp;
+</p>
+<p>
+</p><p>Once I click on the error message I get "Exception Occurs, when xml processed.</p>
+<p>
+</p><p>I have taken all the updates to Window 10 rebooted my machine but error messages continue to surface.&nbsp; I am using Outlook directly.&nbsp; How should I proceed to correct?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Donna Men" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "DM"); this.style="display: inline-block";'
+<h3> donna men  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Howard,</p>
+<p>
+</p><p>
+</p><p>To provide the best solution, we'd like to learn more about your concern. Can you provide the answer to these following questions:</p>
+<p>
+</p><ul>
+<li>What task are you trying to perform when the issue occurred?</li><li>Have you tested running your <strong>Outlook </strong>on <strong>Safe Mode</strong>? Click
+<strong><a href="https://support.office.com/en-us/article/Open-Office-apps-in-safe-mode-on-a-Windows-PC-dedf944a-5f4b-4afb-a453-528af4f7ac72" target="_blank" rel="noreferrer nofollow">here</a></strong> to learn how.</li><li>If so, are you still encountering the same error?</li><li>Which Windows 10 build are you using?</li></ul>
+<p>If you can also provide us a screenshot of your concern, then that will be helpful.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to access blocked numbers list after upgrading to Windows 10 - Microsoft Community</title>
+<h3> rogermathews24012  say:</h3>
+<h2>            Unable to access blocked numbers list after upgrading to Windows 10 Mobile Anniversary Update</h2>
+                    <p>SINCE UPDATING MY NOKIA LUMIA 735 TO WINDOWS 10 ANNIVERSERY EDITION I CANNOT ACCESS MY BLOCKED NUMBERS LIST .ALTHOUGH I CAN BRING UP A CALLS HISTORY LIST THERE DOES NOT SEEM TO BE ANY WAY OF ADDING ANY OF THESE NUMBERS TO BLOCKED CALL LIST.( THINK I USED
+ TO BE ABLE TO LONG PRESS ON NUMBER AND GIVEN OPTION TO BLOCK IT).IS IT POSSIBLE TO GO BACK TO A PREVIOUS UPDATE?</p>
+<p>
+</p><p>
+</p><p><strong>*** Moderator's note: Changed title from "NOKIA 735" to "Unable to access blocked numbers list after upgrading to Windows 10 Mobile Anniversary Update". ***</strong></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Joe Men" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> joe men  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello, <a href="https://answers.microsoft.com/en-us/profile/12e45409-1d0a-4d89-98b2-272339925b4e" title="rogermathews24012">
+Roger</a>.</p>
+<p>
+</p><p>Blocking, unblocking, and accessing the blocked numbers are still available on the Windows 10 Mobile Anniversary Update.</p>
+<p>
+</p><p>For best Windows 10 Mobile Anniversary Update experience, it is recommended that you
+<strong><a href="https://support.microsoft.com/en-us/help/10768/windows-10-mobile-reset-my-phone" target="_blank" rel="noreferrer nofollow" title="Reset my phone">hard reset</a></strong> your phone after upgrading. This will clear the bugs and delete the installation
+ files created in the process of updating. Do not forget to <strong><a href="https://support.microsoft.com/en-us/help/17232/windows-10-mobile-back-up" target="_blank" rel="noreferrer nofollow" title="Back up your stuff">back up your stuff</a></strong> before hard resetting.</p>
+<p>
+</p><p>Keep us posted.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=700-series">700-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 365 Home Premium doesn&#39;t include Access - Microsoft Community</title>
+<h3> davelozano  say:</h3>
+<h2>            Office 365 Home Premium doesn&#39;t include Access</h2>
+                    I purchased Office 365 Home Premium which run on my windows or mac platforms. According to the included applications listed, it says that I get Access. However, it is not in my download list or installed on my systems and the only way I can find to get
+ it is to purchase it separately. Does anyone know why I cant get Access and help me understand why it lists it on the product i purchased from Officemax, but yet is unavailable?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="dianeoforegon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DI"); this.style="display: inline-block";'
+<h3> dianeoforegon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Microsoft's description is just not clear.&nbsp;
+<div><br />
+<div><b>Publisher, Access, Visio, OneNote, FrontPage and Groove do not exist for the Mac</b>. There are Mac programs that will let you do the same things, and in some cases, they can import your Microsoft files.</div>
+<div><br />
+<div>
+<div>Using Access database on Mac</div>
+<div>http://eggerapps.at/mdbviewer/docs/en/convert-access-to-bento.html</div>
+<div><br />
+<div>Converting Access Databases to Bento 4</div>
+<div><br />
+<div>http://answers.microsoft.com/thread/d7756d41-0542-4337-91e5-5338d40c4c05</div>
+<div><br />
+<div>Excel 2011 for Mac can execute SQL queries against Microsoft Access databases using Microsoft Query (comes with Microsoft Office) or a PivotTable, both of which require using ODBC.</div>
+<div><br />
+<div>You can return data to a table:</div>
+<div>http://www.dummies.com/how-to/content/how-to-move-data-from-external-sources-into-excel-.html</div>
+<div><br />
+<div>or a PivotTable</div>
+<div>http://www.dummies.com/how-to/content/how-to-make-a-pivottable-in-excel-for-mac-2011.html</div>
+<div><br />
+<div>Here's an ODBC driver that works with Microsoft Access:</div>
+<div>http://www.actualtech.com/product_access.php</div>
+<div>iTaskX is a full featured, MS Project compatible project management tool for Mac OS X</div>
+<div>http://www.macupdate.com/app/mac/17130/itaskx</div>
+<div><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Paint 3D_Blender Brush_Dirty Brush - Microsoft Community</title>
+<h3> keithwthompson  say:</h3>
+<h2>            Paint 3D_Blender Brush_Dirty Brush</h2>
+                    Does Paint 3D have a Blender Brush?&nbsp; If not, can it be included along with a&nbsp;Dirty Brush option
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John Ado" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JA"); this.style="display: inline-block";'
+<h3> john ado  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Keith,</p>
+<p>
+</p><p>You may use the <strong>Windows Feedback </strong>app to suggest features. </p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=apps_on_insider_preview">apps_on_insider_preview, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>can not download build 14379 to 14383 - Microsoft Community</title>
+<h3> jerrylessard  say:</h3>
+<h2>            can not download build 14379 to 14383</h2>
+                    Windows will not download update 14383 from 14379. &nbsp;I get error code (ox80246007 I am on a laptop can any one help. thanks
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            When does this happen?&nbsp; Download, Prepare to install. Installing.&nbsp; Before reboot or after reboot?<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Storage issues Lumia 800 - Microsoft Community</title>
+<h3> lucianmoisa  say:</h3>
+<h2>            Storage issues Lumia 800</h2>
+                    Hi,<br />
+I have been having this strange issue nobody seemed to hear about: I sync my Lumia with Zune, copy some pictures (about 4-5 gigs) then items are not synced anymore and I get error codes C00D11CD (80004005).<br />
+<br />
+Another issue, related to this, I think, it that I cannot save pictures taken with the camera. It gives me "out of storage" error, even though when I go to phone details it says I still have 8 gigs left... (and no, not reserved)<br />
+<br />
+I have tried everything, resets of all kind, reinstall, windows reinstall, everything... nothing seems to work.<br />
+<br />
+Please help, thank you.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jay_answers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "JA"); this.style="display: inline-block";'
+<h3> jay_answers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have never seen this error. Based on my basic understanding of storage devices, it is possible that the storage part of your phone might have developed a problem. You have mentioned that you have done 'reset of all kind' so we can rule out a software problem
+ here.</p>
+<p>&nbsp;</p>
+<p>I hope your phone is under warranty so you can get this (possibly) hardware issue fixed without any cost.
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Remove Spaces Withing Data - Microsoft Community</title>
+<h3> annbow  say:</h3>
+<h2>            Remove Spaces Withing Data</h2>
+                    <p>Hi how do I remove spaces in a cell when I am typing the following data:</p>
+<p>1243 456 145. I want the data 1243456145. Probably very simple but I cant crack it. thanks in advance</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jerry Duan MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "JD"); this.style="display: inline-block";'
+<h3> jerry duan msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Ann,</p>
+<p>&nbsp;</p>
+<p>Try checking whether you have changed the default format cell.</p>
+<p>1. Click on the Home Tab &gt; Cell Styles </p>
+<p>2. Right Click on the Normal box &gt; Click on Modify</p>
+<p>3. A new dialogue box will appear. Click on the Format button and then try modifying it to the format to achieve your requirement.</p>
+<p>
+</p><p>&nbsp;<a href="https://filestore.community.support.microsoft.com/api/images/6dd7dd16-bf82-49c2-93f2-2f58c9e0ce34" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/6dd7dd16-bf82-49c2-93f2-2f58c9e0ce34" height="392" width="306" /></a></p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Jerry</p>
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Setting up Windows 10 for Office 365 users - Microsoft Community</title>
+<h3> george s gordon  say:</h3>
+<h2>            Setting up Windows 10 for Office 365 users</h2>
+                    
+<p>Our business has been using Office 365 for some time. We are now about to upgrade to Windows 10 on our desktop and other devices.</p>
+<p>I'm looking for the best way to set up Windows 10 accounts for Office 365 users.</p>
+<p>I have just set up a Surface Pro 4 for someone so that he signs in to Windows 10 using the email address for his&nbsp;Office 365 work account.</p>
+<p>This works provided he has a Microsoft Account that uses the 365 email address, which we set up for the purpose.</p>
+<p>I found this suggestion by Eric Yang MSFT&nbsp;at&nbsp;https://community.office365.com/en-us/f/1004/t/402264.</p>
+<p>I'd like clarification on the following points -</p>
+<p>1) This seems a somewhat strange, and potentially confusing, thing to do - so does it have any side effects? Are there any negative consequences?</p>
+<p>2) Should the password for Windows 10 be the same password used to sign in to 365?</p>
+<p>3) What difference does using a different password make?</p>
+<p>There is another way to associate his Office 365 work account with his Windows 10 user account.</p>
+<p>I can set up Windows 10 with either a local account or with a Microsoft Account that does not use his 365 email address.</p>
+<p>Then, for example, I can open OneNote 2016 and add his 365 work account - Windows 10 then saves the 365 account details for use in other Windows apps.</p>
+<p>Apparently you can't add a 365 work account in the version of OneNote that comes with Windows 10. Hence this only works if you have installed recent versions of Office such as 2016 or 2013.</p>
+<p>So, assuming you do have Office 2013/2016, is this a better/cleaner way to set up Windows 10 for Office 365 users?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> haiyusky  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>hi clan,</p>
+<p>it seems that we are not on the same page. please go through my following detailed explanation and suggestions.</p>
+<p>let's take this email address <strong>*** Email address is removed for privacy ***</strong> (it is an office 365 work account) for example.</p>
+<p>if our organization had set up azure ad join on windows 10, see&nbsp;eric's reply and the article he provided, users can log into windows 10 devices with it .
+<br />
+<strong>note</strong>: in this situation, the bold login email address is recognized as
+<strong>an office 365 account by devices</strong>.</p>
+<p>if we sign up <strong>*** Email address is removed for privacy ***</strong> as a microsoft account(what you have done), and then add it as our windows 10 login account. we can also use this bold email address to login windows 10.
+<br />
+note: in this situation, actually, the login email is recognized as a <strong>microsoft account by devices</strong> not an office 365 account.</p>
+<p>a lot of people decide to use this workaround, because they don't mind the following influence , such as the sharing on sharepoint online. please see the following scenario.(the influence is that user needs to select which account the email address belongs
+ to manually)<br />
+1.sharing in the <strong>same</strong> organization.<br />
+if a user shares a document with <strong>*** Email address is removed for privacy ***</strong> and when the bold email address accepts the invitation, he will get the following screenshot. actually, he can only select
+<strong>work or school account</strong> to proceed to access the shared documents. selecting the personal account will not work.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/5a84926f-546d-4085-b915-050cc29e7ce5" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/5a84926f-546d-4085-b915-050cc29e7ce5" /></a></p>
+<p>2.sharing between <strong>different organizations</strong>.<br />
+if an external office 365 user(in another organization) shares a document with <strong>
+*** Email address is removed for privacy ***</strong> and when this email address accepts the invitation, he will get the following screenshot. in this scenario, we can choose both microsoft account and organization account to access the shared documents.
+<strong>but please note:</strong> once we select one account such as <strong>organization account</strong> , we should use the
+<strong>same(organization)</strong> account all the time to access the documents shared by this organization as a related user profile has been created in this organization's tenants. selecting the other account will not work.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/a4ebc01f-ed9a-480a-abb1-04d88b1ae818" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/a4ebc01f-ed9a-480a-abb1-04d88b1ae818" /></a></p>
+<p>given your situation, i would suggest:<br />
+1.use the workaround you have already done if you don't mind the situation above either.<br />
+2.don't create other alias for microsoft account as i think your initial goal is that to use the bold email address to login windows 10.<br />
+3.please understand it will not affect using of office clients. because we can sign to office 2016/2013 downloaded from office 365 subscription with both office 365 work account and microsoft account. just let you know different accounts are associated with
+ different connected services.you can simply click switch account to select which account you want to sign in.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/57659b30-d865-41b7-9637-237b8e7dab83" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/57659b30-d865-41b7-9637-237b8e7dab83" /></a><br />
+4.when we use office 365 online services, for example, you share the documents stored in sharepoint online, or an external user shares the documents with your organization, it would be better that you let the employees select the organization account all the
+ while.</p>
+<p>meanwhile, since this forum mainly focuses on office 365 for business online services, for any creating login account/adding alias, it is suggested to ask questions on
+<a href="http://answers.microsoft.com/en-us/windows/forum/windows_10?tab=threads">
+windows forum</a>.</p>
+<p>if it is helpful, please mark it as yes which will benefit other community members.</p>
+<p>if anything is unclear , feel free to post back.</p>
+<p>regards,<br />
+sky</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Create password to access 6288 - Microsoft Community</title>
+<h3> philipa---01  say:</h3>
+<h2>            Create password to access 6288</h2>
+                    
+<p>I want to know if its possible to create, and how, a password to block others to access my phone...when unblocking the keyboard, or accessing the messages folder or even when opening the memory card.&nbsp;Thanks</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grschinon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can lock the phone when it's switched on. Press the power button once and scroll down to "Lock phone". You'll have to enter the phone's security code to activate the lock (the default on Nokia handsets is 12345) and again to unlock it.<br />
+<br />
+As for when the phone is switched off, you have to set two features. First, have the phone request the SIM card's PIN upon startup.<br />
+<br />
+People can get around this by removing the SIM, so you get around that by having the phone request the security code if the SIM card is removed or changed.<br />
+<br />
+How to do this is detailed in the phone's manual, which you can obtain on Nokia's site if you've lost yours.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> philipa---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for the help but that isn't really what i was looking for...what i really need is to know if is any way to put, to create&nbsp;a password for the memory card, so if anyone want to open it, that password is requested (just like in the PC, for example).
+ If it is not possible, i want to know if it is possible to do the same thing when you want to unlock the&nbsp;phone. Thank you for your help and time spend with this.&nbsp;&nbsp;
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Right to left language issues in Word for iPad - Microsoft Community</title>
+<h3> amir hasanzade  say:</h3>
+<h2>            Right to left language issues in Word for iPad</h2>
+                    <p>Does word for iPad support right to left languages?</p>
+<p>
+</p><p>whenever I try to type in arabic word writes from left to right, now in arabic letters have few form depending on where they are located and word gets them all wrong and just displays the singular form of letters.</p>
+<p>
+</p><p>The question is:</p>
+<p>Is this a bug or should I try some special setting?</p>
+<p>
+</p><p>my region settings is set to usa but I don't think this would affect writing cause other apps like Pages work just fine</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Daniel Jackson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DJ"); this.style="display: inline-block";'
+<h3> daniel jackson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hello Amir,<br />
+<br />
+</span><span style="color: rgba(0, 0, 0, 1)">We apologize for not being able to address your concern in a timely manner.<br />
+<br />
+As mentioned in the following threads,&nbsp;currently this feature is not supported in Word for iPad.<br />
+</span><span style="color: rgba(0, 0, 0, 1)"><br />
+</span><span><a href="http://answers.microsoft.com/en-us/office/forum/office_mobile-officeapps/arabic-support-in-office-for-ipad/5b40e0a4-77f8-4d14-9123-20b89f600f5d"><span style="color: rgba(0, 0, 255, 1)">http://answers.microsoft.com/en-us/office/forum/office_mobile-officeapps/arabic-support-in-office-for-ipad/5b40e0a4-77f8-4d14-9123-20b89f600f5d</span></a><span style="color: rgba(51, 51, 51, 1)">
+<br />
+<br />
+</span><a href="http://answers.microsoft.com/en-us/office/forum/office_mobile-word/word-for-ipad-faq/ad72fa3b-9ae4-46c7-bbbc-f0262939b7cc"><span style="color: rgba(0, 0, 255, 1)">http://answers.microsoft.com/en-us/office/forum/office_mobile-word/word-for-ipad-faq/ad72fa3b-9ae4-46c7-bbbc-f0262939b7cc</span></a><span style="color: rgba(51, 51, 51, 1)">
+<br />
+&nbsp;<br />
+</span></span><span style="color: rgba(0, 0, 0, 1)">If you have any other queries related to Office products, feel free to reply and I'll be happy to further assist you.<br />
+<br />
+Thank you.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Issue with Pivot Table&#34;we couldn&#39;t get the data - Microsoft Community</title>
+<h3> peter doss  say:</h3>
+<h2>            Excel Issue with Pivot Table&#34;we couldn&#39;t get the data from&#34;</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I am using Excel 2013 on Windows</p>
+<p>
+</p><p>I create a table, and insert a pivot table that use this table as data source</p>
+<p>
+</p><p>I close the excel and rename and rename the file, and then open it again</p>
+<p>
+</p><p>When trying to refresh my Pivot Table, I get the following Error:</p>
+<p>
+</p><p>"cannot open PivotTable source File 'C:\myfile.xlsx"</p>
+<p>
+</p><p>"We couldn't get the data from 'Table1' in the workbook 'C:\myexcel2.xlsx' Open the workbook in excel and try again.'</p>
+<p>
+</p><p>I think this is a major bug, if it cannot be fixed.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Daniel Jackson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DJ"); this.style="display: inline-block";'
+<h3> daniel jackson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Peter,<br />
+<br />
+<span>Issues related to Pivot table would be better addressed in Tech Net forum. Click&nbsp;on the link below to post your query in the following Tech Net forum.<br />
+</span><span><a href="http://social.technet.microsoft.com/Forums/en/excel/threads" target="_blank" rel="noreferrer nofollow"><span>http://social.technet.microsoft.com/Forums/en/excel/threads</span></a></span><span><br />
+<br />
+If you have any other questions related to Office products, reply and I’ll be glad to help you.<br />
+<br />
+Thank you.</span>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Sync for HTC TouchPro 2 Model T7380 - Microsoft Community</title>
+<h3> greg iseral  say:</h3>
+<h2>            Sync for HTC TouchPro 2 Model T7380</h2>
+                    <p>I'm trying to find the software that will enable me to sync my HTC TouchPro 2 Model T7380 phone to Outlook/Windows 8. I've already called HTC and they couldn't help. Please let me know if it's possible to sync, or if my only option is to purchase a new phone.
+ And thank you very much in advance!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> resourceful  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello. Unfortunately, the "normal" (free) way using WMDC is not supported in Win 8. I would see if these two pay versions support your device:
+<div><br />
+<div><a href="http://www.akruto.com/" target="_blank" rel="noreferrer nofollow">http://www.akruto.com/</a></div>
+<div><a href="http://www.companionlink.com/windowsmobile/outlook/" target="_blank" rel="noreferrer nofollow">http://www.companionlink.com/windowsmobile/outlook/</a></div>
+<div><br />
+<div>They both have trial versions. You can also set up an exchange activesync account to Outlook.com and sync your phone there. Your PC Outlook can be synced to Outlook.com using Outlook connector (depending on version).&nbsp;<br />
+<div><br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I&#39;ve already purchased Microsoft Office Home and Student 2007 and - Microsoft Community</title>
+<h3> susan j. anderson  say:</h3>
+<h2>            I&#39;ve already purchased Microsoft Office Home and Student 2007 and have the product key and a full license.  I purchased a new computer and want to install it on the new machine.</h2>
+                    <span>
+                    <span>
+<p><strong>Remember - This is a public forum so never post private information such as email or phone numbers!</strong></p>
+<p>Ideas:</p>
+<ul>
+<li>Programs you are having problems with </li><li>Error messages </li><li>Recent changes you made to your computer </li><li>What you have already tried to fix the problem </li></ul>
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The Home and Student product key will allow you to install the software and you will be able to activate it on three PCs. What appears to be the issue here is that you don't have the installation media? You can download it from<a href="http://www.microsoft.com/office/downloads/." target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/office/downloads/.</a></p>
+<p>The exe file that you download will be a self extracting ZIP file. If you wish you can use WinZip or WinRar to extract the files from the ZIP and create an installation disc from those files, or you can run the exe file from the PC(s) you wish to install
+ upon.</p>
+<p>&lt;Susan J. Anderson&gt; wrote in message news:*** Email address is removed for privacy ***...</p>
+<blockquote>
+<p>I went to the Microsoft website, so I don't have the actual disk and I just thought I could go back there and there would be an option.&nbsp; I know I can install it on 3 different computers.&nbsp; That's why I'm asking.&nbsp; And I didn't rate your first answer because
+ it didn't apply to my situation.&nbsp; Thanks for the update. </p>
+</blockquote>
+<hr />
+Graham Mayor - Word MVP<br />
+<a href="http://www.gmayor.com" target="_blank" rel="noreferrer nofollow">www.gmayor.com</a><br />
+Posted via the Communities Bridge<br />
+<a href="http://communitybridge.codeplex.com/" target="_blank" rel="noreferrer nofollow">http://communitybridge.codeplex.com/</a><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Text disappearing from custom Screen Tips - Microsoft Community</title>
+<h3> anniebest  say:</h3>
+<h2>            Text disappearing from custom Screen Tips</h2>
+                    I am working with a fairly complex document that includes form fields (both content controls and legacy forms), REF IF statements, and long-ish custom screen tips. All of the screen tips are below 2000 characters, but Word 2013 is "disappearing" portions
+ of the text from some of them after saving, closing, and reopening the document. The screen tips that have been cut off seem random, as do the points at which they are cut off. &nbsp;Does anyone have any experience with this, and most importantly, fixing it? Thanks
+ in advance!&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ryan fra  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Annie,</p>
+<p>
+</p><p>Please check the latest update for Microsoft Word by clicking <strong>File </strong>
+on the upper left side, then select <strong>Account </strong>and click <strong>Office Updates</strong>.</p>
+<p>
+</p><p>You can also Repair Microsoft office by following this <strong><a href="https://support.office.com/en-US/Article/Repair-an-Office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b" target="_blank" rel="noreferrer nofollow">link.</a></strong></p>
+<p>
+</p><p>Let us know if you need further help.</p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I seem to recall that MS is degrading legacy form fields (this could be a figment of my imagination). I assume that you are talking about screen tips for the legacy fields.</p>
+<p>
+</p><p>General advice is to not mix legacy fields and content controls.</p>
+<p>
+</p><p>What are you doing with the legacy fields that you cannot do using Content Controls?</p>
+<p>I would assume that it is the lengthy screen tips. (I have never found them useful. My recollection is that they show up in the status bar.)</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anniebest  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for your reply. &nbsp;There are a handful of drop down fields in the document that have conditional text associated with them and the conditional text needs to be updated easily by the user while they are working in the form. I was told that the only way
+ to be able to do that was with a legacy drop down rather than the content control drop down.&nbsp;</p>
+<p>
+</p><p>The long screen tips are associated with hyperlinks and are at a client's request. They are showing up as hover-over pop-ups.&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Charles Kenyon" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CK"); this.style="display: inline-block";'
+<h3> charles kenyon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>So, they are hyperlinks that are not part of your drop-downs. Those trigger conditional text? The hyperlinks are not part of the drop-downs nor of of the conditional text?</p>
+<p>
+</p><p>Do the hyperlinks actually link to something or are they there just for the pop-up tips?</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>email from &#42;&#42;&#42; Email address is removed for privacy - Microsoft Community</title>
+<h3> shakeel mohammed  say:</h3>
+<h2>            email from &#42;&#42;&#42; Email address is removed for privacy &#42;&#42;&#42; &#39;Complaint about message from.......&#40;sending IP address&#41;&#39;</h2>
+                    <p>Hi&nbsp;</p>
+<p>we received a message from *** Email address is removed for privacy ***' in out postmaster email account. The subject was 'Complaint about message from IP address'.</p>
+<p>
+</p><p>i have added out postmaster account to receive notifications about complaints, but wanted to know if the complaint was generated because an email we sent was marked as spam or if you recieved an email from the recipient at *** Email address is removed for privacy ***</p>
+<p>
+</p><p>the email we sent was a legitimate email and we want to ensure that these complaints will not affect our domain reputation?</p>
+<p>
+</p><p>Kind Regards</p>
+<p>
+</p><p>Shakeel</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> parmi mehta  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Shakeel,
+<br />
+<br />My name is Parmi, I am an Independent Advisor. Thank you for posting your question. I'll be happy to help. 
+<br />
+<br />First please check if, it is a legit mail and not a SPAM mail. check this thread ---- <a href="https://answers.microsoft.com/en-us/outlook_com/forum/oemail-osend/e-mail-account-blocked-scam/cf7ef1ef-588a-4ee3-9dd7-22831c21ce73">https://answers.microsoft.com/en-us/outlook_com...</a>
+<br />
+<br />If, it is SPAM mail, I would recommend you report the spam mails to Microsoft. in below article the steps and how to report is mentioned 
+<br />
+<br />Deal with abuse, phishing, or spoofing in Outlook.com
+<br /><a href="https://support.office.com/en-us/article/deal-with-abuse-phishing-or-spoofing-in-outlook-com-0d882ea5-eedc-4bed-aebc-079ffa1105a3" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/deal-w...</a>
+<br />
+<br />Use email to submit junk (spam) or phishing scam messages to Microsoft
+<br />To submit a junk or phishing scam message to Microsoft:
+<br />1. Create a blank email message.
+<br />2. Address the message to the Microsoft team that reviews messages, as follows:
+<br />3. For junk messages: *** Email address is removed for privacy ***
+<br />4. For phishing scam messages: *** Email address is removed for privacy ***
+<br />5. Copy and paste the junk or phishing scam message into the new message as an attachment.
+<br />
+<br /> Note
+<br />You can attach multiple messages to the new message. Make sure that all the messages are the same type — either phishing scam messages or junk email messages. &gt; Leave the body of the new message empty.
+<br />
+<br />6. Click Send.
+<br />
+<br />Source - <a href="https://docs.microsoft.com/en-us/office365/securitycompliance/submit-spam-non-spam-and-phishing-scam-messages-to-microsoft-for-analysis" target="_blank" rel="noreferrer nofollow">https://docs.microsoft.com/en-us/office365/secu...</a>
+<br />
+<br />If, you would like to read this article on how Microsoft is trying to fight the Junk mail issue, please feel free to read through --- <a href="https://sendersupport.olc.protection.outlook.com/pm/junkemail.aspx" target="_blank" rel="noreferrer nofollow">https://sendersupport.olc.protection.outlook.co...</a>
+<br />
+<br />Please let me know if, you have any other queries. 
+<br />
+<br />Regards,
+<br />Parmi       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> shakeelmohammed1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Parmi</p>
+<p>
+</p><p>Thanks for getting back to me.&nbsp;</p>
+<p>
+</p><p>i am the administrator of the domain that the complaint was generated against, we sent the email to the recipient. The email was a legetimate email but we recieved the complaint.&nbsp;</p>
+<p>
+</p><p>I am not sure how the complaint was generated and not sure how to respond to the complaint as we are not sending spam emails</p>
+<p>
+</p><p>Can you please inform me if there is anything we can do to get the complaints removed or addressed by us.</p>
+<p>
+</p><p>Kind Regards</p>
+<p>
+</p><p>Shakeel&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brian tillman &#91;outlook mvp 2007-2019&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Outlook.com doesn't have a postmaster account.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> shakeelmohammed1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi we are the owner of the sending domain that the complaints were received against.&nbsp;</p>
+<p>
+</p><p>I am trying to identify how these complaints are sent to Microsoft so that we can take the appropriate action and.</p>
+<p>
+</p><p>if we receive complaints about an email we have sent to a Hotmail users are these because the email we sent was marked as spam or the recipient sent an&nbsp; email to the Microsoft abuse email account?</p>
+<p>
+</p><p>Thanks&nbsp;</p>
+<p>
+</p><p>Shakeel&nbsp;</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brian tillman &#91;outlook mvp 2007-2019&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Information for domain administrators about how Outlook.com deals with mail can be viewed here:&nbsp;<a href="https://sendersupport.olc.protection.outlook.com/pm/" target="_blank" rel="noreferrer nofollow">https://sendersupport.olc.protection.outlook.com/pm/</a>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Dynamic Range Names with Line Chart - Microsoft Community</title>
+<h3> jbt1706  say:</h3>
+<h2>            Dynamic Range Names with Line Chart</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I'm trying to create a chart where the Series are created dynamically.</p>
+<p>I've created a range name in a cell using the formula</p>
+<p>="More_Charts!"&amp;INDEX(Z168:Z179,MATCH(EOMONTH(DATEVALUE(INDEX('Assessments (storms excl)'!F:F,MATCH(I156,'Assessments (storms excl)'!A:A,0))),0)+1,J3:V3,0),1)&amp;"163:"&amp;INDEX(Z168:Z179,MATCH('Assessments (storms excl)'!J3,J157:U157,0),1)&amp;"164"</p>
+<p>
+</p><p>This formula returns in the cell W173 'More_Charts!J163:S164 which is exactly what I want, great!!</p>
+<p>
+</p><p>I then create a Range Name called Chart_data which when created uses:</p>
+<p>=INDIRECT(More_Charts!$W$173) Where More_Charts is the name of the sheet!! So far so good!!</p>
+<p>Now, when I Do Insert Name Define, click on the Range Name it highlights in blue the range reference.&nbsp; Again, so far so good.</p>
+<p>
+</p><p>So finally, I then create a line chart and in the Series Value I type the Wb name separated with a ! then type the Range name which looks like 'Charts_WB.xlsm'!Chart_data</p>
+<p>
+</p><p>When I click OK I get the message "The reference is not valid. References for titles, values, or sizes must be a single cell, row, column."</p>
+<p>
+</p><p>I could understand this is the range wasn't recognised, but having tested this from the Name Manager and seeing it valid (IE the cells are highlighted when I select the range), I cant see where I'm going wrong.</p>
+<p>
+</p><p>Any ideas would be greatly appreciated.</p>
+<p>
+</p><p>Thanks</p>
+<p>John</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="teylyn" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> teylyn  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>the error message tells you what's wrong. The range name refers to a two-dimensional range with two rows and ten columns. The series value can only be one row with many columns, or one column with many rows, or one cell but not a two-dimensional range.&nbsp;</p>
+<p>
+</p><p>You would get the same error if you selected&nbsp;<span style="color: rgba(51, 51, 51, 1)">More_Charts!J163:S164 manually. &nbsp;Which row holds the numbers for the series? Adjust your formula to return either&nbsp;</span><span style="color: rgba(51, 51, 51, 1)">More_Charts!J163:S163
+ or&nbsp;</span><span style="color: rgba(51, 51, 51, 1)">More_Charts!J164:S164.&nbsp;</span></p>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Creating WM6 ROMs for the HTC Wizard. - Microsoft Community</title>
+<h3> xda2_haseeb  say:</h3>
+<h2>            Creating WM6 ROMs for the HTC Wizard.</h2>
+                    I wanted to ask is it legal to create WM6 ROMs for the HTC Wizard.<br />
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Nope it's not legal.
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Previous versions Windows 10 and general comments - Microsoft Community</title>
+<h3> daemon3003  say:</h3>
+<h2>            Previous versions Windows 10 and general comments</h2>
+                    <p>Hi, I have system restore on and configured in Windows 10, notice when you right click and go to properties, there is a previous versions tab like in Windows 7, but it doesn't actually contain any prior folders, and says no previous versions available. I
+ then checked my restore points and found I had 3 points saved, as previous versions is meant to formulate itself at the creation of a restore point, I should have at least 3 folders available on the previous version tab.</p>
+<p>As an aside: the return of the start menu great idea, but where is all the options on the right hand side,it has the usability of the start menu but not the functionality. May I point Microsoft to the Windows 7 start menu it was brilliant, in its simplicity
+ maybe the options could be restored in later builds of Windows 10, if not hopefully classic shell will do an update for Win 10.</p>
+<p>The insistence of Microsoft to ram the Metro apps down your throat staggers belief. I have a Windows phone 8.1, and they are perfect on it, but not on my desktop, and the reason they removed gadgets was because they were unsafe, I have yet to use a Metro
+ app that hasn't requested my location, or that doesn't contain live tiles, which I ask you is the most pernicious of the 2.</p>
+<p>I have found no real issues with any software I have loaded onto Windows 10, the things that didn't work in Win 8 still don't work, and the things that do still do.</p>
+<p>I have installed Qtab onto Windows 10 as it still doesn't contain tab options on its windows, although the add a desktop button can be thought of as almost a form of tabbing.</p>
+<p>Love the fact MKV files now show as thumbnails although media player still won't play them.</p>
+<p>System transparency program still works on Windows 10, even gives me transparency on Start Menu looks awesome.</p>
+<p>I mainly play games on my system, and use it as a general purpose home entertainment center, still remarkably hard to find the games folder in 10, like it was in 8, but find it I did.</p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="ThrashZone" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "TH"); this.style="display: inline-block";'
+<h3> thrashzone  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yep I believe the issue is tied to refresh install,</p>
+<p>All of these so called restore points created only apply to system not personal files or programs downloaded :/</p>
+<p>Oddly even restore to an earlier time can not find these windows update restore points :)</p>
+<p>Funky but what would anyone expect from a preview&nbsp; ;)</p>
+<p>Cheers.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=performance_and_maintenance">performance_and_maintenance, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

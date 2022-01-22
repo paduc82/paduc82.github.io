@@ -1,0 +1,2349 @@
+    <title>How to find word First Row and Lastrow - Microsoft Community</title>
+<h3> vijayze  say:</h3>
+<h2>            How to find word First Row and Lastrow</h2>
+                    <span>Hello All,</span><br />
+                    <span>Hello All,</span><br />
+<br />
+<span>I have a excel macro which creates a word doc and then creates a table in the word doc.</span><br />
+<span>I have a excel macro which creates a word doc and then creates a table in the word doc.</span><br />
+<br />
+<span>The table has many rows and goes till 10 pages or so. For each page in the word doc I want to know the first row and the last row of the table. Is it possible?</span>
+<span>The table has many rows and goes till 10 pages or so. For each page in the word doc I want to know the first row and the last row of the table. Is it possible?</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It is possible. You haven't said exactly what you want to know about the first and last row on each page -- the row index, or the text in the row, or something else. If all you want is the row index, you can adapt the following code.<br />
+<br />
+Option Base 1<br />
+<br />
+Sub TableRowData()<br />
+&nbsp;&nbsp;&nbsp; ' define meaningful names to use for array's first dimension<br />
+&nbsp;&nbsp;&nbsp; Const pgnum = 1<br />
+&nbsp;&nbsp;&nbsp; Const startrow = 2<br />
+&nbsp;&nbsp;&nbsp; Const endrow = 3<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; Dim data() As Long&nbsp; ' array to hold data<br />
+&nbsp;&nbsp;&nbsp; Dim rw As Row&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' current row of table<br />
+&nbsp;&nbsp;&nbsp; Dim rownum As Long&nbsp; ' the index of rw in table's rows<br />
+&nbsp;&nbsp;&nbsp; Dim datarow As Long&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' current value of array's second dimension<br />
+&nbsp;&nbsp;&nbsp; Dim rg As Range&nbsp;&nbsp;&nbsp;&nbsp; ' a range object for finding the page where rw starts<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' initialization<br />
+&nbsp;&nbsp;&nbsp; ReDim data(3, 1)<br />
+&nbsp;&nbsp;&nbsp; Set rw = ActiveDocument.Tables(1).Rows(1)<br />
+&nbsp;&nbsp;&nbsp; rownum = 1<br />
+&nbsp;&nbsp;&nbsp; datarow = 1<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' store the page number and row number for the first row of the table<br />
+&nbsp;&nbsp;&nbsp; Set rg = rw.Range<br />
+&nbsp;&nbsp;&nbsp; rg.Collapse wdCollapseStart<br />
+&nbsp;&nbsp;&nbsp; data(pgnum, datarow) = rg.Information(wdActiveEndAdjustedPageNumber)<br />
+&nbsp;&nbsp;&nbsp; data(startrow, datarow) = rownum<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' Step through the remaining rows of the table.<br />
+&nbsp;&nbsp;&nbsp; ' Each time the page number changes, store the preceding row as the<br />
+&nbsp;&nbsp;&nbsp; ' last row on the previous page; then expand the array and store the<br />
+&nbsp;&nbsp;&nbsp; ' page number and row number for the new row.<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' Note: this loop could be written as For rownum = 1 to ActiveDocument.Tables(1).Rows.Count,<br />
+&nbsp;&nbsp;&nbsp; ' but it would slow down as rownum increases because VBA counts the rows from 1 to rownum<br />
+&nbsp;&nbsp;&nbsp; ' for each iteration. For a large number of rows, this way is faster.<br />
+&nbsp;&nbsp;&nbsp; While rownum &lt; ActiveDocument.Tables(1).Rows.Count<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rw = rw.Next<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rownum = rownum + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rg = rw.Range<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rg.Collapse wdCollapseStart<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If rg.Information(wdActiveEndAdjustedPageNumber) &gt; data(pgnum, datarow) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; data(endrow, datarow) = rownum - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ReDim Preserve data(3, datarow + 1)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; datarow = datarow + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; data(pgnum, datarow) = rg.Information(wdActiveEndAdjustedPageNumber)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; data(startrow, datarow) = rownum<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Wend<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' finish up with the last row of the table<br />
+&nbsp;&nbsp;&nbsp; data(endrow, datarow) = rownum<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' display the results<br />
+&nbsp;&nbsp;&nbsp; Dim msg As String<br />
+&nbsp;&nbsp;&nbsp; Dim i As Long<br />
+&nbsp;&nbsp;&nbsp; For i = 1 To UBound(data, 2)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; msg = msg &amp; "datarow = " &amp; data(pgnum, i) &amp; vbTab &amp; "rows " &amp; data(startrow, i) &amp; " - " &amp; data(endrow, i) &amp; vbCr<br />
+&nbsp;&nbsp;&nbsp; Next i<br />
+&nbsp;&nbsp;&nbsp; MsgBox msg<br />
+End Sub<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vijayze  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Jay!
+<div><br />
+<div>Thanks for the reply. I should have explained the complete scenario.</div>
+<div><br />
+<div>All I am trying to do is to identify if the first cell in the first row of every page is empty or not.</div>
+<div><br />
+<div>If it is empty, it should go back to the previous page, identify the last non empty cell in the first column and insert a page break there. This way I want to have first cell in the first row of every page to be non empty.</div>
+<div><br />
+<div>Note:</div>
+<div>There can be a situation where first column in a page would be all empty. If this is the case then we have to ignore it.</div>
+<div><br />
+<div>Can we do the above using vba?</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'm sure it can be done in VBA. It will be somewhat more complex than the code I posted, but not impossible.<br />
+<br />
+Some of the considerations you'll have to deal with include:<br />
+<ul>
+<li>A table cell that contains no text still contains a cell marker, so an "empty" cell's .Range.Text is a string with a length of 2.</li><li>Instead of inserting a page break, for the row that should be the first one on a page, set .Cells(1).Range.ParagraphFormat.PageBreakBefore = True. (This is equivalent to going to the Paragraph formatting dialog, clicking the Line &amp; Page Breaks tab, and
+ checking Page Break Before.)</li><li>VBA gets very unhappy when dealing with tables that contain either merged or split cells. If you've used those, try to find a way to do without them.<br />
+</li></ul>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vijayze  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello Jay!
+<div><br />
+<div>I have tested your code and I get the output too.</div>
+<div><br />
+<div>This is what I am trying to do:</div>
+<div>From second page, if the first cell is empty, then it should goto previous page and identify non empty cell (in first column) and insert a page break there. If we donot find a non empty cell in first column of previous page then we can ignore. This looks
+ quite easy in Excel but it looks like a herculean task in word!</div>
+<div><br />
+<div>The general logic looks a bit simple but when I try to convert it to VBA all kind of issues arise. I am trying to go through the references you gave. I think I have learned some word coding researching all the this time.</div>
+<div><br />
+<div>You have already written code which identifies the last row and first row of every page, I think now its a bit easy (for you) to insert the pagebreak. Can you guide me in building the macro? Many thanks for the input!</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vijayze  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Jay,
+<div><br />
+<div>I have tried developing a macro and when I was finished I thought it was done!</div>
+<div><br />
+<div>But alas, I have noticed that I have done a big mistake. As I kept on inserting the page breaks, the # pages increased and all the macro went haywire. I got 16 pages for a 5 page document where I think the doc could be ready in 7 pages. Here is the code.
+ I am pasting the complete code (most of the code is something which you gave).</div>
+<div><br />
+<div>
+<div>Sub TableRowData()</div>
+<div>&nbsp; &nbsp; ' define meaningful names to use for array's first dimension</div>
+<div>&nbsp; &nbsp; Const pgnum = 1</div>
+<div>&nbsp; &nbsp; Const startrow = 2</div>
+<div>&nbsp; &nbsp; Const endrow = 3</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; Dim data() As Long &nbsp;' array to hold data</div>
+<div>&nbsp; &nbsp; Dim rw As Row &nbsp; &nbsp; &nbsp; ' current row of table</div>
+<div>&nbsp; &nbsp; Dim rownum As Long &nbsp;' the index of rw in table's rows</div>
+<div>&nbsp; &nbsp; Dim datarow As Long &nbsp; &nbsp; &nbsp;' current value of array's second dimension</div>
+<div>&nbsp; &nbsp; Dim rg As Range &nbsp; &nbsp; ' a range object for finding the page where rw starts</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' initialization</div>
+<div>&nbsp; &nbsp; ReDim data(3, 1)</div>
+<div>&nbsp; &nbsp; Set rw = ActiveDocument.Tables(1).Rows(1)</div>
+<div>&nbsp; &nbsp; rownum = 1</div>
+<div>&nbsp; &nbsp; datarow = 1</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' store the page number and row number for the first row of the table</div>
+<div>&nbsp; &nbsp; Set rg = rw.Range</div>
+<div>&nbsp; &nbsp; rg.Collapse wdCollapseStart</div>
+<div>&nbsp; &nbsp; data(pgnum, datarow) = rg.Information(wdActiveEndAdjustedPageNumber)</div>
+<div>&nbsp; &nbsp; data(startrow, datarow) = rownum</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' Step through the remaining rows of the table.</div>
+<div>&nbsp; &nbsp; ' Each time the page number changes, store the preceding row as the</div>
+<div>&nbsp; &nbsp; ' last row on the previous page; then expand the array and store the</div>
+<div>&nbsp; &nbsp; ' page number and row number for the new row.</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' Note: this loop could be written as For rownum = 1 to ActiveDocument.Tables(1).Rows.Count,</div>
+<div>&nbsp; &nbsp; ' but it would slow down as rownum increases because VBA counts the rows from 1 to rownum</div>
+<div>&nbsp; &nbsp; ' for each iteration. For a large number of rows, this way is faster.</div>
+<div>&nbsp; &nbsp; While rownum &lt; ActiveDocument.Tables(1).Rows.Count</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; Set rw = rw.Next</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; rownum = rownum + 1</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; Set rg = rw.Range</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; rg.Collapse wdCollapseStart</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; If rg.Information(wdActiveEndAdjustedPageNumber) &gt; data(pgnum, datarow) Then</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; data(endrow, datarow) = rownum - 1</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ReDim Preserve data(3, datarow + 1)</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; datarow = datarow + 1</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; data(pgnum, datarow) = rg.Information(wdActiveEndAdjustedPageNumber)</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; data(startrow, datarow) = rownum</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; End If</div>
+<div>&nbsp; &nbsp; Wend</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' finish up with the last row of the table</div>
+<div>&nbsp; &nbsp; data(endrow, datarow) = rownum</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; ' display the results</div>
+<div>&nbsp; &nbsp; Dim msg As String</div>
+<div>&nbsp; &nbsp; Dim i As Long</div>
+<div>&nbsp; &nbsp; For i = 1 To UBound(data, 2)</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; msg = msg &amp; "datarow = " &amp; data(pgnum, i) &amp; vbTab &amp; "rows " &amp; data(startrow, i) &amp; " - " &amp; data(endrow, i) &amp; vbCr</div>
+<div>&nbsp; &nbsp; Next i</div>
+<div>&nbsp; &nbsp; MsgBox msg</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; '"""""""""" This is what I tried """"""""""""</div>
+<div>&nbsp; &nbsp; Dim checkrow As Integer</div>
+<div>&nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; For i = 1 To UBound(data, 2)</div>
+<div>&nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp;If data(pgnum, i) &gt; 1 Then 'to skip page #1</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'length of blank cells shows 3 in my doc so I took 4 as non empty</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; If Len(ActiveDocument.Tables(1).Cell(data(startrow, i), 1).Range.Text) &lt; 4 Then</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'looping through the previous page</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; For checkrow = data(endrow, (i - 1)) To data(startrow, (i - 1)) Step -1</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'check if we have come across a non empty value in the previous page</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; If Len(ActiveDocument.Tables(1).Cell(checkrow, 1).Range.Text) &gt; 3 Then</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 'if yes then insert page break</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ActiveDocument.Tables(1).Cell(checkrow, 1).Range.ParagraphFormat.PageBreakBefore = True</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Exit For</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; End If</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Next checkrow</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;End If</div>
+<div>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp; End If</div>
+<div>&nbsp; &nbsp; &nbsp;&nbsp;</div>
+<div>&nbsp; &nbsp; &nbsp;Next i</div>
+<div>&nbsp; &nbsp; &nbsp;</div>
+<div>End Sub</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Vijay,<br />
+<br />
+I decided it was better to throw away the part of the code concerned with the data array, precisely because the data in it would be unreliable after the code sets the first Page Break Before formatting. The logic of the revised macro is explained in the big
+ comment before the While loop in the following code.<br />
+<br />
+Sub TableAdjust()<br />
+&nbsp;&nbsp;&nbsp; Dim rw As Row&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' current row of table<br />
+&nbsp;&nbsp;&nbsp; Dim rwTest As Row&nbsp;&nbsp; ' row for finding previous nonempty cell<br />
+&nbsp;&nbsp;&nbsp; Dim pgNum As Long&nbsp;&nbsp; ' page number where rw is found<br />
+&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' initialization<br />
+&nbsp;&nbsp;&nbsp; Set rw = ActiveDocument.Tables(1).Rows(1)<br />
+&nbsp;&nbsp;&nbsp; pgNum = rw.Range.Information(wdActiveEndPageNumber)<br />
+&nbsp;&nbsp;&nbsp; rw.Cells(1).Range.Paragraphs(1).PageBreakBefore = True<br />
+&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; ' Step through the remaining rows of the table.<br />
+&nbsp;&nbsp;&nbsp; ' Each time the page number changes, if the first cell of the<br />
+&nbsp;&nbsp;&nbsp; ' current row is empty, look back through the preceding rows (rwTest)<br />
+&nbsp;&nbsp;&nbsp; ' to find the closest one whose first cell is not empty.<br />
+&nbsp;&nbsp;&nbsp; ' If that cell has not already been marked as "Page break before",<br />
+&nbsp;&nbsp;&nbsp; ' mark it and reset rw to rwTest. If it has already<br />
+&nbsp;&nbsp;&nbsp; ' been marked, just continue processing.<br />
+&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; While rw.Index &lt; ActiveDocument.Tables(1).Rows.Count<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rw = rw.Next<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If rw.Range.Information(wdActiveEndPageNumber) &gt; pgNum Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pgNum = rw.Range.Information(wdActiveEndPageNumber)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' an empty cell contains a 2-character cell marker<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Len(rw.Cells(1).Range.Text) &lt; 3 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rwTest = rw.Previous<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; While Len(rwTest.Cells(1).Range.Text) &lt; 3<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rwTest = rwTest.Previous<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Wend<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Not rwTest.Cells(1).Range.Paragraphs(1).PageBreakBefore Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rwTest.Cells(1).Range.Paragraphs(1).PageBreakBefore = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rw = rwTest<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; pgNum = rw.Range.Information(wdActiveEndPageNumber)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Wend<br />
+End Sub<br />
+<br />
+I've tested this successfully on some small sample tables, but I'll be interested to hear how it works on a larger one.<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Setting the Default Startup Folder in Outlook-2013 for Windows DONT - Microsoft Community</title>
+<h3> krishna kunwar  say:</h3>
+<h2>            Setting the Default Startup Folder in Outlook-2013 for Windows DONT WORK</h2>
+                    <p>Hi Team,</p>
+<p>
+</p><p>I recently upgraded to Office-2013.</p>
+<p>
+</p><p>To set a default folder in Outlook and get all mails in that&nbsp;.PST folder.&nbsp;In Office 2010, I used below steps.</p>
+<p>File &gt;&gt; Account Setting &gt;&gt; Email Tab &gt;&gt; Select Browse button in bottom of Email Tab.</p>
+<p>
+</p><p>Now this browse button is missing in Outlook 2013.</p>
+<p>
+</p><p>I&nbsp;did internet search&nbsp;and tried bellow steps do the same with success. </p>
+<ul>
+<li>In 2010/2013:
+<ol>
+<li>Select the <strong>File</strong> tab.</li><li>In the left column, select <strong>Options</strong>.</li><li>In the left column, select <strong>Advanced</strong>.</li><li>Under <strong>Outlook start and exit</strong>, click the <strong>Browse...</strong> button.</li></ol>
+</li><li>Under <strong>Start in this folder:</strong>, select your preferred start folder.</li><li>Click <strong>OK</strong>.</li><li>Click <strong>OK</strong>.</li><li>In 2007, in the Options window, click <strong>OK</strong>.</li></ul>
+<p>Please help here... Dragging mails from Mailbox to PST is pain..</p>
+<p>
+</p><p>
+</p><p>Krishna</p>
+<p>+91-9765000614</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>One Account has type MAPI, Other has type - Microsoft Exchange </p>
+<p>
+</p></blockquote>
+<p>
+</p><p>Mapi accounts (Hotmail, Live, Outlook.com) used the Hotmail Connector in previous Outlook versions - would now be an EAS account.</p>
+<p>
+</p><p>You can't change the destination folder for either of these types of accounts in O'2013 so you'll need to either configure them as POP3 or use rules to move new email to a folder in a separate PST file.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can I get Microsoft Security Essentials on CD&#47;DVD&#63; - Microsoft Community</title>
+<h3> stephenwprice  say:</h3>
+<h2>            Can I get Microsoft Security Essentials on CD&#47;DVD&#63;</h2>
+                    
+<p>I am still using dialup Internet access.&nbsp; Is there a way to get Microsoft Security Essentials on CD/DVD?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Dr. Strangelove" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "DS"); this.style="display: inline-block";'
+<h3> dr. strangelove  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No, but you can burn your own.&nbsp; You need to download and save the appropriate version for the target machine, and then download the definition updates for that version.&nbsp;<br />
+<br />
+<p><span>From a computer with internet access,
+<span>you can go to <a href="http://www.microsoft.com/security_essentials" target="_blank" rel="noreferrer nofollow">
+<span>www.microsoft.com/security_essentials</span></a>.<span>&nbsp;
+</span>Once there, click on "<strong>locales and languages</strong>". <span>
+&nbsp;</span>There you will see the links for the various OS, and 32 or 64-bit links.<span>&nbsp;
+</span>When you select the one you need, just save the download file.<span>&nbsp;
+</span>To get the <strong>definition updates</strong>, go to <a href="https://www.microsoft.com/security/portal/Definitions/ADL.aspx" target="_blank" rel="noreferrer nofollow">
+<span>https://www.microsoft.com/security/portal/Definitions/ADL.aspx</span></a> and select the same for the definition files, and save them as well.<span>&nbsp;
+</span>While on this page, you can also view what changes have been made to the latest definitions.</span></span></p>
+<br />
+<br />
+Remember, MSE is only for Home, and home-based small business use.<br />
+<a href="http://www.microsoft.com/security_essentials/eula.aspx#mainNav" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/security_essentials/eula.aspx#mainNav</a><br />
+<br />
+Doc<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2010 hyperlink blocked in Windows 7 Home Premium - Microsoft Community</title>
+<h3> chuck nicholas  say:</h3>
+<h2>            Outlook 2010 hyperlink blocked in Windows 7 Home Premium</h2>
+                    
+<p>Hyperlink in Outlook 2010 mail is disallowed.&nbsp; Had to copy/paste link into browser.</p>
+<p>Internet Explorer is default and Outlook 2010 is default mail program.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> guruprasad ra  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p><span>You may also use the following Microsoft Fixit tool to resolve the issue:</span></p>
+<p><a href="http://support.microsoft.com/kb/310049" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/310049</span></a></p>
+<p><span>&nbsp;</span></p>
+<p><span>Note: this also applies to Outlook 2010.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>CTRL &#43; V is automatically sending emails in Outlook - Microsoft Community</title>
+<h3> kathryn tripodi  say:</h3>
+<h2>            CTRL &#43; V is automatically sending emails in Outlook</h2>
+                    In Outlook, CTRL + V is automatically sending off emails. I'm not accidentally hitting CTRL + ENTER. Does anyone have any solutions?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You sure about that Ctrl+V is paste as Ctrl+C is copy<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kathryn tripodi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes, when I try to use the shortcut CTRL + V to paste an image in my email, Outlook will send my email off without pasting in the image. This only happens in Outlook.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Oliver Wu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "OW"); this.style="display: inline-block";'
+<h3> oliver wu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Kathryn,</span></p>
+<p>
+</p><p><span>As you said you want to use Ctrl + V to paste an image into your composing emails, may I know if you don’t copy and image, just use the Ctrl + V, the emails are still sent out now? To help check it, you can try to completely restart your computer and
+ then compose a new email, then press Ctrl + V and check if the issue persists. Please note, in this test don’t copy anything, thanks.</span></p>
+<p>
+</p><p><span>Moreover, if you are using the Outlook client, you can try to upgrade it to the latest, and see if the issue disappears. You can try to click File &gt; Office Account &gt; Update Options &gt; Update Now and have a try.</span></p>
+<p>
+</p><p><span>If the suggestions above don’t work, I’d like to collect some more information for further investigation:</span></p>
+<p><span><span><span>1.</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><span>The version of your Outlook client, please click File &gt; Office Account and then take a full screenshot about it to me, thanks.</span></p>
+<p><span><span><span>2.</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><span>How long the issue persists? Before the issue did you make any changes to your Outlook Client?</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Oliver</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Betty Gui MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "BG"); this.style="display: inline-block";'
+<h3> betty gui msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Kathryn,</span></p>
+<p>
+</p><p>Do you have other concerns now?</p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Betty</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to sign in to Office365 account from OneNote &#40;or any Office - Microsoft Community</title>
+<h3> trever &#40;gsb devops&#41;  say:</h3>
+<h2>            Unable to sign in to Office365 account from OneNote &#40;or any Office for Mac app&#41;</h2>
+                    <p>I try to sign in to my office365 account from OneNote for Mac (16.16 (180705)). &nbsp;It asks for my personal certificate which I provide. &nbsp;Nothing happens. &nbsp;It never signs me in and I don't get any errors. &nbsp;I believe this has something to do with our corporate
+ authentication but I don't know how to debug the failure. &nbsp;I am getting redirected to a company authentication URL which pops up a dialog asking for my certificate. &nbsp;When I select my certificate, the dialog goes away but nothing happens. &nbsp;I'm told by co-workers
+ that previous versions of OFM apps (15.37) work. &nbsp;We recently started to implement 2 factor authentication in our company but I do not see any indication that it's asking for the 2-factor authentication.</p>
+<p>
+</p><p>I am using the latest fast track version (16.16 (180705)) but this has been happening for several months now.</p>
+<p>Mac OSX 10.13.5 (17F77)</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> yohandicrespo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello my name is Yohandi OneDrive Advisor
+<br />
+<br />In this case it is recommended to reset the OneDrive
+<br />
+<br />1- Quit OneDrive. (Select the cloud icon in the top tray, the select Settings &gt; Quit OneDrive.)
+<br />
+<br />2- Find OneDrive in your Applications folder.
+<br />
+<br />3- Right-click OneDrive and select Show Package Contents.
+<br />
+<br />4- Browse to the Contents &gt; Resources folder.
+<br />
+<br />5- Double-click ResetOneDriveApp.command (or ResetOneDriveAppStandalone.command, if you're using the standalone app).
+<br />
+<br />6- Start OneDrive and finish the setup process.
+<br />
+<br />I wish you an excellent day! ;)
+<br />
+<br />I hope it works for you       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> trever &#40;gsb devops&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for the fast and courteous response. &nbsp;</p>
+<p>
+</p><p>Unfortunately it did not solve the problem. &nbsp;OneDrive, Skype for Business and MS Teams for Mac all let me authenticate with my account, but not OneNote, Word, Excel, etc. &nbsp;</p>
+<p>
+</p><p>When logging in to Teams for Mac, and it prompts me to select my certificate, I see this message which I think may be a clue:</p>
+<p style="margin-left: 30px">Modern authentication failed here, but you'll still be able to sign in. &nbsp;Your status code is 2:-1206.</p>
+<p>
+</p><p>I'm wondering if OneNote, Outlook, Word, Excel, etc use a different method (modern?) of authenticating with our company authentication endpoint and it's failing.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/988c1646-bb61-451f-be30-218c0451dfee?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/988c1646-bb61-451f-be30-218c0451dfee?upload=true" /></a></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> yohandicrespo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Trever
+<br />
+<br />Sorry for the delay, I have been looking for information related to the authentication error that is presented in Microsoft Teams and the answers I have found tell me that it is due to an authentication configuration that must be done in the Federation (ADFS), you have implemented a federated organization?
+<br />
+<br />If so, check the information that appears in the links below.
+<br />
+<br />Microsoft Teams login error - Modern authentication failed here status code caa20004
+<br /><a href="https://social.technet.microsoft.com/wiki/contents/articles/51619.microsoft-teams-login-error-modern-authentication-failed-here-status-code-caa20004.aspx" target="_blank" rel="noreferrer nofollow">https://social.technet.microsoft.com/wiki/conte...</a>
+<br />
+<br />"Modern authentication failed here, but you'll still be able to sign in. Your status code is 4c7" error with Microsoft Teams
+<br /><a href="https://support.microsoft.com/en-us/help/4041047/modern-authentication-failed-here-status-code-is-4c7-when-signing-in-t" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-us/help/404104...</a>
+<br />
+<br />Modern Auth fails in Teams
+<br /><a href="https://techcommunity.microsoft.com/t5/Microsoft-Teams/Modern-Auth-fails-in-Teams/td-p/66213" target="_blank" rel="noreferrer nofollow">https://techcommunity.microsoft.com/t5/Microsof...</a>
+<br />
+<br />Microsoft Teams login problems
+<br /><a href="https://techcommunity.microsoft.com/t5/Microsoft-Teams/Microsoft-Teams-login-problems/td-p/74032" target="_blank" rel="noreferrer nofollow">https://techcommunity.microsoft.com/t5/Microsof...</a>
+<br />
+<br />I hope I help you
+<br />
+<br />I wish you an excellent day :)       
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to add audio to a sway - Microsoft Community</title>
+<h3> elbeze  say:</h3>
+<h2>            how to add audio to a sway</h2>
+                    how do I add audio to a presentation?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason &#40;office engineer&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>If you click the + button that appears in the middle of the storyline, one of the cards available on the Media tab is Audio.&nbsp; All you need to do is insert that and then choose your audio file.</p>
+<p>
+</p><p>Jason</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cb052502  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Jason-</p>
+<p>I was able to load the file without a problem and I can click play and it starts. But when I share the link with others in my organization the audio file doesn't load or play. Am I doing something wrong? Thanks for the help.</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason &#40;office engineer&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What happens if you sign out (or use an in private window), load the Sway, and then try to play the audio?&nbsp; Does it work for you?</p>
+<p>
+</p><p>Jason</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cb052502  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Jason-</p>
+<p>I found out that for people I have shared this with, the audio file will eventually load and play but it could be 20 seconds before it shows up in the play screen. I also saved the audio file to an MP3 taking the size down to 1.9 MBs. Pretty small and should
+ load and play fairly quickly.</p>
+<p>
+</p><p>When I open and hit play it loads and starts in a few seconds so not sure what the delay (and some cases not playing) for others.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason &#40;office engineer&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Does your smaller MP3 solution fix it or does the same problem persist?&nbsp; What if you try to view the Sway on a different computer, do you get the delay then?</p>
+<p>
+</p><p>Jason</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cb052502  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The smaller MP3 doesn't fix the&nbsp;problem&nbsp;of some people not even being able to open and play the file.</p>
+<p>
+</p><p>There are others who said the delay of the file loading and then playing was reduced but it still doesn't help the broader project.</p>
+<p>
+</p><p>For me, the person who built it, the file loads in about five seconds and plays but this is after other elements of the presentation load.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason &#40;office engineer&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Can you try opening your Sway in another browser or in an in private window?&nbsp; I'm wondering if the slowdown is merely network slowness and, if so, it may only be faster for you because some files are cached.&nbsp; Do you know if the slowness happens for other
+ users only the first time they view the Sway or on successive views?</p>
+<p>
+</p><p>Jason</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cb052502  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>It seems to work for others when opened in Google Chrome. Is there some reason for that?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jason &#40;office engineer&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>What situations/browsers does it have the delay in?</p>
+<p>
+</p><p>Jason</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cb052502  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Situations? When I share the link with others in my company via IE, some people cannot open and access the file and some see a lengthy delay before the audio file loads and plays.</p>
+<p>
+</p><p>In Chrome, it seems like the file loads and plays properly for everyone.</p>
+<p>Does that help?</p>
+<p>
+</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=sway">sway, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I have an error code 80181349 when connecting to zune. My phone is - Microsoft Community</title>
+<h3> mcgals  say:</h3>
+<h2>            I have an error code 80181349 when connecting to zune. My phone is unusable</h2>
+                    Yesterday I got a notification that an update for phone can be downloaded. So I connected my phone and downloaded the update (it was a Samsung update for Omnia 7). Towards the end of the process it got bugged and looped the last four steps of the update.
+ So on the last step, after it finished rebooting, I disconnected the phone. Afterwards I tried to restore the backup, but it immediately quits with an error code 80181349. My phone now doesn't boot, it constantly asks me to connect to zune (even after restarting
+ it). When I connect to Zune it immediately tries to restore the backup and again quits instantly with the same error code. My phone is now completely useless :(.<br />
+<br />
+I have a Samsung Omnia 7.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> mcgals  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I fixed the problem yesterday. I only had to reboot Windows. It restored the backup, withough any Music or Pictures, which is okay though, at least it works now.<br />
+Thanks for trying to help anyway :)<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 2013 Mail Settings on Windows 10 will not load from Control - Microsoft Community</title>
+<h3> bradbb2005  say:</h3>
+<h2>            Office 2013 Mail Settings on Windows 10 will not load from Control Panel</h2>
+                    <p>
+</p><p>
+</p><p>Hello,</p>
+<p>
+</p><p>I have a Windows 7 --&gt; Windows 10 upgraded machine, it was an upgrade on a fresh install. I installed Office 2013, activated and good to go. This is Windows 10 Pro 64bit, i5 Processor, and 16GB ram.</p>
+<p>
+</p><p>When I try to set up profiles, I got to CP and click on Mail, it acts like it will load but then it doesn't and nothing happens. This is happening on two different machines.</p>
+<p>
+</p><p>I have tried the following:</p>
+<p>- Tried Full repair twice</p>
+<p>- Set up a local account first.</p>
+<p>- Searched for a clear answer</p>
+<p>
+</p><p>This is a fresh install and should not be happening, I have to set up profiles on 4 other machines, same specs and I anticipate this same thing is going to happen. I had no problems with another machine running Outlook 2010 in the same config. Someone please
+ help me out here, this issue is costing $$$.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/0a10b1c4-907d-4678-8769-f6737f686d0a" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/0a10b1c4-907d-4678-8769-f6737f686d0a" /></a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Brad,</p>
+<p>
+</p><p>A quick question before&nbsp;we proceed.</p>
+<p>What happens when you click on File &gt; Account settings &gt; Accounts settings? Are you able to see the Account settings?</p>
+<p>
+</p><p><span>I suggest you to
+</span><span>restart your computer in clean boot and check.
+</span><span>Clean boot is performed to disable all startup programs and 3rd party services on the machine and check if they are conflicting with the Office program.</span></p>
+<p><span>Refer to the link mentioned to boot the system in clean boot:</span></p>
+<p><a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">http://support.microsoft.com/kb/929135</span></a></p>
+<p><strong><span>Note:</span></strong><span> After checking in clean boot ensure to reboot the system in normal mode which
+ is explained in the same article.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span><span>If Office applications work fine in clean boot then follow the complete article, perform advanced clean boot to check which program is causing the conflict.</span></span></p>
+<p>
+</p><p>Please post to us with the status of Office and we will assist you further.</p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bradbb2005  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you for your reply, In Outlook I can access the account settings no problem, to add an account I
+ need to go through Control Panel.</p>
+<p>
+</p><p>I am going to attempt clean booting now.</p>
+<p>
+</p><p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/c4579eb9-6381-43cc-9853-8f642b72503f" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/c4579eb9-6381-43cc-9853-8f642b72503f" /></a></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/4d392b34-c14e-4c4a-918d-730e4dfaee8e" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/4d392b34-c14e-4c4a-918d-730e4dfaee8e" /></a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bradbb2005  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>After performing a clean boot the problem is still happening, Outlook loaded fine but the mail settings would not open from the control panel, same thing as before. There has to be a resolution to this!</p>
+<p>
+</p><p>I disabled everything except MS in msconfig and also disabled all startup programs from Task Mgr.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There are a couple of MS Utilities that may help with MS Outlook fault finding</p>
+<p><a href="https://testconnectivity.microsoft.com/" target="_blank" rel="noreferrer nofollow">https://testconnectivity.microsoft.com/</a></p>
+<p><a href="https://support.microsoft.com/en-us/kb/2812744" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-us/kb/2812744</a></p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bradbb2005  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the help, I have screenshots of &nbsp;that scan, but it seems as though there is nothing that indicates what is going on. I really need this issue fixed.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/89bf8f86-4e04-4722-ad1d-edb4d818060b" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/89bf8f86-4e04-4722-ad1d-edb4d818060b" /></a><a href="https://filestore.community.support.microsoft.com/api/images/ae4ad24a-6069-4017-9912-85701787a5c2" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ae4ad24a-6069-4017-9912-85701787a5c2" /></a><a href="https://filestore.community.support.microsoft.com/api/images/405ae320-f954-4db6-8e16-cd43e775b8cd" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/405ae320-f954-4db6-8e16-cd43e775b8cd" /></a><a href="https://filestore.community.support.microsoft.com/api/images/e3b02b8f-9990-463d-bf65-07338f5eab27" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/e
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bradbb2005  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have also confirmed this problem exists on a 32-bit Windows 7 Machine with 4GB of memory installed. Appears to be a problem with Office 2013 at this point for me.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There's nothing untoward in that OffKat scan, other than it appears that the hotmail connector may still be installed, if so uninstall it</p>
+<p>If you do not use SharePoint de-select the Import Add-in </p>
+<p>And the testconnectivity link in respect of the Ex tests?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bradbb2005  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I didn't try the testconnectivity settings as I am not sure what I am testing for. I can connect to my exchange server just fine within the program, and I have managed to set up profiles using command line switch "outlook.exe /profiles". but I still need
+ to get into the Mail settings to prompt for a profile to use. It is ridiculous this doesn't work, and MS wants $500 to work on it 1 on 1. Now I am left to wait for replies on here.
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Multiple rules for conditional formatting - Microsoft Community</title>
+<h3> pramodyq  say:</h3>
+<h2>            Multiple rules for conditional formatting</h2>
+                    <p>hi,</p>
+<p>i am trying to creat a conditional formatting using different rules on the basis of values in three cell</p>
+<p>column J contain "Status" with Value of A1;A2;A3;...........A15</p>
+<p>column N contains "Amount"</p>
+<p>&amp; column Q contains " Age"</p>
+<p>
+</p><p>the condition rules which i want to use are</p>
+<p>
+<table>
+
+<tbody>
+<tr>
+<td><span style="color: rgba(255, 0, 0, 1); font-weight: bold">Lower Limit (€) Amount</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1); font-weight: bold">Upper Limit Amount</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1); font-weight: bold">AI2-AI4&nbsp; (status)</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1); font-weight: bold">AI2-AI4</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1); font-weight: bold">AI2-AI4</span>
+</td>
+</tr>
+<tr>
+<td><span style="color: rgba(255, 0, 0, 1)">500</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1)">50,000</span>
+</td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">3 mon</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">3 months</span><span style="color: rgba(255, 255, 255, 1); font-weight: bold">ths</span>
+</td>
+<td><span style="color: rgba(0, 0, 0, 1); font-weight: bold"><span>&nbsp;</span>4 months</span>
+</td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">Bey</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">5 months</span><span style="color: rgba(255, 255, 255, 1); font-weight: bold">ond
+ 4 months</span> </td>
+</tr>
+<tr>
+<td><span style="color: rgba(255, 0, 0, 1)">50,000</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1)">5,00,000</span>
+</td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">6 mont</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">6 months</span><span style="color: rgba(255, 255, 255, 1); font-weight: bold">hs</span>
+</td>
+<td><span style="color: rgba(0, 0, 0, 1); font-weight: bold">8 months
+</span></td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">Beyo</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">greater than months</span><span style="color: rgba(255, 255, 255, 1); font-weight: bold">nd
+ 8 months</span> </td>
+</tr>
+<tr>
+<td><span style="color: rgba(255, 0, 0, 1)">5,00,000</span>
+</td>
+<td><span style="color: rgba(255, 0, 0, 1)">∞</span>
+</td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">1 year</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">12 months</span>
+</td>
+<td><span style="color: rgba(0, 0, 0, 1); font-weight: bold">15 months</span>
+</td>
+<td><span style="color: rgba(255, 255, 255, 1); font-weight: bold">Bey</span><span style="color: rgba(0, 0, 0, 1); font-weight: bold">Beyond 15 months</span><span style="color: rgba(255, 255, 255, 1); font-weight: bold">obnd
+ 15 months</span> </td>
+</tr>
+</tbody>
+</table>
+</p><p>any help is more than welcome</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,</span></p>
+<p>
+</p><p><span>Thank you for posting your query in Microsoft Community.</span></p>
+<p>
+</p><p><span>We understand how you feel about the situation. Let me guide you to resolve the issue.</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>I need more information before we proceed.</span></span></p>
+<p>
+</p><p><span>What do you exactly mean by the data under C2 to E4 the information mentioned?</span></p>
+<p>
+</p><p><span>The information mentioned is as shown below.</span></p>
+<p><span style="color: rgba(0, 112, 192, 1)"><span>For cell C2 it is “3 mon3 months”. For cell E3 it is “Beyogreater than monthsnd 8 months” etc.</span></span></p>
+<p>
+</p><p><span>For the cells A2 to A4 and B2 to B3 to put a upper and lower limit on Amount.</span></p>
+<p>
+</p><p><span>You can use the “Data Validation” under “DATA” tab in Ribbon. </span></p>
+<p>
+</p><p><span>Refer the article for more information about Data Validation. </span></p>
+<p><a href="https://blogs.office.com/2013/07/30/manage-your-spreadsheets-with-data-validation-in-the-excel-web-app-aka-an-awesome-tool-to-prevent-your-friends-from-messing-up-your-data/" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">https://blogs.office.com/2013/07/30/manage-your-spreadsheets-with-data-validation-in-the-excel-web-app-aka-an-awesome-tool-to-prevent-your-friends-from-messing-up-your-data/</span></a><span>
+</span></p>
+<p>
+</p><p><span>I look forward to your reply to assist you further.<br />
+<br />
+Thank you. </span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pramodyq  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>HI,</p>
+<p>My appologies if i was not clear. let me explain again</p>
+<p>a) i want to create a conditional formatting on the basis of following criteria</p>
+<table>
+<tbody>
+<tr>
+<td>Claim amount (lower limit)</td>
+<td>claim amount (higher limit)</td>
+<td>Di1-Di4 (claim Status)</td>
+<td>Di1-Di4</td>
+<td>Di1-Di4</td>
+</tr>
+<tr>
+<td>500</td>
+<td>50000</td>
+<td>&lt;3 months (Age)</td>
+<td>4 month</td>
+<td>beyond 4 month</td>
+</tr>
+<tr>
+<td>50000</td>
+<td>500000</td>
+<td>&lt;&nbsp; 7 months (age)</td>
+<td>8 months</td>
+<td>beyond 8 month</td>
+</tr>
+<tr>
+<td>500000</td>
+<td>
+</td><td>&lt; 15 month (Age)</td>
+<td>15 months</td>
+<td>Beyond 15 month</td>
+</tr>
+</tbody>
+</table>
+<p>a) For claim amoount less then 50000 and claim status is between Di1 and Di4 and the age is less than 3 than cell colour should be green. on same condition with Age is four then cell colour should be yellow. if on same condition with age is greater than
+ 4 then cell should be Red</p>
+<p>b) For claim amoount greater then 50000 and less than 500000 and claim status is between Di1 and Di4 and the age is less than 7 month than cell colour should be green. on same condition with Age is 8 then cell colour should be yellow. if on same condition
+ with age is greater than 8 then cell should be Red</p>
+<p>c For claim amoount greater then 500001 if claim status is between Di1 and Di4 and the age is less than 15 month than cell colour should be green. on same condition with Age is 15 month then cell colour should be yellow. if on same condition with age is
+ greater than 15 month then cell should be Red</p>
+<p>
+</p><p>AGe values are in cell R;&nbsp; Claim Amount is i Cell O, clim status are in col J</p>
+<p>with Regards</p>
+<p>Pramod Vyas</p>
+<p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I can not access my Rocketmail account using MS Outlook 2016 - Microsoft Community</title>
+<h3> kings.ibrahim  say:</h3>
+<h2>            I can not access my Rocketmail account using MS Outlook 2016</h2>
+                    <p>I have Windows 10 Pro x64 is installed on Lenovo Z50-70 Laptop. I can not access my Rocketmail account. I performed the procedures of manual configuration but with no results. Please help me ASAP.</p>
+<p>
+</p><p>Best Regards,</p>
+<p>
+</p><p>Ibrahim</p>
+<p>
+</p><p>Attachments: snap shots of this issue.</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/48cfc27b-75de-4af7-94b7-95763e8d0743" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/48cfc27b-75de-4af7-94b7-95763e8d0743" /></a></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/51c63533-bfeb-4dda-ac90-775ebfc011cc" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/51c63533-bfeb-4dda-ac90-775ebfc011cc" /></a></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/7ca5891a-0aa8-48ef-b20c-0257a51ea505" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/7ca5891a-0aa8-48ef-b20c-0257a51ea505" /></a></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/b4e4824a-a2dc-4257-8895-813d1b6afa0d" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/b4e4824a-a2dc-4257-8895-813d1b6afa0d" /></a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> kings.ibrahim  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have finally resolved it as follows:</p>
+<p>1) Disable the Yahoo account key, then enable allow using less secure apps.</p>
+<p>2) In the User Information fields, insert 'Your Name' and full 'Email address '</p>
+<p>3) In the Server Information fields, &nbsp;choose 'IMAP', insert 'imap.mail.yahoo.com' for incoming mail server, and insert 'smtp.mail.yahoo.com' for outgoing mail server.</p>
+<p>4) In the Login Information fields, insert full email address as 'user name ' and your Rocketmail account password as 'Password', check 'Remember password'.</p>
+<p>5) Check 'Require logon using Secure Password Authentication &nbsp;(SPA)'</p>
+<p>6) Click 'More settings, and on 'Outgoing Server ' tap check 'My outgoing server &nbsp;(SMTP) requires authentication '</p>
+<p>7) On 'Advanced ' tap, insert 993 and SSL for incoming server, and insert 587 and TLS for outgoing server. Click Ok then Next.</p>
+<p>8) Wait for sometime till the process of adding your rocketmail account is completed.&nbsp;</p>
+<p>
+</p><p>MISSION ACCOMPLISHED.&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2019 keeps crashing - Microsoft Community</title>
+<h3> alan katz-summercorn  say:</h3>
+<h2>            Outlook 2019 keeps crashing</h2>
+                    <p>Message comes up:-&nbsp;</p>
+<p>
+</p><p>'We are sorry, bur Outlook has run into an error that is preventing it from working correctly. Outlook will need to be closed as a result. Would you like us to repair now?'
+<strong>Repair Now&nbsp; - Help - Close</strong></p>
+<p>
+</p><p>Repair now causes the the message to clear then soon after Outlook shuts down. Any ideas?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Alan, follow these steps to perform a full repair of your Office installation . . .
+<br />
+<br />Open Control Panel - Programs and Features
+<br />Click Microsoft Office in the list of installed applications
+<br />At the top, click 'Change'
+<br />On the resulting dialog, click 'Repair' - choose the Online Repair, it is a comprehensive fix
+<br />
+<br />That should fix any issues with your Office Installation . . .       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>unable to attach documents in using Windows 7 with IE11 - Microsoft Community</title>
+<h3> paul r w 777  say:</h3>
+<h2>            unable to attach documents in using Windows 7 with IE11</h2>
+                    <p>Hi, I'm having trouble browsing to add attachments (get browser not responding message)&nbsp;. This is happening in Hotmail as well as in general using IE11.</p>
+<p>I've tried resetting internet explorer, completing windows updates, uninstalling and reinstalling siverlight and flash player 13.
+</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> john rubdy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Paul,</p>
+<p>&nbsp;</p>
+<p>Please answer these questions in order to understand the issue better. </p>
+<p>&nbsp;</p>
+<ol>
+<li>Which antivirus program is installed on the computer?</li><li>Do you face similar issue with other email accounts?</li><li>Does the issue occur with specific file attachment?</li></ol>
+<p>&nbsp;</p>
+<p>You may face this issue due to antivirus program or corrupted internet temp files. Follow these methods and check if it helps:</p>
+<p>&nbsp;</p>
+<p><strong>Method 1:</strong> You may try to clear the browser cache and check.</p>
+<p>&nbsp;</p>
+<p>a. Open <strong>Internet Explorer</strong> on desktop.</p>
+<p>b. Press <strong>Ctrl+Shift+De</strong>l, select and delete your <strong>temp files, cookies and browsing history.</strong></p>
+<p><strong>&nbsp;</strong></p>
+<p><span>Also refer these articles: </span></p>
+<p>
+</p><p><strong>Delete and manage cookies</strong></p>
+<p><a href="http://windows.microsoft.com/en-us/internet-explorer/delete-manage-cookies#ie=ie-11-win-7" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/internet-explorer/delete-manage-cookies#ie=ie-11-win-7</a></p>
+<p>
+</p><p><strong>Manage and delete your browsing history</strong></p>
+<p><a href="http://windows.microsoft.com/en-us/internet-explorer/manage-delete-browsing-history-internet-explorer#ie=ie-11-win-7" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/internet-explorer/manage-delete-browsing-history-internet-explorer#ie=ie-11-win-7</a></p>
+<p>&nbsp;</p>
+<p>
+</p><p><strong>Method 2</strong>: I would suggest you to temporarily disable antivirus program and firewall and check.</p>
+<p>
+</p><p><strong>Warning: </strong>Antivirus software can help protect your computer against viruses and other security threats. In most cases, you shouldn't disable your antivirus software. If you have to temporarily disable it to install other software, you should
+ re-enable it as soon as you're done. If you're connected to the Internet or a network while your antivirus software is disabled, your computer is vulnerable to attacks.</p>
+<p>&nbsp;</p>
+<p>Also please check out this <strong><a href="http://answers.microsoft.com/en-us/windowslive/forum/mail-email/im-not-able-to-work-with-attachments-in-outlookcom/677f94a3-2d54-4d97-8568-fef588e752d8">thread</a></strong> (Steps also applies for
+ IE11) for more information about email attachment issues. Follow the instructions given by the thread starter.&nbsp;</p>
+<p>
+</p><p>Hope this helps. If you need further assistance with Windows, let us know and will be glad to help.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Asha 210 Music player - Microsoft Community</title>
+<h3> kristufi  say:</h3>
+<h2>            Asha 210 Music player</h2>
+                    
+<p>Is it possible to search for a song using a String with the Nokia asha 210?</p>
+<p>For example: The song i want to play has the filename " Taylor Swift- I know you where trouble.mp3". So the singer or real title is not specified. If i search for "trouble", would it find the song?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Did you try via Nokia » Menu » Apps » Gallery » (Memory Card ») Music files » just type ‘taylor’?</p>
+<p>This does not work for ‘trouble’ because that is not a ‘contains x’ but a ‘starts-with x’ search. Because that search does not work recursively into subfolders, all your songs must be in this folder. The same works for Nokia » Music » My Music » Options
+ » Go to Media menu » All songs. Did that help?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kristufi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The problem is that I don't have the phone yet. I am looking for one that which has the ability to do the contains x fuction. So i am not able to test it&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I am not aware of any Nokia Series 40 which allows ‘conatins-x’. In the other operating system of Nokia&nbsp;– Symbian/S60 – the&nbsp;built-in Music Player&nbsp;does ‘starts-with’ searches only, at least on my Nokia E72. However the file manager in Symbian/S60 is able
+ to do ‘contains-x’ searches. Therefore – if you look for a QWERTY device – you have the option to go for
+<a href="http://www.gsmarena.com/compare.php3?idPhone1=5417&amp;idPhone2=3717" target="_blank" rel="noreferrer nofollow">
+Nokia E6</a>, <a href="http://www.gsmarena.com/compare.php3?idPhone1=5417&amp;idPhone2=2831" target="_blank" rel="noreferrer nofollow">
+Nokia E72</a>, and <a href="http://www.gsmarena.com/compare.php3?idPhone1=5417&amp;idPhone2=3198" target="_blank" rel="noreferrer nofollow">
+Nokia E5</a>. However, I guess, you are looking for folder-playing&nbsp;as well, …</p>
+<p>&nbsp;</p>
+<p>Because I do not see any support for either Nokia Series 40 nor Symbian/S60 anymore, did you consider to go for a touchscreen based phone, or a BlackBerry OS 10 device?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kristufi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I prefer a real keyboard but I saw the Lumia 435 is getting out soon, maybe I will buy that one.&nbsp;</p>
+<p>&nbsp;</p>
+<p>Thanks for the help ! :)</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The Music player of Windows Phone 8, does support ‘contains-x’, indeed.</p>
+<p>&nbsp;</p>
+<p>If you do not mind, I recommend a second-hand&nbsp;phone because you might make a better bargain then. With a touchscreen-based phone, I recommend to have screen with at around&nbsp;300 ppi (for non-garbled readability) and a compass (for foot-navigation and much
+ more). Then, you get&nbsp;a non-screwed-up touchscreen experience on the long run.&nbsp;With these features on your list, you begin with a&nbsp;<a href="http://www.gsmarena.com/results.php3?chkCardSlot=selected&amp;nDisplayDensityMin=290&amp;chkCompass=selected&amp;sOSes=4" target="_blank" rel="noreferrer nofollow">Lumia
+ 730</a>&nbsp;currently. However, the <a href="http://www.gsmarena.com/compare.php3?idPhone1=5321&amp;idPhone2=6640" target="_blank" rel="noreferrer nofollow">
+Lumia 720</a>&nbsp;might be worth a look, although its pixel&nbsp;dentisity&nbsp;is lower.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sp12er  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You meant the 210 music player doesn't support "contain-x" search? that's sucks! I plan to buy the upcoming 215 as my Portable Music Player as my NL 920's batter life and memory is alrady in poor state... seeing as 215 seems to be able to do all the basic
+ things I do daily. What does the music player look like? does it upport simple Playlist making? I need some reference as this phone seem to take much longer time to reach My Country (Indonesia)</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;the Nokia 215 is not based on the operating system Nokia Series 40 like the Nokia 210 but on Series 30+ (MediaTek), like
+<a href="http://www.gsmarena.com/compare.php3?idPhone1=5703&amp;idPhone2=6910" target="_blank" rel="noreferrer nofollow">
+Nokia 108</a>, <a href="http://www.gsmarena.com/compare.php3?idPhone1=6150&amp;idPhone2=6910" target="_blank" rel="noreferrer nofollow">
+Nokia 220</a>, <a href="http://www.gsmarena.com/compare.php3?idPhone1=6288&amp;idPhone2=6910" target="_blank" rel="noreferrer nofollow">
+Nokia 225</a>, and <a href="http://www.gsmarena.com/compare.php3?idPhone1=6570&amp;idPhone2=6910" target="_blank" rel="noreferrer nofollow">
+Nokia 130</a>. In my Nokia 220, I found one, single playlist = favourites. I do not find a way to create additional playlists. Shuffle and Repeat are possible. Like in the latest Nokia Series 40, I found no way to make folder playing work. In my Nokia 220,
+ I am not able to find <em>any</em> search feature either. Furthermore, the music of video files is ignored. No Bluetooth Stereo Music (in the Nokia 215 not either). No Equaliser. With Series 30+, you are beaming yourself back 10 years in mobile phone history.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to reinstall office - Microsoft Community</title>
+<h3> mjones0089  say:</h3>
+<h2>            how to reinstall office</h2>
+                    Somehow I've lost my office, where can I go to reinstall this application?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> karl timmermans &#40;outlook mvp 2012-2018&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            &gt;&gt;
+<br /> where can I go to reinstall this application?
+<br />&lt;&lt;
+<br />
+<br />The following article describes the steps required to reinstall (while Office 2016 is not in the articles subject line - it equally applies)
+<br />
+<br />Download and install or reinstall Office 365 or Office 2019 on a PC or Mac
+<br /><a href="https://support.office.com/en-us/article/download-and-install-or-reinstall-office-365-or-office-2019-on-a-pc-or-mac-4414eaaf-0478-48be-9c42-23adc4716658" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/downlo...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi mjones0089, to keep your activation count correct, you need to deactivate your previous Installation and then re-install Office 365
+<br />
+<br />Go to <a href="https://office.com/myaccount" target="_blank" rel="noreferrer nofollow">https://office.com/myaccount</a> and sign in using your Microsoft account, if prompted
+<br />
+<br />Select Install 
+<br />
+<br />Under Install information, locate that PC which Office was installed on 
+<br />
+<br />Select Deactivate Install to deactivate the Office installation 
+<br />
+<br />Then, click Install to install Office       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronbarker  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>MJ</p>
+<p>
+</p><p>If you have Office stand alone version of Office 2016 you can reinstall it from your Office Account at:&nbsp;<span><a href="https://www.office.com/Myaccount" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">https://www.office.com/Myaccount</span></a></span>
+ you need to sign in with the same email address and password that you used when you first setup/installed your Office 2016. Then click on&gt;Install&gt;Install</p>
+<p>
+</p><p>Are you sure that you need to reinstall your Office 2016. Type&gt; Word.exe in the search box to see if it finds Word 2016.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Step 1 - Sign in to download Office
+<br />
+<br />Go to <a href="http://www.office.com" target="_blank" rel="noreferrer nofollow">http://www.office.com</a> and if you're not already signed in, select Sign in.
+<br />
+<br />
+<br />Sign in with the account you associated with this version of Office. This account can be a Microsoft account, or work or school account.
+<br />
+<br />Forgot your account details? See I forgot the account I use with Office.
+<br /><a href="https://support.office.com/en-us/article/i-forgot-the-account-i-use-with-office-eba0b4a2-c0ae-472c-99f6-bc63ee2425a8?wt.mc_id=scl_installoffice_home" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/i-forg...</a>
+<br />
+<br />On the Office home page, do the following depending on your version of Office.
+<br />
+<br />If you signed in with a Microsoft account, from the Office home page select Install Office &gt; Install. (Office 365 subscribers should select Install again).
+<br />
+<br />This begins the download of Office. Follow the prompts on your screen to complete the install.       
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>error code 0x83cf3105 - Microsoft Community</title>
+<h3> abigailtaylor1210  say:</h3>
+<h2>            error code 0x83cf3105</h2>
+                    I need to know how to fix this error code
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sergio P ." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "SP"); this.style="display: inline-block";'
+<h3> sergio p .  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello AbigailTaylor1210,
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>A search in the forum returns a few threads where the same error was encountered and the problem solved in different scenarios. Please follow the link below and let us know if your issue persists.
+</span></p>
+<p><span><a href="http://answers.microsoft.com/en-us/Search/Search?SearchTerm=83cf3105&amp;CurrentScope.ForumName=WinPhone&amp;CurrentScope.Filter=&amp;askingquestion=false">http://answers.microsoft.com/en-us/Search/Search?SearchTerm=83cf3105&amp;CurrentScope.ForumName=WinPhone&amp;CurrentScope.Filter=&amp;askingquestion=false</a></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Regards, </span>
+</p>
+<p><span>&nbsp;</span></p>
+<p><span>Sergio P.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel-Splitting one column of debits and credits into two columns - Microsoft Community</title>
+<h3> terrike  say:</h3>
+<h2>            Excel-Splitting one column of debits and credits into two columns</h2>
+                    <p>Looking for a formula or way of splitting one column containing both debits and credits into two columns, debits in one and credits in the other.&nbsp; I use office 2007.&nbsp; I also have office 2003.</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>If debit is negative and credit is positive (or vice versa):</p>
+<p>Let's say the data are in A2:A100.</p>
+<p>In B2, enter the formula&nbsp;&nbsp;&nbsp; =IF(A2&gt;0,A2,"")&nbsp;&nbsp;&nbsp; and fill down to B100.</p>
+<p>In C2, enter the formula&nbsp;&nbsp;&nbsp; =IF(A2&lt;0,A2,"")&nbsp;&nbsp;&nbsp; and fill down to C100.</p>
+<p>If you want to get rid of the formulas:</p>
+<ul>
+<li>Select B2:C100.</li><li>Press Ctrl+C to copy.</li><li>Click the lower half of the Paste button on the Home tab of the ribbon, and select Paste Values from the dropdown menu.</li></ul>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Edge missing &#38;Micorsoft Service can&#39;t login &#40;win 10 - Microsoft Community</title>
+<h3> kouhuang  say:</h3>
+<h2>            Edge missing &#38;Micorsoft Service can&#39;t login &#40;win 10 mobile&#41;</h2>
+                    <p>
+</p><p><span>My </span><span style="color: rgba(51, 51, 51, 1)">Mobile OS&nbsp;</span><span>Win10moblie &nbsp;1703 &nbsp; 10.0.15204.0 &nbsp; (phone from Hong Kong)&nbsp;</span></p>
+<p><br />
+<span style="color: rgba(51, 51, 51, 1)">&nbsp;my edge browser is missing and my Microsoft Service cant run &nbsp;(Onedrive、Microsoft&nbsp;</span><span>account&nbsp;</span><span>,when i click login after return my App login screen)</span></p>
+<p><br />
+<br />
+</p>
+<p><span style="color: rgba(51, 51, 51, 1)">and when I try to follow a link to a web page, I get the following message "</span><span>&nbsp;you must to install an app for this work to search for apps in the
+</span><span style="color: rgba(51, 51, 51, 1)">Store</span><span style="color: rgba(51, 51, 51, 1)">".&nbsp;</span></p>
+<p>
+</p><p><span>but other app can run &nbsp;, no</span><span>problem &nbsp;</span></p>
+<p>
+</p><p>I has reset my lumia 950 ,but this bug still...( English &nbsp;&amp; Chinese &nbsp;version same )</p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Anyone else have this issue
+</span>fix method? &nbsp;<span style="color: rgba(51, 51, 51, 1)">thanks</span></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Timoteo IV Ofr" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "TI"); this.style="display: inline-block";'
+<h3> timoteo iv ofr  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello Kou,</p>
+<p>
+</p><p>
+</p><p>That's weird. For clarity, when you say "reset my Lumia 950", did you perform a hard reset? If so, we suggest that you download and install the
+<strong><a href="https://support.microsoft.com/en-US/help/12379/windows-10-mobile-device-recovery-tool-faq" target="_blank" rel="noreferrer nofollow">Windows Device Recovery Tool</a></strong> on a Windows PC to flash the approved Windows version for your phone. This
+ tool is use to fix any software concerns and will remove everything stored on your phone. Make sure to check or create a
+<a href="https://support.microsoft.com/en-us/help/17232/windows-10-mobile-back-up" target="_blank" rel="noreferrer nofollow">
+<strong>backup</strong></a> before proceeding to avoid data loss.</p>
+<p>
+</p><p>
+</p><p>Update us with the outcome.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=using_windows_10_on_phone">using_windows_10_on_phone, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Format or similar and fresh install of windows - Microsoft Community</title>
+<h3> honesteven  say:</h3>
+<h2>            Format or similar and fresh install of windows</h2>
+                    Hiyas<br />
+My friend was given a HP ipaq with some foreign language version of windows. Went through all options and cannot find english option. What I would like to do it format it or be able to install windows mobile 6 on it (i have windows mobile six stored on my vista
+ computer at the moment.) How can I do this? Thank you<br />
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            you can only install an upgrade if provided by the device manufacturer. to the best of my knowledge, hp has not offered any upgrades to wm6. The image you've got on your Vista might damage your device and is, in my opinion, an illegal copy. If you want
+ to change the language on the device you'll nedd to acquire it through HP. Check their website.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="honesteven" role="img">
+<h3> honesteven  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            http://h20000.www2.hp.com/bizsupport/TechSupport/SoftwareIndex.jsp?lang=en&amp;cc=us&amp;prodNameId=414322&amp;prodTypeId=215348&amp;prodSeriesId=430120&amp;swLang=8&amp;taskId=135&amp;swEnvOID=1087#290<br />
+<br />
+Thats the device but I cannot see anywhere to download the same version of windows thats on the system currently as its legit. I would like to reinstall the operating system into an english one
+<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            i suggest you contact hp. it seems that they do not have the image for download.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>19H1 Build 18362 released to SDK - Microsoft Community</title>
+<h3> crazykats  say:</h3>
+<h2>            19H1 Build 18362 released to SDK</h2>
+                    <a href="https://www.neowin.net/news/windows-10-sdk-preview-build-18362-now-available-as-the-final-release-draws-closer" target="_blank" rel="noreferrer nofollow">https://www.neowin.net/news/windows-10-sdk-preview-build-18362-now-available-as-the-final-release-draws-closer</a>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    0 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Johnny_55" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> johnny_55  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            <span>Do not call this fake number, it is not MS.</span>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>screen flickered and emails were deleted - Microsoft Community</title>
+<h3> sksegrest  say:</h3>
+<h2>            screen flickered and emails were deleted</h2>
+                    I was recently upgraded to Outlook Mail and I do see that the emails load faster; however, while I was reading some emails and then clicking delete for that particular one, all of a sudden the screen started flickering and about 10-15 emails were deleted.&nbsp;
+ How do I stop that?&nbsp; This never happened with the old format.&nbsp; Thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> antijunkxe  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>I was recently upgraded to Outlook Mail and I do see that the emails load faster; however, while I was reading some emails and then clicking delete for that particular one, all of a sudden the screen started flickering and about
+ 10-15 emails were deleted.&nbsp; How do I stop that?&nbsp; This never happened with the old format.&nbsp; Thanks.
+</blockquote>
+<p style="color: rgba(51, 51, 51, 1)">
+I do not have your problem but this might help (I read must do quickly--maybe ask a nearby tech:&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">[</span><a href="https://answers.microsoft.com/en-us/outlook_com/forum/oemail-orestoremail/how-to-bulk-move-all-trash-items-to-inbox/62f8f6d3-8560-4e76-a829-c2eacc641a86"><span style="color: rgba(0, 102, 204, 1)">How
+ to bulk move all trash items to inbox?</span></a><span style="color: rgba(51, 51, 51, 1)">&nbsp;&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;&lt;</span><a href="https://answers.microsoft.com/en-us/outlook_com/forum/oemail-orestoremail/how-to-bulk-move-all-trash-items-to-inbox/62f8f6d3-8560-4e76-a829-c2eacc641a86?page=2"><span style="color: rgba(0, 102, 204, 1)">https://answers.microsoft.com/en-us/outlook_com/forum/oemail-orestoremail/how-to-bulk-move-all-trash-items-to-inbox/62f8f6d3-8560-4e76-a829-c2eacc641a86?page=2</span></a><span style="color: rgba(51, 51, 51, 1)">&gt;]</span></p>
+<p style="color: rgba(51, 51, 51, 1)">
+&nbsp; I just view my email via Microsoft Office 2010 primarily and via web Internet Explorer 11 only to mark junk as Phishing scam.&nbsp; [On web read-out is very tricky sometimes invisible boxes are clicked with invisible check marks -- so that may be how your problem
+ started.&nbsp; Also I find on web if screen enlarged greater than 100 percent buttons disappear; on other days one can see the boxes have been checked and see the boxes' outline--but when they are invisible it is possible to hover on top to left&nbsp;of Folder Name
+ (i.e. Inbox) accidentally click on invisible box to left of it and that marks ALL emails below.&nbsp; So I only use Microsoft Office 2010 Outlook on PC which automatically asks if I really want to delete and I have to answer Yes or No before I can wipe out everything.]</p>
+<p style="color: rgba(51, 51, 51, 1)">
+On a different note:&nbsp; this might help if you have not been migrated to Microsoft's new server:
+</p>
+<p style="color: rgba(51, 51, 51, 1)">
+[If your Hotmail or Live or Outlook on web&nbsp;(associated with Microsoft Office 2010 [or other year] Outlook)&nbsp;was moved by Microsoft to the new server this may help [Microsoft's 6-month old email to me about it links did not work so I used the following--symptoms
+ of needing are you: stop receiving emails cannot send emails on Microsoft Office 2010 [or other year] Outlook on PC--different users being moved different times worldwide ]:
+</p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;&lt;</span><a href="https://www.howto-outlook.com/howto/outlookcommigrationinfo.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">https://www.howto-outlook.com/howto/outlookcommigrationinfo.htm</span></a><span style="color: rgba(51, 51, 51, 1)">&gt;
+ If you logon via browser [i.e., Internet Explorer 11] to your Hotmail etc. &nbsp;its new header will be
+</span><span style="color: rgba(51, 51, 51, 1); font-weight: bold; text-decoration-line: underline">black</span><span style="color: rgba(51, 51, 51, 1)"> if it has been migrated.&nbsp; I did not do the step to remove the Outlook connector however.&nbsp;"</span></p>
+<p />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Spotify Problem - Microsoft Community</title>
+<h3> super_addy  say:</h3>
+<h2>            Spotify Problem</h2>
+                    
+<p>Hi All,</p>
+<p>&nbsp;</p>
+<p>I'm having a problem opening Spotify for my N97 mini. I have downloaded the app successfully, however when I enter my log in details, it comes up logging in but each time returns to the log in screen. I'm already subscribed to Spotify's premium service and
+ I've also uninstalled and reinstalled the app to try and fix&nbsp;but I'm still having the same problems. Any help to solve the problem would be much appreciated.</p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+<p>&nbsp;</p>
+<p>Steven</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brandobo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I have the same Spotify problem on Nokia N97 mini, login screen and after accept screen back to login screen in a loop, the spotify premniun account login works on computer</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you make Outlook use the storage card for email attachments in - Microsoft Community</title>
+<h3> aredtype  say:</h3>
+<h2>            How do you make Outlook use the storage card for email attachments in Windows Mobile 6.0&#63;</h2>
+                    
+<p>Hello!</p>
+<p>&nbsp;</p>
+<p>How do you make Outlook use the storage card for email attachments in Windows Mobile 6.0?</p>
+<p>I have a Samsung Blackjack (model: SGH i607) phone.</p>
+<p>&nbsp;</p>
+<p>Thanks</p>
+<p>Peter</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The steps outlined above will work on a Pocket PC only.</p>
+<p>&nbsp;</p>
+<p>Follow the steps below to save attachments to the storage card on a Smartphone. Note: You do this at your own risk.</p>
+<p>&nbsp;</p>
+<p>Download a free registry editor&nbsp;<a href="http://www.phm.lu/products/Smartphone/RegEdit/" target="_blank" rel="noreferrer nofollow">here</a>.
+</p>
+<p>&nbsp;</p>
+<p>You need to create&nbsp;1 folder on your Storage card. Call it Attachments.</p>
+<p>&nbsp;</p>
+<p>Open the registry editor and go to Hkey_Current_user\Software\Microsoft\MAPI. Click Values soft key.</p>
+<p>&nbsp;</p>
+<p>Create&nbsp;1 string value. Click Menu &gt; New Value &gt; String.&nbsp;It should be called AttachPath and the value should be the path to&nbsp; the Attachments folder you created above (\Storage card\Attachments)</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Suggestion&#58; SMS Threading - Microsoft Community</title>
+<h3> gary42  say:</h3>
+<h2>            Suggestion&#58; SMS Threading</h2>
+                    I would like to see an option to thread my SMS messages on MyPhone web. If I sort by From/To, the order within each name appears to be random. If it also sorted by date, the messages would be threaded.
+<br />
+<br />
+When sorted by From/To, allow a quick jump to a name. 
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="wmta2" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "WM"); this.style="display: inline-block";'
+<h3> wmta2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for the feedback. I have shared your suggestion with the rest of the team.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Error &#34;APPEND command or literal size is too large&#34; in Outlook - Microsoft Community</title>
+<h3> ������ �����������  say:</h3>
+<h2>            Error &#34;APPEND command or literal size is too large&#34; in Outlook 2011</h2>
+                    <p>Hi!</p>
+<p>I have installed Office 2011 for Mac. Recently I began to get an error "APPEND command or literal size is too large" when Outlook is launching. Who can tell me what I should to do to correct this error?&nbsp;</p>
+<p>Don't offer to delete all my post messages, please! :)</p>
+<p>
+</p><p>&nbsp;</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Arshad&#39; Khan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> arshad&#39; khan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Create a new identity/profile and check if the problem gets resolved.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Виталий Горшков" role="img">
+<h3> ������� �������  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Сергей, получилось решить эту проблему?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vadymche  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I need help with the same problem. </p>
+<p>As i understand it occurs after i've attached big size file. </p>
+<p>I've deleted the file but nothing changed.&nbsp;</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

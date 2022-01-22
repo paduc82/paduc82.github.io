@@ -1,0 +1,2521 @@
+    <title>Word 2003&#58; how can I open docs in &#34;final&#34; view by default - Microsoft Community</title>
+<h3> yann2104  say:</h3>
+<h2>            Word 2003&#58; how can I open docs in &#34;final&#34; view by default</h2>
+                    
+<p>Hello,</p>
+<p>&nbsp;</p>
+<p>I have the following issue: I need to convert in PDF thousands of docs. For this, one of our developers make a tool which open the document and print it with PDF Creator. The issue is that the documents are open in the "Final Showing markup" mode by default
+ and therefore print all the changes, which is not what I want.</p>
+<p>I tried to uncheck the Security option "Make hidden markup visible when opening or saving", but it doesn't change anyhting.</p>
+<p>Any idea on how I should do it?</p>
+<p>Thank you in advance,</p>
+<p>Yannick</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>The following macro should do the trick. <a href="http://www.gmayor.com/installing_macro.htm" target="_blank" rel="noreferrer nofollow">
+http://www.gmayor.com/installing_macro.htm</a> You will have to choose whether you want to save the changed document near the end of the macro and enter the name of your PDF printer (as shown in Word when you select it) between the quotes where indicated. Try
+ it on a test folder containing a handful of copy documents first!</p>
+<p>Sub BatchProcess()<br />
+Dim strFilename As String<br />
+Dim strPath As String<br />
+Dim oDoc As Document<br />
+Dim fDialog As FileDialog<br />
+Dim sPrinter As String</p>
+<p>With Dialogs(wdDialogFilePrintSetup)<br />
+&nbsp; &nbsp; sPrinter = .Printer<br />
+&nbsp; &nbsp; '*****************************************<br />
+&nbsp; &nbsp; .Printer = "Put your PDF printer name here"<br />
+&nbsp; &nbsp; '*****************************************<br />
+&nbsp; &nbsp; .DoNotSetAsSysDefault = True<br />
+&nbsp; &nbsp; .Execute<br />
+End With</p>
+<p>Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)<br />
+With fDialog<br />
+&nbsp; &nbsp; .Title = "Select folder and click OK"<br />
+&nbsp; &nbsp; .AllowMultiSelect = False<br />
+&nbsp; &nbsp; .InitialView = msoFileDialogViewList<br />
+&nbsp; &nbsp; If .Show &lt;&gt; -1 Then<br />
+&nbsp; &nbsp; &nbsp; &nbsp; MsgBox "Cancelled By User", , _<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; "List Folder Contents"<br />
+&nbsp; &nbsp; &nbsp; &nbsp; Exit Sub<br />
+&nbsp; &nbsp; End If<br />
+&nbsp; &nbsp; strPath = fDialog.SelectedItems.Item(1)<br />
+&nbsp; &nbsp; If Right(strPath, 1) &lt;&gt; "\" _<br />
+&nbsp; &nbsp; &nbsp;&nbsp; Then strPath = strPath + "\"<br />
+End With</p>
+<p>If Documents.Count &gt; 0 Then<br />
+&nbsp; &nbsp; Documents.Close savechanges:=wdPromptToSaveChanges<br />
+End If<br />
+If Left(strPath, 1) = Chr(34) Then<br />
+&nbsp; &nbsp; strPath = Mid(strPath, 2, Len(strPath) - 2)<br />
+End If<br />
+strFilename = Dir$(strPath &amp; "*.doc?")</p>
+<p>While Len(strFilename) &lt;&gt; 0<br />
+&nbsp; &nbsp; WordBasic.DisableAutoMacros 1<br />
+&nbsp; &nbsp; Set oDoc = Documents.Open(strPath &amp; strFilename)<br />
+&nbsp; &nbsp; With ActiveWindow.View<br />
+&nbsp; &nbsp; &nbsp; &nbsp; .ShowRevisionsAndComments = False<br />
+&nbsp; &nbsp; &nbsp; &nbsp; .RevisionsView = wdRevisionsViewFinal<br />
+&nbsp; &nbsp; End With</p>
+<p>&nbsp; &nbsp; 'Do what you want with oDoc<br />
+&nbsp; &nbsp; oDoc.PrintOut<br />
+&nbsp; &nbsp; oDoc.Close savechanges:=wdDoNotSaveChanges<br />
+&nbsp; &nbsp; 'OR<br />
+&nbsp; &nbsp; 'oDoc.Close savechanges:=wdSaveChanges<br />
+&nbsp; &nbsp; WordBasic.DisableAutoMacros 0<br />
+&nbsp; &nbsp; 'End If<br />
+&nbsp; &nbsp; strFilename = Dir$()<br />
+Wend<br />
+With Dialogs(wdDialogFilePrintSetup)<br />
+&nbsp; &nbsp; .Printer = sPrinter<br />
+&nbsp; &nbsp; .Execute<br />
+End With<br />
+End Sub</p>
+<hr />
+<hr />
+Graham Mayor - Word MVP<br />
+<a href="http://www.gmayor.com" target="_blank" rel="noreferrer nofollow">www.gmayor.com</a><br />
+Posted via the Communities Bridge<br />
+<a href="http://communitybridge.codeplex.com/" target="_blank" rel="noreferrer nofollow">http://communitybridge.codeplex.com/</a><br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> yann2104  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Indeed, I found the solution here: <a href="http://www.eggheadcafe.com/software/aspnet/36179840/code-to-have-word-open-in-final-view-vs-final-showing-markup.aspx" target="_blank" rel="noreferrer nofollow">
+http://www.eggheadcafe.com/software/aspnet/36179840/code-to-have-word-open-in-final-view-vs-final-showing-markup.aspx</a></p>
+<p>&nbsp;</p>
+<p>The code must be inserted in a macro of the Normal.dot to be executed at each doc opening.</p>
+<p>&nbsp;</p>
+<p>Thanks</p>
+<p>&nbsp;</p>
+<p>Y</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Usage rights expired &#63; - Microsoft Community</title>
+<h3> garyadams  say:</h3>
+<h2>            Usage rights expired &#63;</h2>
+                    Can't be....doesn't make sense at all, everything was fine yesterday and now my zune says it syncs but when I unplug the usb, I get the same "usage rights have expired sync with pc". &nbsp;I tried everything suggested on the forums to no avail, and I have not
+ had anything like this happen since I purchased my zune in 2007.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello GaryAdams,</p>
+<p>In this thread you will find some useful information:</p>
+<p><a href="http://answers.microsoft.com/en-us/zune/forum/account-player/usage-rights-have-expired-wont-restore/ccb9f61b-ca2e-4922-9541-47d0dfec5609">http://answers.microsoft.com/en-us/zune/forum/account-player/usage-rights-have-expired-wont-restore/ccb9f61b-ca2e-4922-9541-47d0dfec5609</a></p>
+<p>Thanks for posting!</p>
+<p>Cheers,</p>
+<p>Debora S.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=music,_movies_&#38;_tv">music,_movies_&#38;_tv, </a> <br>
+<a href="/search?q=groove_music">groove_music, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>403 Forbidden Error on Sites - Microsoft Community</title>
+<h3> devintauber  say:</h3>
+<h2>            403 Forbidden Error on Sites</h2>
+                    
+<p>&lt;split from this thread&gt;</p>
+<p>hello there.</p>
+<p>i would dispute this answer as i am having similar issues as max except, i am experiencing this this issue occasionally on my onedrive app. i just set up my e3 premium trial on the 13th of october. the problem usually originates when i try to open or edit
+ files inside onedrive, again, sometimes it works. on seemingly random occurrences, when i click on a folder or file, it says "working on it..." for a minute or so until the message in the attached picture appears and i have to back out to the office homepage.
+ once this error happens the office page slows right down and it struggles with everything. then, without warning, everything works as it should. as i am looking at this to be the predominant software for my 120+ end users, i would really like to see this addressed
+ because this is not boding well.</p>
+<p>&nbsp;<a href="http://fud.community.services.support.microsoft.com/Fud/FileDownloadHandler.ashx?fid=55a058ec-bca6-4202-906a-aab73341f95b" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2ffud.community.services.support.microsoft.com%2fFud%2fFileDownloadHandler.ashx%3ffid%3d55a058ec-bca6-4202-906a-aab73341f95b" /></a></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> allanlu_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Devin,</p>
+<p>I understand your feelings about this, and I will assist you to troubleshoot the issue. Could you help confirm the following information to narrow down the issue?<br />
+1. To identify if this issue is related to specific user, does any other users experience this issue?<br />
+2. Does this issue happen to other sites or just only the OneDrive site? <br />
+3. Have you tried using other browsers and see if you encounter the issue?<br />
+4. If possible,&nbsp;please check whether the issue persists when you use another network environment.</p>
+<p>Meanwhile, please try adding the SharePoint Online sites to trusted sites and see the outcome. You can refer to how to
+<a href="http://support2.microsoft.com/kb/2629108" target="_blank" rel="noreferrer nofollow">troubleshoot issues with this option in SharePoint Online</a> and expand
+<strong>Add your SharePoint Online sites to trusted sites</strong> in the article to help you do so.</p>
+<p>Please post back at your convenience and we will continue to discuss the situation.</p>
+<p>Regards,<br />
+Allan</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> allanlu_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Devin,</p>
+<p>Do you need further assistance? If so, could you provide the information above for further troubleshooting?</p>
+<p>Regards,</p>
+<p>Allan</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>msn butterfly email - Microsoft Community</title>
+<h3> lohese  say:</h3>
+<h2>            msn butterfly email</h2>
+                    <p>I can't access my emails through msn butterfly. Each time I click on the icon, a message pups up: THERE IS NO DISK IN THE DRIVE. &nbsp;PLEASE INSERT A DISK INTO DRIVE H. I do not have a disk. I never had and never used. I never had this kind of issue before with
+ msn email through butterfly icon.</p>
+<p>Furthermore, the message does not go away from the screen &nbsp;even after multiple attempts to cancel or delete.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello,</p>
+<p>
+</p><p>Thank you for posting your query on Microsoft Community.</p>
+<p>
+</p><p>As per description, you are unable to access emails using msn butterfly. You get a message pop up THERE IS NO DISK IN THE DRIVE. &nbsp;PLEASE INSERT A DISK INTO DRIVE H when you click on the msn butterfly icon.</p>
+<p>
+</p><p><span><span>I would appreciate if you can provide us the following information to help us understand the issue better:
+</span></span></p>
+<p>
+</p><ul>
+<li><span><span>Have you made any recent changes prior to the issue?</span></span></li><li><span><span>Which Operating system do you have on your computer?</span></span></li></ul>
+<p>
+</p><p>I would suggest you to follow the methods given below and check if that helps.</p>
+<p>
+</p><p><strong><span style="color: rgba(0, 0, 0, 1)"><span>Method 1. Microsoft Safety Scanner.</span></span></strong><span style="color: rgba(0, 0, 0, 1)">
+<span>I would suggest you to perform a full system scan using the Microsoft Safety Scanner to eliminate any issues related to virus/malware.</span></span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span><strong>Microsoft Safety Scanner</strong></span></span><span style="color: rgba(103, 103, 103, 1)">
+</span><a href="http://www.microsoft.com/security/scanner/en-us/default.aspx" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(5, 99, 193, 1)">http://www.microsoft.com/security/scanner/en-us/default.aspx</span></span></a></p>
+<p>
+</p><p><strong><span style="color: rgba(0, 0, 0, 1)"><span>Note:</span></span></strong><span style="color: rgba(0, 0, 0, 1)"><span>&nbsp;Any data files that are infected may only be cleaned by deleting the file entirely, which means there is a potential for data loss.<br />
+The Microsoft Safety Scanner expires 10 days after being downloaded. To rerun a scan with the latest anti-malware definitions, download and run the Microsoft Safety Scanner again.</span></span></p>
+<p>
+</p><p><span><span>If issue still persists try method 2.</span></span></p>
+<p>
+</p><p><strong><span><span>Method 2: Perform Clean Boot. </span></span></strong></p>
+<p><span><span>Placing your system in Clean Boot state helps in identifying if any third party applications or startup items are causing the issue. You need to follow the steps from the article mentioned below to perform a Clean Boot.</span></span></p>
+<p>
+</p><p><strong><span><span>Refer: How to perform a clean boot in Windows</span></span></strong></p>
+<p><a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(5, 99, 193, 1)">http://support.microsoft.com/kb/929135</span></span></a></p>
+<p>
+</p><p><span><strong><span>Note:</span></strong><span> </span><span style="color: rgba(0, 0, 0, 1)">After clean boot troubleshooting step, follow the section "How to reset the computer to start as usual after troubleshooting with clean boot" in the provided link to return
+ your computer to Normal startup mode.</span></span></p>
+<p>
+</p><p><span>Hope this information is helpful. Please do let us know if you need further assistance with Windows, we’ll be glad to assist.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=msn">msn, </a> <br>
+<a href="/search?q=using_msn.com_and_msn_apps">using_msn.com_and_msn_apps, </a> <br>
+<a href="/search?q=my_home_page">my_home_page, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Why is my msn email not loading into my iPhone&#63; they tell me the - Microsoft Community</title>
+<h3> maxinesusan  say:</h3>
+<h2>            Why is my msn email not loading into my iPhone&#63; they tell me the Newwork is not working&#63;</h2>
+                    I went to the my provider (T-Mobile) and they said that Hotmail was having problems commiunicating with my mobile device.&nbsp; I did see one message to that effect when I was working on my computer.&nbsp; What is going on and when will this be resolved.&nbsp; I need
+ my email on my phone!!!!!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hassan0987  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I am having the same problem for two days. I am with AT&amp;T and unable to access mail through my phone. Even from my laptop, Hotmail is acting weird. I tried removing and reinstalling the email accounts but this did not help.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> maxinesusan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I am having the samee issues.&nbsp; I have a brand new iPhone 5 with T-Mobile and it is not working either.&nbsp; At T-Mobile they tried the same thing and still it is not working.&nbsp; they have been having issues for the last three days from hotmail, outlook, MSN customers.&nbsp;
+ MSN is the WORST email program.&nbsp; They have been making so many changes nothing is working correctly.&nbsp; I am so&nbsp;angry with them I could scream.&nbsp; They have no regard for their customers, no help-nothing.&nbsp; One hand does not know what the other is doing.&nbsp;
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><span style="color: rgba(0, 0, 0, 1)">Hi Everyone,</span></font></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)"><font>I apologize for the inconvenience this issue may have been causing you. Let me further assist you with this concern.</font></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>Service for Outlo</font></span><span style="color: rgba(0, 0, 0, 1)"><font>ok.com has been restored although some customers may experience issues accessing
+ and syncing email through their mobile devices. For status updates regarding this please refer to this
+</font><a href="https://status.live.com/" target="_blank" rel="noreferrer nofollow"><font color="#0072c6">page</font></a><font>.</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>You can also try to fix your issue by reconfiguring your account to your device. Refer to this
+</font><a href="http://windows.microsoft.com/en-US/windows/outlook-to-go#1TC=t1" target="_blank" rel="noreferrer nofollow"><font color="#0072c6">link</font></a><font> for the steps.</font></span></p>
+<p>&nbsp;</p>
+<p><font><span style="color: rgba(0, 0, 0, 1)">If you are getting a different signing on signing in or using Outlook.com please post a new thread about it.</span></font></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>Thank you.</font></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hassan0987  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The problem is still not solved. I think I tried different things including deleting the account from the mail app and setting it again. This is a new problem that I did not encounter over the last 4 years of my apple app use with hotmail. My other 3 accounts
+ including yahoo and gmail works fine. Hotmail works better from the browser, on both phone and computer, but still very slow on opening emails.
+<div><br />
+<div>There is still a problem and Microsoft should stop trying to convince us that its solved! &nbsp;</div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> maxinesusan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I agree-it is still not fixed.&nbsp; The emails are taking forever to load if they load at all and the phone is not synching to my outlook account either.&nbsp;&nbsp;&nbsp; This issue is getting old fast.&nbsp; I need this to work.&nbsp; Nothing works correctly at Microsoft.&nbsp; I think
+ they have no idea what they are doing.&nbsp; Why they keep changing everything I do not know.&nbsp; Others with hotmail seens not to be having issues.&nbsp; Why some and not others.&nbsp; Is is the MSN folks that have issues, those who use Windows Live or ourlook??&nbsp; Anyone know????
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> yasminc  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's not working, nothing is solved check here:&nbsp;<a href="http://www.websitedown.info/" target="_blank" rel="noreferrer nofollow">http://www.websitedown.info</a>&nbsp; &nbsp;you can check what is working and waht is not.
+ for mobile devices with a hotmail account use blu-m.hotmail.com and the test says it's down<br />
+<br />
+WEBSITE AVAILABILITY CHECK FOR BLU-M.HOTMAIL.COM:
+<div>
+<p><b>blu-m.hotmail.com is down</b></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hassan0987  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ok, I think my account is back to normal only this morning 8/18/2013. I hope everybody else is the same.&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Everyone,
+<p>&nbsp;</p>
+<p>Welcome to Microsoft Community. </p>
+<p>&nbsp;</p>
+<p>We understand you're having issues accessing your emails on your mobile device. Please be informed that the s<font color="#000000"><font><span>ervice for Outlook.com has been restored although some customers may experience issues accessing and syncing email
+ through their mobile devices. For status updates go to: <a href="http://status.live.com/" target="_blank" rel="noreferrer nofollow">
+<font color="#0072c6">http://status.live.com</font></a>. </span></font></font></p>
+<p><font color="#000000"><font><span><strong>Note:</strong> If you are experiencing a different issue signing in or using Outlook.com, please create a new thread.</span></font></font></p>
+<p><br />
+Let us know if you need further assistance on this.</p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davew_972  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have an android phone,&nbsp; have had and @msn.com e mail for some time.<br />
+<br />
+Last week, the phone stopped picking up e mails on two of the three accounts I have. I also need e mails to my phone. Is there a fix that anyone can recommend.<br />
+<br />
+Thanks<br />
+<br />
+Dave<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 2019 - how to get image location properties on pasted images&#63; - Microsoft Community</title>
+<h3> mosaicl  say:</h3>
+<h2>            Word 2019 - how to get image location properties on pasted images&#63;  older Word versions included this in Alt Text but feature now removed</h2>
+                    <p>We recently started rolling out Office 2019 to select users.</p>
+<p>We noticed in Word 2019 that the Alt Text for pasted images no longer contains the path to the image file location.
+</p>
+<p>
+</p><p>I'm told by MS support this feature has been removed, although previously active in earlier Word versions.</p>
+<p>
+</p><p>1.&nbsp; Is there a Macro or VBA or add in that will get that data if present?</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; It would be too labor intensive to now have to also paste the image location manually since we can deal with hundreds of images in a single .docx</p>
+<p>
+</p><p>We use it to validate the most recently version of a pasted image during our QC.</p>
+<p>
+</p><p>Please help and thank you,</p>
+<p>
+</p><p>B</p>
+<p>
+</p><p>Moved from:&nbsp;Word&nbsp; / Windows 10&nbsp; / Office 2019</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rich Michaels - MVP &#40;greatcirclelearning.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RM"); this.style="display: inline-block";'
+<h3> rich michaels - mvp &#40;greatcirclelearning.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I don't recall in any previous version of Word, maybe someone else does, that pasting images into a document ever resulted in an automatic capture into Alt Text of the path of the pasted image. If an image is inserted as a linked image then the path is of
+ course saved into an XML node of the document bundle.</p>
+<p>
+</p><p>Since you mentioned macro, VBA, or add-in code that might help you here are a few to perform a web search on and try out.</p>
+<p>
+</p><p>1. AuthorTec Insert - an add-in that does image insertions (embedded, linked, or the special combo of both) and does save the image path in Alt Text.</p>
+<p>
+</p><p>2. AuthorTec Accessibility - an add-in that make it very easy to Review &amp; Edit all objects that require Alt Text in a Word document. It saves a bunch of clicking back and forth.</p>
+<p>
+</p><p>3. AuthorTec Link - an add-in that is used to change the path on linked images, which is very helpful when the master location needs to be updated. It also converts linked images to embedded or embedded to linked as an option.</p>
+<p>
+</p><p>4. For a custom VBA solution you will need the following for the core of your macro:</p>
+<p>
+</p><p>
+</p><p>&nbsp; &nbsp; Dim iShp As Word.InlineShape, shp As Word.Shape</p>
+<p>&nbsp; &nbsp; On Error Resume Next</p>
+<p>&nbsp; &nbsp; For Each iShp In ActiveDocument.InlineShapes</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; If iShp.LinkFormat.Type = wdLinkTypePicture Then</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Debug.Print iShp.LinkFormat.SourceFullName</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; End If</p>
+<p>&nbsp; &nbsp; Next</p>
+<p>&nbsp; &nbsp; For Each shp In ActiveDocument.Shapes</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; If shp.LinkFormat.Type = wdLinkTypePicture Then</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Debug.Print shp.LinkFormat.SourceFullName</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; End If</p>
+<p>&nbsp; &nbsp; Next</p>
+<p>
+</p><div>
+<p>
+</p><p>Hope this helps</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Maxey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> greg maxey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Rich,</p>
+<p>
+</p><p>&nbsp; I can confirm that pasting a copied image in Word 2010 and 2016 does in fact result in the image path being recorded as the inlineshape alternate text.</p>
+<p>
+</p><p>&nbsp; However, that inlineshape is not linked so I haven't found another way (if possible) to determine that path.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The Office group at Microsoft has confirmed that this is an intentional change to prevent personal info from being added to the Alt text.&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>As indicated in the Alt Text pane, the purpose of the Alt Text was really to enable screen readers to describe the image to a person who is blind</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/aac10790-1fb0-49e5-b054-77fd9cc16acd?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/aac10790-1fb0-49e5-b054-77fd9cc16acd?upload=true" /></a></p>
+<p>
+</p><p>And as the presence of the filename in the Alt Text interfered with its purpose and in view of the security issues that had been raised with Microsoft when the Alt Text revealed the source of the image, a decision was made to remove
+ the source details from the Alt Text.</p>
+<p>
+</p><p>If the images are linked to the document, the following modification of Rich's code will assign the source of each image to its Alt Text</p>
+<p>
+</p><p>&nbsp;Dim iShp As Word.InlineShape, shp As Word.Shape<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; For Each iShp In ActiveDocument.InlineShapes<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If iShp.LinkFormat.Type = wdLinkTypePicture Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; iShp.AlternativeText = iShp.LinkFormat.SourceFullName<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; For Each shp In ActiveDocument.Shapes<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If shp.LinkFormat.Type = wdLinkTypePicture Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shp.AlternativeText = shp.LinkFormat.SourceFullName<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+End Sub<br />
+</p>
+<p>As a work-around for new documents or when inserting images and at the same time assign the source of the image to its AltText, you can use</p>
+<p>
+</p><p>Dim FD As FileDialog</p>
+<p>Dim strFileName As String<br />
+Dim ILS As InlineShape<br />
+Set FD = Application.FileDialog(msoFileDialogFilePicker)<br />
+With FD<br />
+&nbsp;&nbsp;&nbsp; .Title = "Select the image that you want to insert."<br />
+&nbsp;&nbsp;&nbsp; .Filters.Clear<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Filters.Add "All Pictures", _</p>
+<p>"*.emf;*.wmf;*.jpg;*.jpeg;*.jfif;*.jpe;*.png;*.bmp;*.dib;*.rle;*.gif;*.emz;*.wmz;*.pcz;*.tip;*.tiff;*.svg;*.pct;*.pict"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AllowMultiSelect = False<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If .Show = -1 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strFileName = .SelectedItems(1)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox "You did not select an image."<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exit Sub<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+Set ILS = ActiveDocument.InlineShapes.AddPicture(strFileName, False, True, Selection.Range)<br />
+ILS.AlternativeText = strFileName<br />
+End Sub<br />
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Grupo Hogar - Microsoft Community</title>
+<h3> anacorral ballesta  say:</h3>
+<h2>            Grupo Hogar</h2>
+                    hola quiero un grupo de hogar
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="ZigZag3143 &#40;MS -MVP&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "Z"); this.style="display: inline-block";'
+<h3> zigzag3143 &#40;ms -mvp&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div><i>Please select your language from the drop down list at the bottom of the page to post your question in the language of your choice. The forum you posted in is for English only. If you do not find the desired language, support options for additional
+ international locations can be found by following the link below:</i><br />
+<br />
+<br />
+<b>Por favor, seleccione su idioma en la lista desplegable anterior para enviar tu pregunta en el idioma de su elección. El foro que ha publicado es para Inglés solamente. Si usted no encuentra el idioma que desee por encima de, las opciones para apoyar a otros
+ destinos internacionales se puede encontrar siguiendo el siguiente enlace:<br />
+</b><br />
+<br />
+<a href="http://support.microsoft.com/common/international.aspx" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/common/international.aspx</a></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>missing sent items in office 365 outlook - Microsoft Community</title>
+<h3> pmharski  say:</h3>
+<h2>            missing sent items in office 365 outlook</h2>
+                    <p>My sent folder shows no email items, though i've sent emails.</p>
+<p>I know 2 other people who have this problem.</p>
+<p>We all have gmail imap set up.</p>
+<p>Save sent items is checked.</p>
+<p>
+</p><p>The emails are still on the gmail server. Why are they not appearing in my sent mail folder?</p>
+<p>
+</p><p>Thank you.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi pmharski,</p>
+<p>&nbsp;</p>
+<p>Greetings, as far as I know, Save copies of messages in the Sent Items folder option in Outlook can only be applied to Exchange account. For IMAP account, please go to &gt; File menu &gt; click Account Settings &gt; Account Settings &gt; Select the
+ IMAP, and then click Change &gt; Make sure that the <em>Don't save copies of sent items</em> check box is not selected.</p>
+<p>&nbsp;</p>
+<p>Besides, can you see the [Gmail] folder in the folder list, if so, expand it to check whether you can see the sent folder.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pitski  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for the help.</p>
+<p>That is not marked.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>any other ideas.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi pmharski,</p>
+<p>&nbsp;</p>
+<p>Gmail's Sent Mail folder is under the [Gmail] folder in your folder list. Can you see the [Gmail] folder in the folder list?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pmharski  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <a href="https://filestore.community.support.microsoft.com/api/images/970c4d07-7672-4fed-889f-efbbf2fcb124?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/970c4d07-7672-4fed-889f-efbbf2fcb124?upload=true" /></a>This
+ is screenshot of outlook folders
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi pmharski,</p>
+<p>&nbsp;</p>
+<p>Can you see the sent folder after expanding the [Gmail] folder? If not, you can try to re-add your account to Outlook.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pmharski  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Kyrie-</p>
+<p>
+</p><p>Thanks. I had tried to expand the folder several times and today - voila!</p>
+<p>
+</p><p>I appreciate everyone's help and patience.</p>
+<p>
+</p><p>patti</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_windows">outlook_for_windows, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Yahoo Email and invalid certificate - Microsoft Community</title>
+<h3> leafnose  say:</h3>
+<h2>            Yahoo Email and invalid certificate</h2>
+                    <p>In internet explorer using 8.1 and 10 OS, and using the latest versions of all updates; All my computers are receiving invalid certificate notifications using Yahoo Mail</p>
+<p>
+</p><p>Yahoo tech support says that internet explorer is unsupported.</p>
+<p>Wow</p>
+<p>Come on you guys</p>
+<p>Microsoft Internet explorer and Yahoo Email can't work together ??</p>
+<p>
+</p><p>will support Edge per Yahoo.</p>
+<p>and if that fails? </p>
+<p>
+</p><p>well, maybe their both a previous era of computing and it's gmail and firefox here we come.......???</p>
+<p>
+</p><p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Varnau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> don varnau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>In internet explorer using 8.1 and 10 OS, and using the latest versions of all updates; All my computers are receiving invalid certificate notifications using Yahoo Mail</p>
+<p>
+</p><p>Yahoo tech support says that internet explorer is unsupported.</p>
+<p>
+</p><p>Come on you guys</p>
+<p>Microsoft Internet explorer and Yahoo Email can't work together ??</p>
+<p>
+</p><p>will support Edge per Yahoo.</p>
+<p>
+</p></blockquote>
+<p>
+</p><p>1. <em>&gt; Yahoo tech support says that internet explorer is unsupported.</em></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp; Nonsense.</p>
+<p>2. Verify that the Date, Time and Time zone are correct on the computers</p>
+<p>3. Sign out of Yahoo Mail then sign in again</p>
+<p>4. Both computers...</p>
+<p>&nbsp;&nbsp; Internet Options&gt; General tab&gt; Browsing History&gt; Delete&gt; uncheck "Preserve Favorites website data" then delete Temporary Internet Files. No reason, yet, to delete cookies, history,&nbsp; passwords, etc.</p>
+<p>
+</p><p>Don</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> leafnose  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for response</p>
+<p>The "preserve favorites website data" was already unchecked</p>
+<p>
+</p><p>deleted files yet again</p>
+<p>
+</p><p>and, truly, I have the email from tech support that plainly states their done with internet explorer, and list of their supported browsers;&nbsp; One of which is MS Edge. That seems to be part of the Win 10 environ, but not win 8.1</p>
+<p>
+</p><p>will work with Edge&nbsp; for a while and see if that is stable. </p>
+<p>
+</p><p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Varnau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> don varnau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>Thanks for response</p>
+<p>The "preserve favorites website data" was already unchecked</p>
+<p>
+</p><p>deleted files yet again</p>
+<p>
+</p><p>and, truly, I have the email from tech support that plainly states their done with internet explorer, and list of their supported browsers;&nbsp; One of which is MS Edge. That seems to be part of the Win 10 environ, but not win 8.1</p>
+<p>&nbsp;</p>
+</blockquote>
+<p>
+</p><p><em>&gt; Yahoo tech support says that internet explorer is unsupported.</em></p>
+<p>&nbsp;I&nbsp;replied "nonsense" to this because if it were true, there would be hundreds of posts about it here, but there are not.</p>
+<p>
+</p><p>There is not any basic incompatibility between IE11 and Yahoo Mail. I access Yahoo Mail with IE11 on both Windows 7 and Windows 10.</p>
+<p>
+</p><p>1. Did you do this?</p>
+<p>&nbsp;&nbsp; (2) Verify that the Date, Time and Time zone are correct on the computers</p>
+<p>&nbsp;&nbsp; (3) Sign out of Yahoo Mail then sign in again</p>
+<p>2. Is this the message you're seeing in an Information Bar?</p>
+<p>"IE has blocked this website from displaying content with </p>
+<p>security certificate errors."</p>
+<p>If it is, does Display content anyway work?</p>
+<p>
+</p><p>Don</p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Phone no longer supported&#63;&#63;&#63; - Microsoft Community</title>
+<h3> fgt_06  say:</h3>
+<h2>            Phone no longer supported&#63;&#63;&#63;</h2>
+                    I have an HTC Touch Pro 2 otherwise known as HTCt7380.&nbsp; As of recent I have experienced some technical difficulties and the phone had to be reset. I have since tried to sync with myphone and I keep getting the reply that myphone "doesn't work with this
+ phone anymore."&nbsp; It worked just fine not to long ago and now it doesn't when I need it most.&nbsp; Please help.&nbsp; What must I do to re-sync my contacts?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Julie fka profjulie" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> julie fka profjulie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            MyPhone has been discontinued and syncing stopped on August 7th. See <a href="http://answers.microsoft.com/en-us/winphone/forum/wp6n-wpmyphone/microsoft-myphone-htc-hd2-problem/ee79c6ad-7c58-45fc-95ad-e494c4156cd9?page=1&amp;tm=1313803100892#footer">
+my answers in this thread for a more thorough explanation.</a>
+<div><br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Connect to multiple Sharepoint locations using WebDAV - Microsoft Community</title>
+<h3> haneef ibn ahmad  say:</h3>
+<h2>            Connect to multiple Sharepoint locations using WebDAV</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>Give that:</p>
+<ol>
+<li>I work with a few organisations whom all use Office 365, therefore, all have their own contoso.sharepoint.com links for their OneDrive for Business.</li><li>I need to be able to access all of those Sharepoint folders seamlessly.</li><li>I'm also an Office 365 Admin on some of those organisations.</li><li>I need to make sure users have an easy simple solution to follow.</li></ol>
+<p>
+</p><p>Therefore, I need to be able to use 'Add a network location' without going to the Internet Explorer (as I cannot use it to login to multiple accounts simultaneously).</p>
+<p>
+</p><p>In fact, the main problem that I have right now is that when I try to&nbsp;'Add a network location' in Windows Explorer or using the 'net use' command, I get errors.</p>
+<p>
+</p><p>I need to know how I can just simply 'Add a network location' or 'Map a network' drive without using Internet Explorer.</p>
+<p>
+</p><p>
+</p><p>Thanks,</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jim Liu MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "JL"); this.style="display: inline-block";'
+<h3> jim liu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Haneef Ibn Ahmad,<br />
+<br />
+The suggested method is to go to the site below as an admin:</p>
+<p><span><a href="https://portal.office.com/adminportal/home#/users" target="_blank" rel="noreferrer nofollow">https://portal.office.com/adminportal/home#/users</a>
+</span></p>
+<p>Select a user &gt; OneDrive settings &gt; Access Files.<br />
+<br />
+For your requirement, you can try this:<br />
+1. In This PC, click Computer Tab &gt; Map network drive.</p>
+<p>2. Checkmark "Connect using different credentials".&nbsp;</p>
+<p>3. Input:<br />
+\\<strong>contoso</strong>-my.sharepoint.com@ssl\personal\<strong>jim</strong>_<strong>contoso</strong>_onmicrosoft_com\&nbsp;</p>
+<p>and click Finish.</p>
+<p>&nbsp;</p>
+<p>Result:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/457acba0-78b5-4e16-b701-c98b0b19b584?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/457acba0-78b5-4e16-b701-c98b0b19b584?upload=true" /></a>&nbsp;</p>
+<p>Note: If you cannot successfully make it, check the following before you re-add it:<br />
+1. Go to Internet Explorer &gt; Gear &gt; Internet options &gt; Security &gt;Trusted sites, add the site to your white list:<br />
+https://contoso-my.sharepoint.com<br />
+(If it still doesn't work, also add<br />
+https://contoso-files.sharepoint.com<br />
+https://contoso-myfiles.sharepoint.com<br />
+https://contoso.sharepoint.com)<br />
+2. In IE browser, login to OneDrive for Business with that account.<br />
+<br />
+Thanks,<br />
+Jim</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onedrive">onedrive, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Was on chat but they can&#39;t help me. and I quote&#58; - Microsoft Community</title>
+<h3> belindaosterhout  say:</h3>
+<h2>            Was on chat but they can&#39;t help me. and I quote&#58;</h2>
+                    <p>I see. Regarding your concern, I would suggest that you contact our Technical Support Team, they are the ones who have all the tools to remotely access your computer to check and diagnose your They will troubleshoot this more in depth and install a driver
+ for your soundcard device and fix the issue regarding your Internet Settings so you can play Facebook games. Let me get the contact details of our Technical Support</p>
+<p>unable to locate this help</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Joel Ivory Johnson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JI"); this.style="display: inline-block";'
+<h3> joel ivory johnson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Who is it that you contacted for help and what was the nature of the problem? The forum in which you have posted this is for Windows Mobile but it looks like your problem is for the desktop operating system.&nbsp;
+<div><br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="BelindaOsterhout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "BE"); this.style="display: inline-block";'
+<h3> belindaosterhout  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>That is just it, not sure where the problem is. Have tried Fix It software from Microsoft. While I understand Internet Explorer is a browser, and Microsoft is an operating system, both are involved because settings have been messed with.
+</p>
+<p>Unable to play games on Facebook, while others load and have no sound. Keep getting error messages, each time a new site loads. Each time I see a yellow triangle with an exclamation point inside. sometimes the message reads like null is not an object.
+</p>
+<p>tried to fix the sound but it shows no hardware and support seems to run me in circles.
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="BelindaOsterhout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "BE"); this.style="display: inline-block";'
+<h3> belindaosterhout  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            have no idea how I got to the phone portion either.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot add a OST file to Outlook that was used yesterday - Microsoft Community</title>
+<h3> sausagecreature  say:</h3>
+<h2>            Cannot add a OST file to Outlook that was used yesterday</h2>
+                    <p>I wanted to relocated my OST files for Outlook 2013.</p>
+<p>
+</p><p>I had to delete the email accounts that were using the files, because they were locked by Outlook even when outlook was closed.</p>
+<p>
+</p><p>Once I deleted the accounts, I was able to move the OST files.</p>
+<p>
+</p><p>I then tried to add them back in and Outlook tells me :"The file you chose is not an Outlook Data File. You must select a new file type".</p>
+<p>
+</p><p>I swear the wheels fell off this godawful suite of software around 2010. I am constantly, constantly coming across the most basic things that have ceased to work. Microsoft should be blasted out of all existence. I even had long discussions with a TAM at
+ MS when Vista came out, it was so full of holes there was less that worked than did work and still endless issues with this half baked OS.&nbsp;</p>
+<p><br />
+</p>
+<p>So.....</p>
+<p>How can I have just been using the files yesterday and now Outlook thinks they are not Outlook Data Files?</p>
+<p>
+</p><p>Any ideas how I can add the OST files that Outlook used yesterday, and for the previous decade that it now refuses to use?</p>
+<p>
+</p><p>I did try via control panel&gt;Mail and also via Outlook&gt;File&gt;Accounts&gt;settings&gt;datafiles.&nbsp;</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You cannot re-connect an *ost data file to a mail account, that has allways been the case, and in any case why? since an *.ost is a local cached copy of what is on the server<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sausagecreature  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Because I dont have a copies of many of the mails that are on the server. The files are designed so that if the server is not available I can still access my mails, that is what I have used them for and have done for years. One of them is an archive of an
+ old email account that is no longer available, but there is vital information in those ost that i need. The OST from the server which has not been available for years has provided me daily access to the emails that were on that server and now I cannot access
+ them. This has changed since moving the files yesterday.&nbsp;</p>
+<p>
+</p><p>
+</p><p>Cant help but wonder then how was it that I used the files yesterday when the server has not been available for years and I have repeatedly rebuilt that profile in different installations at different times, but now am unable to use those files? .&nbsp;</p>
+<p><br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Hal Hostetler - MVP-Outlook" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "HH"); this.style="display: inline-block";'
+<h3> hal hostetler - mvp-outlook  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>An .OST file is a carbon copy of your email account on the server.&nbsp; It is considered volatile and expendable; if an .OST file is damaged or erased, Outlook will rebuild the file with the data on the server.&nbsp; The only exception to this involves IMAP accounts
+ where, due to limitations in the protocol, things like <a href="https://www.msoutlook.info/question/do-not-risk-losing-your-contacts-and-calendar-when-using-imap" target="_blank" rel="noreferrer nofollow">
+Contacts, Calendars, To-Dos, and the like are stored locally and are subject to damage or deletion</a>.&nbsp; The email and folder structure are preserved on the server and a rebuild .OST file will have all that data restored to it.</p>
+<p>
+</p><p>A .PST (Personal STorage) file, by contrast, is a permanent offline storage folder.&nbsp; These can be added and removed from Outlook at will and are suitable as long-term/permanent backup files.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>Cant help but wonder then how was it that I used the files yesterday when the server has not been available for years and I have repeatedly rebuilt that profile in different installations at different times, but now am unable to use those files? .&nbsp;<br />
+<br />
+</p>
+</blockquote>
+<p>
+</p><p>Just to add to the other replies already provided, an .ost file can only be opened/read by the "original" Outlook profile/email account that was used to create it.</p>
+<p>
+</p><p>The reason you have been able to use the file "yesterday when the server has not been available for years" is because it would have been working in "offline mode" which is the precise purpose of the file (.ost = offline storage).</p>
+<p>
+</p><p>If you have the orphaned OST files, you are going to need to purchase a 3rd party OST2PST file to recover any data in the file.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sausagecreature  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for your advice guys, alas, it does not fit with the experience I have had. Many times I have used these files to rebuild a profile (different installs, different computers) after the email server was decommissioned. Not sure how I have done this
+ if you are right, but I have certainly done it, time and time again.&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>Not sure how I have done this if you are right, but I have certainly done it, time and time again.&nbsp;
+</blockquote>
+<p>
+</p><p>If you ever determine "how" you accomplished an existing .ost file on a new computer creating a new Outlook profile, can assure you that there are many that would most definitely be interested in the process followed since as stated in my previous response</p>
+<p>
+</p><p>An .ost file can only be opened/read by the original Outlook profile/email account that created it.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sausagecreature  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Amazing eh? If only that was true. I dont think I did anything unusual, but know for a fact, beyond doubt that I have rebuilt this machine.&nbsp;</p>
+<p>
+</p><p>Mainly I know that because I had a extremely long winded conversation with microsoft to have my dev license ported to the new hardware after I had used up all the entitlement on the license (mostly on rebuilds and replacement hardware) and needed MS to accept
+ that I wasn't using more copies than I was entitled to, but merely shifting to new hardware and decommissioning the old. This took place after the old mail server was shut down. So, without any doubt, I know I have done this once with no special process. I
+ also know I have done it more than once.&nbsp;</p>
+<p>
+</p><p>Weird eh? I suppose not everything in the world of MS works as it should, sometimes in my favour, sometimes not.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>Amazing eh? If only that was true. I dont think I did anything unusual, but know for a fact, beyond doubt that I have rebuilt this machine.&nbsp;</p>
+<p><br />
+</p>
+</blockquote>
+<p>
+</p><p>Not only would it be amazing but totally unheard of. The only reason I'm adding one last reply is to avoid other people reading this thread from having a false sense of hope that it can be done. There is an entire eco-system of OST2PST conversion utility
+ programs for this very reason so your challenge would be to find one other post anywhere by anyone who has successfully accomplished what you're describing.</p>
+<p>
+</p><p>Just so there is no mistake</p>
+<p>
+</p><p>#1 - If an IMAP account is deleted in OL'2013 (or later), the OST file also gets physically deleted</p>
+<p>#2 - Even iif a copy of the OST file was made and then </p>
+<p>(a) the IMAP account was deleted from an existing profile and</p>
+<p>(b) the same IMAP account was re-added to that profile&nbsp;</p>
+<p>the copied OST file cannot be used for that account</p>
+<p>
+</p><p>Unfortunately, unless and until the exact steps that were followed are detailed in a fashon that would allow someone to replicate things, there is absolutely no way for anyone to confirm what actually was done and verify that an old ost file could be added
+ to an Outlook profile.</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sausagecreature  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I appreciate what you are trying to do. </p>
+<p>
+</p><p>Not only from more than a few years of this, but also just last week I deleted the profile just before relocating the OST file which goes against the steps you lay out. I couldn't move the OST file until I deleted the profile. So I deleted the profile, and
+ then simply relocated the OST which you say should have been deleted when the profile was deleted.&nbsp;</p>
+<p>
+</p><p>It doesn't matter now anyway, more and more these days one just has to say good bye to things that once were, and for that I often have MS to thank. So, I shall try and take a Buddhist-like approach to my attachment to the previously important emails and
+ accept that they are gone.&nbsp;</p>
+<p>
+</p><p>I appreciate the help of you knowledgeable folk, even if we disagree, so thanks for everything you guys for your kind intentions, and esp Karl.&nbsp; It is time to cut my losses, I have other fish I need to fry.&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Karl Timmermans &#91;Outlook MVP 2012-2018&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "KT"); this.style="display: inline-block";'
+<h3> karl timmermans &#91;outlook mvp 2012-2018&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>So I deleted the profile, and then simply relocated the OST which you say should have been deleted when the profile was deleted.&nbsp;<br />
+</p>
+<p><br />
+</p>
+</blockquote>
+<p>
+</p><p>For sake of accuracy, I did not state "when the profile was deleted" - what I stated was</p>
+<p>
+</p><p>"<span>If an IMAP account is deleted in OL'2013 (or later), the OST file also gets physically deleted'</span></p>
+<p><span><br />
+The above refers to removing an IMAP account from an "existing profile".</span></p>
+<p>
+</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>VBA for Word 2010 Run-time error 4605 - Microsoft Community</title>
+<h3> dcobb12  say:</h3>
+<h2>            VBA for Word 2010 Run-time error 4605</h2>
+                    I have code written that allows a user to select a signature for a document. The selected signature image is placed at the bottom of page one at the right margin. I know the macro was working two weeks ago, but when I tried to use it today, I get the run-time
+ error shown below. If I choose debug, it indicates the .RelativeHorizontalPosition line. Once I escape out of the debugging, the signature is in the right place vertically, but at the left margin instead of the right margin. My code for inserting the signature
+ is shown below. Any help would be greatly appreciated. <img src="https://filestore.community.support.microsoft.com/api/images/a2ab3400-085b-408e-9454-0f1afacde71c" /><br />
+&nbsp;&nbsp;&nbsp; If optBrown = True Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Application.ScreenUpdating = False<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Dim Rng As Range, Shp As Shape, StrImg As String<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; StrImg = "v:\users\operations\templates\word2010\bksigs\a487_sig.gif"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Rng = Selection.Range<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Rng.Collapse<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Shp = ActiveDocument.InlineShapes.AddPicture(FileName:=StrImg, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SaveWithDocument:=True, Range:=Rng).ConvertToShape<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With Shp<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .LockAspectRatio = True<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Height = 75<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Width = 250<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .RelativeHorizontalPosition = wdRelativeHorizontalPositionMargin<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .LeftRelative = 50<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .RelativeVerticalPosition = wdRelativeVerticalPositionLine<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> dcobb12  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you for the responses. I changed the bookmark alignment to be right aligned. I also remarked out&nbsp;these lines (before the last End With):</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .RelativeHorizontalPosition = wdRelativeHorizontalPositionMargin<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .LeftRelative = 50<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .RelativeVerticalPosition = wdRelativeVerticalPositionLine<br />
+The macro worked perfectly. </p>
+<p>&nbsp;</p>
+<p>The remarked out Dim statement is actually further up in another part of the code. As for the poor programming practice, I learning as I go. I never worked with VBA until I was assigned the task of taking several WordPerfect templates/macros and recreating
+ them in Word. Its been an experience.</p>
+<p>&nbsp;</p>
+<p>I thank you all for your insight. It does help me immensely!</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Hotmail not registering on MobileMe - Microsoft Community</title>
+<h3> ted bravakis  say:</h3>
+<h2>            Hotmail not registering on MobileMe</h2>
+                    I have been trying to register my Hotmail account on MobileMe through me.com and I continually get a "server unreachable" error message, even though I know the POP information I have is correct because it's the same information on my iPhone and iMail on
+ Mac (which both work). &nbsp;Suggestions on a fix to me.com accepts my Hotmail account are welcome and appreciated.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Julie fka profjulie" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> julie fka profjulie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You've posted your question in a forum that is dedicated to devices that are running the windows mobile operating system.&nbsp; MobileMe is not used for windows mobile devices and the iPhone, iMail and Mac have nothing to do with windows mobile devices or phones.&nbsp;
+ If you have a question about anything to do with a windows mobile device, we would be happy to help you out.&nbsp; But, unfortunately, your question does not have anything to do with this forum.&nbsp; Perhaps you'll find some help if you post your question in a MobileMe,
+ iPhone, iMail or Mach forum.</p>
+<p>&nbsp;</p>
+<hr />
+Prof Julie | <a href="https://mvp.support.microsoft.com/profile=6FE2050D-85F2-41C0-B6AC-D3C00BCFACEC" target="_blank" rel="noreferrer nofollow">
+Microsoft MVP Windows Phone</a> | <a href="http://pocketprimer.com" target="_blank" rel="noreferrer nofollow">pocketprimer.com</a> |<a href="http://twitter.com/profjulie" target="_blank" rel="noreferrer nofollow"> twitter</a>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot see password form - Microsoft Community</title>
+<h3> 瞉斐呂  say:</h3>
+<h2>            Cannot see password form</h2>
+                    <p>Hi Everyone,</p>
+<p>
+</p><p>While I try to login Skype, I cannot see the password form. I try to uninstall and reinstall the software. But it didn't work.&nbsp;</p>
+<p>
+</p><p>My OS is Windows XP SP3 and Skype version is 7.36.0.150.</p>
+<p>
+</p><p>Thank you for your support.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> susan_s.  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span style="color: rgba(0, 0, 0, 1)"><span>Hello Techfreak_,</span></span></p>
+<p>
+</p><p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>Thank you for answering customer’s concern.</span></span></p>
+<p>
+</p><p>
+</p><p><span><span style="color: rgba(0, 0, 0, 1)"><span>Hi </span></span><span><a href="https://answers.microsoft.com/en-us/profile/9c66eaed-d8b7-4b2c-b88d-1586e12e0c21" title="玉斐呂"><span style="color: rgba(0, 103, 184, 1)">玉斐呂</span></a><span>,</span></span></span></p>
+<p>
+</p><p>
+</p><p><span><span>Welcome to the Skype Community.</span></span></p>
+<p>
+</p><p><span><span>Please be informed that the issue has resolved according to Skype Heartbeat,
+</span><a href="https://heartbeat.skype.com/2017/08/problems_with_sign_in_on_windo.html" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">click here.</span></a></span></p>
+<p>
+</p><p><span><span><del>We highly suggest that you completely </del></span><del><a href="https://support.skype.com/en/faq/FA10634/how-do-i-uninstall-and-reinstall-skype-for-windows-desktop?" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">uninstall
+ and reinstall Skype</span></a><span>.</span></del></span></p>
+<p>
+</p><p><span><span>Hope this information helps us. Let me know if you need further assistance.</span></span></p>
+<p>
+</p><p><span><span>Thank you. </span></span></p>
+<p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_windows_desktop">skype_for_windows_desktop, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+<a href="/search?q=sign_in">sign_in, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Syncing with Exchange AND PC&#33;&#63;&#33; Duplicate contacts created - Microsoft Community</title>
+<h3> mpderksen  say:</h3>
+<h2>            Syncing with Exchange AND PC&#33;&#63;&#33;  Duplicate contacts created</h2>
+                    I connect my Windows Mobile device to my work laptop (WinXP) via Exchange. &nbsp;I've never connected it with a cable. &nbsp;
+<div>I connect the same device to my home Desktop PC (Vista) via a USB cable and Windows Mobile Device Center.</div>
+<div>Both computers run Outlook 2007, though the Desktop Vista machine also has Business Manager installed, which I do not use.</div>
+<div><br />
+</div>
+<div>Issue: &nbsp;Duplicate contacts and/or failure to sync changes. &nbsp;But only in a few cases. &nbsp;745 Contacts, deleted duplicates, now have 703.</div>
+<div><br />
+</div>
+<div>On the device, ActiveSync settings are set as follows:</div>
+<div>Exchange - Calendar, Contacts and Email</div>
+<div>Windows PC - Contacts and Calendar</div>
+<div><br />
+</div>
+<div>In WMDC, settings are:</div>
+<div>Contacts - both Exchange and PC are checked</div>
+<div>Calendar - both Exchange and PC are checked</div>
+<div>Email - Only Exchange is checked (comcast.net account set through different control panel)</div>
+<div><br />
+</div>
+<div>Office OneNote is checked, and on phone I have 5 copies of it, but only 3 are checked</div>
+<div><br />
+</div>
+<div>I have tested making changes on the PC and the Laptop (Exchange), and data seems to flow to/from the Mobile device and changes are updates are applied.</div>
+<div><br />
+</div>
+<div>Question: &nbsp;Are there fields which do NOT transfer and if they are changed result in duplicates? &nbsp;I.e. categories. &nbsp;In a few cases I noticed the categories switched ("customer, university" in one, and "university, customer" in the other). &nbsp;</div>
+<div><br />
+</div>
+<div>Second, possibly related is that I get reminder alerts that birthdays are weeks overdue. &nbsp;I have duplicate Birthday events in my calendar in most cases. &nbsp;These are not from the same people that were duplicated in the Contacts folder. &nbsp;Deleting the Birthday
+ from the contact does NOT delete it from the Calendar. &nbsp;Adding the Birthday back, adds a THIRD copy to the calendar.</div>
+<div><br />
+</div>
+<div>I hope this was descriptive enough.</div>
+<div><br />
+</div>
+<div>Thanks in Advance,</div>
+<div><br />
+</div>
+<div>Michael</div>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Johan van Mierlo" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JV"); this.style="display: inline-block";'
+<h3> johan van mierlo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Michael,<br />
+<br />
+If your pc's outlook is also connected with exchange then you don't have to sync the same items on you phone on exchange and PC.<br />
+<br />
+If your PC's outlook is indeed connected to exchange as well, just uncheck those items (Contacts,Calendar and E-mail) from your pc sync in the active sync settings of you Phone. (leave the exhange boxes checked)<br />
+<br />
+This will remove them all and only your exchange information will be synced to your device.<br />
+<br />
+The over due birthday reminders happens because you synced your device to your pc after the reminder. In this case the Phone is telling the PC that this happened and again you will get this. You won't have this if your calendar is only synced with exchange.<br />
+<br />
+Since you are now syncing with two different sources with the same information, you have your duplicates.<br />
+<br />
+Hope this helps
+<hr />
+Johan van Mierlo,<br />
+<br />
+| <a href="http://www.mobilityminded.com" target="_blank" rel="noreferrer nofollow">http://www.MobilityMinded.com</a> | <a href="http://www.bostonpocketpc.com" target="_blank" rel="noreferrer nofollow">
+http://www.BostonPocketPC.com</a> | <a href="http://social.microsoft.com/Forums/en-US/category/windowsmobile/" target="_blank" rel="noreferrer nofollow">
+Moderator Windows Mobile Total Access Forums</a> |
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Universal Apps Keep Crashing - Microsoft Community</title>
+<h3> ribshark  say:</h3>
+<h2>            Universal Apps Keep Crashing</h2>
+                    I am trying to use some of the universal apps on Windows 10, but they are extremely unstable and often crash. Some, like the beta store and xbox, crash when opened. Others, like the old store, crash under certain circumstances, such as typing in the search
+ bar. As none of the store apps are working properly, it makes it very difficult to browse and install other apps. Is this a known issue, or is it something to do with my setup?<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for your interest in Windows 10 Technical Preview.</p>
+<p>
+</p><p>This issue might be caused due to various reasons:</p>
+<p>
+</p><ul>
+<li>Drivers crash or compatibility.</li><li>Third party applications crash.</li><li>User profile corruption.</li></ul>
+<p>Please try the below suggestions and check if it helps:</p>
+<p>
+</p><p><strong>Method1: Create a new user account</strong></p>
+<ul>
+<li>From the desktop press Windows flag key + R .</li><li>Type netplwiz in the run box.</li><li>The user account Window will pop up click ADD.</li><li>Follow the onscreen instructions to create a new account and try to check the apps in the new user account.</li></ul>
+<p><strong>Method 2: Clean boot</strong></p>
+<p>
+</p><p><span>Putting your system in Clean Boot state helps in identifying if any third party applications or startup items are causing the issue. You need to follow the steps from the article mentioned below
+ to perform a Clean Boot.</span></p>
+<p>
+</p><p><span>How to perform a clean boot in Windows</span><strong>
+<span><br />
+</span></strong></p>
+<p>
+</p><p><a href="http://support.microsoft.com/kb/929135" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(5, 99, 193, 1)">http://support.microsoft.com/kb/929135</span></span></a><span><br />
+</span></p>
+<p>
+</p><p><span><strong>Note: </strong>
+After troubleshooting, refer to this section "How to reset the computer to start normally after clean boot troubleshooting"</span></p>
+<p>
+</p><p><span>Also please ensure that all the updates are installed on the computer.</span></p>
+<p>
+</p><p><span>Hope this information helps, for further assistance please reply.&nbsp;</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ribshark  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the reply. Unfortunately, none of the instructions given had any effect on the issue I am having. If the following info is useful to solving this in any way I upgraded from Windows 8.1, and then performed a refresh after encountering several issues
+ with performance. The refresh failed at first but worked after a reboot.<br />
+</p>
+<p>
+</p><p>EDIT: For whatever reason some universal apps have suddenly started working again! Store still crashes, but store beta is now working.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for the reply.</p>
+<p>
+</p><p>Sorry about the delay in response.</p>
+<p>
+</p><p>After going through your post we can say this issue is caused because of failed reset or Windows core files corrupt.</p>
+<p>
+</p><p>It is advisable that you download the ISO copy of Windows 10 Technical Preview make a bootable disc and initiate the refresh.</p>
+<p>
+</p><p>Note: Refresh will wipe all&nbsp; the apps that you have installed.</p>
+<p>
+</p><p>Hope this information helps.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=apps_on_insider_preview">apps_on_insider_preview, </a> <br>
+<a href="/search?q=other_apps">other_apps, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Changing column Order in a pivot table - Microsoft Community</title>
+<h3> garybernier  say:</h3>
+<h2>            Changing column Order in a pivot table</h2>
+                    Hi...I imported a csv file from a report generator tool into excel. &nbsp;I then created a pivot table except that I have the columns ordered by fiscal quarter spanning two fiscal years so the table has both Q1 2011 and a Q1 2012... The pivot table is ordering
+ them alphabetically so I have Q1 2011 then Q1 2012 then Q2 2011 etc...
+<div><br />
+</div>
+<div>I've tried relabeling the fields in the flat file so the alphabetical order makes sense chronologically but when I create the pivot table it uses the original lablels???</div>
+<div><br />
+</div>
+<div>Anyone know how to change the order of pivot table columns?</div>
+<div><br />
+</div>
+<div>Thanks,</div>
+<div>Gary</div>
+<div><br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> michaelpalmer93  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>*Solved* </p>
+<p>I have the same issue as above (even carried over to 2016) and I've found a simple solution.</p>
+<p>
+</p><p>If you click the column heading you want to move and then hover over the edge of the cell and click/hold. You should see a faint, thick vertical line appear meaning you can drag that column to the part of the pivot table you want it in. (See screenshot)</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/13cd9ddc-afc2-4178-acee-9cc7c343d945" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/13cd9ddc-afc2-4178-acee-9cc7c343d945" /></a><br />
+</p>
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>error says &#39;not enough memory to run excel&#39;, not true-have - Microsoft Community</title>
+<h3> tukrn  say:</h3>
+<h2>            error says &#39;not enough memory to run excel&#39;, not true-have plenty memory-need help&#33;Windows 10</h2>
+                    Cannot open excel worksheets, have plenty of memory, must be something else causing this.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Roberto Ven" role="img">
+<h3> roberto ven  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Try using<em><strong><a href="https://support.office.com/en-us/Article/Repair-an-Office-application-7821d4b6-7c1d-4205-aa0e-a6b40c5bb88b" target="_blank" rel="noreferrer nofollow">Repair an Office application</a></strong></em> just to be sure that there's no corruption
+ on Excel protocol files.</p>
+<p>
+</p><p>Let us know the outcome.</p>
+<p>Best regards,</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Intel TurboBoost &#38; Gaming on AC power in Windows 10 - Microsoft Community</title>
+<h3> dksquard  say:</h3>
+<h2>            Intel TurboBoost &#38; Gaming on AC power in Windows 10</h2>
+                    <p>I have an interesting issue...</p>
+<p>
+</p><p>CPU clock speed drops to sub 1.7Ghz when a game is running in the foreground and the laptop is on AC power. Leave the game in the foreground, unplug from AC using batter, and it appears TurboBoost enables and the PC runs just below 2.4Ghz. The same issue
+ occurs when minimizing the game while plugged in to AC power. Remove AC power and clock speed remains just below 2.4Ghz. I have installed all available windows updates, re-installed updated chipset drivers from acers website.</p>
+<p>&nbsp;</p>
+<p>Screen 1: Game in foreground, AC power, lowered clock</p>
+<p>Screen 2: Game in foreground, battery power, appears TurboBoost is enabled</p>
+<p>Screen 3: Game minimized (still running), AC power, appears TurboBoost is enabled</p>
+<p>Screen 4: Game minimized (still running), batter power, appears TurboBoost is enabled</p>
+<p><a href="https://communities.intel.com/servlet/JiveServlet/showImage/2-275938-242048/pastedImage_0.png" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fcommunities.intel.com%2fservlet%2fJiveServlet%2fdownloadImage%2f2-275938-242048%2fpastedImage_0.png" height="768" width="1366" /></a></p>
+<p><a href="https://communities.intel.com/servlet/JiveServlet/showImage/2-275938-242097/pastedImage_1.png" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fcommunities.intel.com%2fservlet%2fJiveServlet%2fdownloadImage%2f2-275938-242097%2fpastedImage_1.png" height="768" width="1366" /></a></p>
+<p>&nbsp;</p>
+<p><a href="https://communities.intel.com/servlet/JiveServlet/showImage/2-275938-242098/pastedImage_2.png" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fcommunities.intel.com%2fservlet%2fJiveServlet%2fdownloadImage%2f2-275938-242098%2fpastedImage_2.png" height="768" width="1366" /></a></p>
+<p>&nbsp;</p>
+<p><a href="https://communities.intel.com/servlet/JiveServlet/showImage/2-275938-242099/pastedImage_3.png" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fcommunities.intel.com%2fservlet%2fJiveServlet%2fdownloadImage%2f2-275938-242099%2fpastedImage_3.png" height="768" width="1366" /></a></p>
+<p>&nbsp;</p>
+<p>I have an Acer Aspire R3-471T laptop</p>
+<p>Intel Core i5 4210U 1.7Ghz (2.4Ghz)</p>
+<p>Windows 10 Pro Technical Preview Build 9926 (I am aware running an unfinished version of windows could be the issue)</p>
+<p>&nbsp;</p>
+<p>The issue was still present prior to updating to the most recent build. It also occurs regardless of game, it even occurs with emulators. Am I missing something here?</p>
+<p>&nbsp;</p>
+<p>Thanks in advance!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ganesh Achar B" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "GA"); this.style="display: inline-block";'
+<h3> ganesh achar b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p><span>Thank you for your interest in using Windows 10 Technical Preview.</span><span> We appreciate your detailed information.</span></p>
+<p>
+</p><p><span><span style="color: rgba(0, 0, 0, 1)">The issue might be due to in-compatible device driver.
+</span><span style="color: rgba(51, 51, 51, 1)">As Windows 10 Technical Preview is still in developmental stage, you may expected some compatibility issues as of now.</span></span></p>
+<p>
+</p><p><span>The problem may occur because the system BIOS is outdated. If you have an older computer, update the system BIOS to the latest version. To update the BIOS on your computer, visit the Web site of your computer manufacturer to download the BIOS update.
+ Or, contact your computer manufacturer for help.</span></p>
+<p>
+</p><p><span><strong>Note:</strong> Modifying BIOS/ complementary metal oxide semiconductor (CMOS) settings incorrectly can cause serious problems that may prevent your computer from booting properly. Microsoft cannot guarantee that any problems resulting from
+ the configuring of BIOS/CMOS settings can be solved. Modifications of the settings are at your own risk.<span>&nbsp;
+</span></span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)"><span>I recommend you join the Windows Insider Program to get more frequent preview builds and send your feedback straight to the people building Windows.</span></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><span>&nbsp;</span></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><span>Once you’re an Insider, use the Windows Feedback app to tell us which features you love, which features you could do without, or when something could be better.</span></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><span>&nbsp;</span></span></p>
+<p><span style="color: rgba(51, 51, 51, 1)"><span>Refer to this article by “<strong>Nirmal S</strong>” to know more on “<strong>How to share feedback on Windows 10 Technical Preview?</strong>” :
+</span></span><a href="http://answers.microsoft.com/en-us/windows/forum/windows_tp-winipp/how-to-share-feedback-on-windows-10-technical/5e501781-a580-43e3-8926-40ae19343805"><span style="color: rgba(17, 34, 204, 1)"><span>http://answers.microsoft.com/en-us/windows/forum/windows_tp-winipp/how-to-share-feedback-on-windows-10-technical/5e501781-a580-43e3-8926-40ae19343805</span></span></a></p>
+<p>
+</p><p><span>Hope this helps. Please do let us know if you further help.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DKsquard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DK"); this.style="display: inline-block";'
+<h3> dksquard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the reply. I reverted back to 8.1, updated BIOS, and made sure drivers were up to date. Still same issue. Any ideas? It has to be some sort of configuration setting...</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ipellant  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There is a deep bug in the way TaskManager calculates current CPU speed. </p>
+<p>It occurs on Windows 8x and has been carried forward to Win 10.</p>
+<p>At a mid code level, Windows system reporting has a pair of properties: CPU max speed and CPU load. It should be simple math to calculate the current CPU speed from those properties. But... something went wrong.
+</p>
+<p>It becomes blatantly obvious when TaskManager shows a current CPU speed in excess of the rated maximum and a CPU load of less than 10%... ummm... it goes faster when doing nothing.</p>
+<p>
+</p><p>Ignore the current speed ratings reported in TaskManager.</p>
+<p>
+</p><p>I wrote a simple program in VB.Net to confirm my suspicions.</p>
+<p>
+</p><p>Use your subjective senses: </p>
+<p>is the computer making more noise (eg: cooling fan)?</p>
+<p>is game performance / response different?</p>
+<p>
+</p><p>The problem really gets down to a Windows 8 bug that has not been fixed in Windows 10.</p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DKsquard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DK"); this.style="display: inline-block";'
+<h3> dksquard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the response. </p>
+<p>
+</p><p>However, I really wish it was just that simple. I am aware of that bug, but its not the issue in this situation. Gaming frame rate and performance lines up with the drop in clock speed from battery to AC power. I can have relevant evidence posted this evening.</p>
+<p>
+</p><p>It's interesting to note, that this bug does not exist on my friends desktop, running Windows 10 or windows 8 (he dual boots). Task Manager reporting works as intended as well as frame rates and performance is as expected.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DKsquard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DK"); this.style="display: inline-block";'
+<h3> dksquard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Interesting article here, describes my problem pretty well, but it's with a completely different manufacturer.</p>
+<p>
+</p><p>http://support.lenovo.com/us/en/documents/ht051665</p>
+<p>
+</p><p>Issue was resolved with a BIOS update... If this is my problem as well, I hope Acer sees as much importance in a fix as Lenovo...</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DKsquard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DK"); this.style="display: inline-block";'
+<h3> dksquard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Take note that screen 1 (On AC power) shows a lowered clock speed, as well as a lowered frame rate. Screen 2 (Battery power) shows Turbo Boost functioning as one would expect, and a playable frame rate for this game. This is consistent from game to game.
+ Reminder: minimizing the game re-enables turbo boost EVEN when on AC power. The moment the game is brought back to the foreground, clock speed drop.
+</p>
+<p>AC Power; 22 FPS; 1.63GHz CPU</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/9e3a8a0e-95d8-4511-8061-dae725e7b8c9" /></p>
+<p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DKsquard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DK"); this.style="display: inline-block";'
+<h3> dksquard  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Battery power; 34 FPS; 2.43GHz CPU</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/2913acb0-8bb0-4b79-83dd-ca58bc7784a8" /></p>
+<p>
+</p><p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ganesh Achar B" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "GA"); this.style="display: inline-block";'
+<h3> ganesh achar b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for the detailed information. This might help other community members if they come across same issue.</p>
+<p>
+</p><p>Please do let us know if you have any suggestion/question related to Windows 10 Technical Preview.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=performance_and_maintenance">performance_and_maintenance, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to sync a windows mobile 6.1 phone with OWA - Microsoft Community</title>
+<h3> inkline  say:</h3>
+<h2>            how to sync a windows mobile 6.1 phone with OWA</h2>
+                    
+<div>What are the Exchange Server settings I need to enter into my phone in order to get it to sync</div>
+<div><br />
+</div>
+I can access the company's&nbsp;<span>OWA page from IE on the device, but that is not functional - I need to set up the phone's active sync exchange account for contacts, calendar, email, and tasks.&nbsp;<br />
+</span>
+<div><span><br />
+</span></div>
+<div><span>The exchange server has a "BASIC web access experience"&nbsp;</span></div>
+<div><span><br />
+</span></div>
+<div><span>I have tried to copy the cert file onto the phone, but I cannot seem to get it to "copy to file"; that option remains greyed<br />
+<br />
+</span></div>
+<div><span>My&nbsp;<span>IT staff is not trained to assist me, I am on my own (with MS's help of course)&nbsp;</span></span></div>
+<div><br />
+</div>
+<div>is it even possible?</div>
+<div><br />
+</div>
+<div><br />
+</div>
+<div><br />
+</div>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> shanemsweet  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            use the same server settings on the phone setup as you have for the exchange account.&nbsp; ie, if your server is mail.domain.com, the same applies to the server setup on the phone.&nbsp; if you dont use SSL, dont check the both on the phone.&nbsp;&nbsp; re cert, we dont
+ use them here <br />
+and i works without it<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> inkline  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'm sorry, I realize that it is the same as the mail server - but it comes back asking me to fix the entries every-time.&nbsp;
+<div><br />
+<div>what is the domain entry - versus the web server address?</div>
+<div><br />
+<div><br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia C5&#58; When on Headphone, Ringtone in Loudspeaker - Microsoft Community</title>
+<h3> phonetwaddler  say:</h3>
+<h2>            Nokia C5&#58; When on Headphone, Ringtone in Loudspeaker</h2>
+                    
+<p>Is it a feature or a bug?</p>
+<p>&nbsp;</p>
+<p>When I listen to some music using my headphones or headset and an SMS or Call is arriving, the SMS arriving-signal or the Call announcement ringtone is coming out of the loudspeaker of the Nokia C5 but I do not hear it in the headphones. This is very annoying
+ in a loud environment, because I regularly miss a call because I do not hear it.</p>
+<p>&nbsp;</p>
+<p>Is there any chance to change it?</p>
+<p>&nbsp;</p>
+<p>In all the other Nokia's I had till now, it was always that way, that all the sounds were coming out of the headphones, when one was plugged in and no sound was coming out of the internal loudspeaker of the phone.</p>
+<p>&nbsp;</p>
+<p>Thanks for any answer.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> _mef_  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>This is really odd, I can hear the ringtone in BOTH my headphones and thru loudspeeker.</p>
+<p>&nbsp;</p>
+<p>Maybe try checking the Accesories settings (Menu -&gt; Settings -&gt; Settings -&gt; General -&gt; Accesories -&gt; [choose accesory, say headphones]), there's an option there to set default profile when headphones etc. are plugged in. Try changing that profile to some
+ loud one.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phonetwaddler  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I already tried the different options in the "Accessories settings" menu. Nothing helped. The ringtone is always trough the loudspeaker. Is there no chance to switch the loudspeaker off and hear the ringtone through the headphones resp. headset?</p>
+<p>&nbsp;</p>
+<p>Thanks for help</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> _mef_  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Ok, I guess its because I'm using headset and not headphones.</p>
+<p>&nbsp;</p>
+<p>Try setting headset as default accesory even tho you actually use headphones - you should be able to hear the ringtone then.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phonetwaddler  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>No chance :-(</p>
+<p>&nbsp;</p>
+<p>When plugging in my headphones, I can only choose between:</p>
+<p>&nbsp;</p>
+<p>- headphones</p>
+<p>- sound output</p>
+<p>- music station</p>
+<p>&nbsp;</p>
+<p>no chance for selecting headset.</p>
+<p>&nbsp;</p>
+<p>When plugging in my headset, I can choose the headset.</p>
+<p>&nbsp;</p>
+<p>But whatever I plug in, the ringtone is always on the loudspeaker of the Nokia and not in the headphones / headset / music station / sound output :-(</p>
+<p>&nbsp;</p>
+<p>I hope a firmwareupdate fixes these bugs, otherwise I have to switch back to my old 2730 or leave Nokia for other brands :-(</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> _mef_  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>One more thing - how about trying third party mp3 player?</p>
+<p>&nbsp;</p>
+<p>Say LCG Jukebox. You can download a trial from their site and give it a try.</p>
+<p>&nbsp;</p>
+<p>Also, try turning on the Warning Tones in your active profile.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Other than that we can only wait for software update...</p>
+<p>&nbsp;</p>
+<p>:smileyindifferent:</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phonetwaddler  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Warning tones are on. Does not change if on or off :smileysad:</p>
+<p>&nbsp;</p>
+<p>Third party player? I will give a try! But not today ...</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> korleone---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm having the same issue... tried all possible headphone combinations but with no luck :smileysad:</p>
+<p>Updated to 062.001 fw and still the same... :smileysad:</p>
+<p>&nbsp;</p>
+<p>I'm really dissapointed</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Getting error 80073cf6 trying to install the Music and Video apps - Microsoft Community</title>
+<h3> jwace81  say:</h3>
+<h2>            Getting error 80073cf6 trying to install the Music and Video apps after a factory reset on a Lumia 830</h2>
+                    I just bought a Lumia 830.&nbsp; When initially setting it up I wasn't able to connect to the internet to restore from a backup or sign in with my MS account, so I did a factory reset.&nbsp; After the reset the Music and Video apps were not installed, and trying
+ to install them from the store results in error 80073cf6.&nbsp; This only appears to affect the Music and Video apps.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jwace81  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I tried again after several hours, and now both apps have installed fine.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>N96 - Cannot find Live TV Application - Microsoft Community</title>
+<h3> brooke63  say:</h3>
+<h2>            N96 - Cannot find Live TV Application</h2>
+                    
+<p>Hey guys,</p>
+<p>&nbsp;</p>
+<p>I purchased a Nokia N96 16Gb a few weeks ago, i have now got the wireless working cos i needed static ip address.</p>
+<p>&nbsp;</p>
+<p>But i cannot find the Live TV app, from review videos i have watched it should be in Menu, Applications, then media(or mulitmedia) but its not there.</p>
+<p>&nbsp;</p>
+<p>Is there anyway to reload the applications that came as default or did they make some N96's without live TV?? mine is a UK version</p>
+<p>&nbsp;</p>
+<p>Thanks in advances</p>
+<p>&nbsp;</p>
+<p>Mark</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> drhowells---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Because it is not available in the UK, most (I think all) branded phones have the application removed.&nbsp;
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

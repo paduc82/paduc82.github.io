@@ -1,0 +1,2609 @@
+    <title>DoCmd.RunSQL in 2010 - Microsoft Community</title>
+<h3> ding k  say:</h3>
+<h2>            DoCmd.RunSQL in 2010</h2>
+                    <p>Here is an extract of a simple bit of code that is failing me.&nbsp; I am not certain why.</p>
+<p>&nbsp;</p>
+<p>When I attempt to run this code in ACCESS 2010 I get the following error:</p>
+<p>&nbsp;</p>
+<p><strong>2342: A RunSQL action requires an arguement consisting of an SQL statement.</strong></p>
+<p>&nbsp;</p>
+<p>If I do Debug.Print SQLStr1 &amp; SQLStr2 &amp; SQLStr3 and copy the results from the immediate window into a query, the query runs.</p>
+<p>Here is the result of the Debug.Print (just copied and pasted, not cleaned up or anything) from the first record in rs1:</p>
+<p>&nbsp;</p>
+<p>SELECT PolicyNum, ISSUE AS IssueDate, RequestDate, AV_ReqDt, CV_ReqDt, FV0 AS AV_PreValDt, CV0 AS CV_PrevValDt, TAXVTOT0 AS TaxRsv_PrevValDt FROM tblITR_Data LEFT JOIN 201104 AS PrevValDt ON tblITR_Data.PolicyNum = PrevValDt.POLNO WHERE (((PolicyNum)='911673047'));</p>
+<p>&nbsp;</p>
+<p>Can anybody help me spot what I am doing wrong here, please?</p>
+<p>&nbsp;</p>
+<p>Thanks!</p>
+<p>&nbsp;</p>
+<p>Sub GetITR_Data()<br />
+On Error GoTo GetITR_Data_Err<br />
+'<br />
+Dim db As Database<br />
+Dim rs1 As Recordset<br />
+'<br />
+Dim SQLStr1 As String<br />
+Dim SQLStr2 As String<br />
+Dim SQLStr3 As String<br />
+'<br />
+Dim tblMth As Long<br />
+Dim tblYr As Long<br />
+Dim tblName As String<br />
+'<br />
+Set db = CurrentDb<br />
+Set rs1 = db.OpenRecordset("tblITR_Data")<br />
+'<br />
+&nbsp;&nbsp;&nbsp; rs1.MoveFirst<br />
+&nbsp;&nbsp;&nbsp; Do Until rs1.EOF<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Month(rs1![RequestDate]) = 1 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tblMth = 12<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tblYr = Year(rs1![RequestDate]) - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tblMth = Month(rs1![RequestDate]) - 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tblYr = Year(rs1![RequestDate])<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tblName = Format(tblYr, "0000") &amp; Format(tblMth, "00")<br />
+'<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SQLStr1 = "SELECT PolicyNum, ISSUE AS IssueDate, RequestDate, AV_ReqDt, CV_ReqDt, FV0 AS AV_PreValDt, CV0 AS CV_PrevValDt, TAXVTOT0 AS TaxRsv_PrevValDt "<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SQLStr2 = "FROM tblITR_Data LEFT JOIN " &amp; tblName &amp; " AS PrevValDt ON tblITR_Data.PolicyNum = PrevValDt.POLNO "<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SQLStr3 = "WHERE (((PolicyNum)='" &amp; rs1![PolicyNum] &amp; "'));"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; DoCmd.RunSQL SQLStr1 &amp; SQLStr2 &amp; SQLStr3<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rs1.MoveNext<br />
+&nbsp;&nbsp;&nbsp; Loop<br />
+'<br />
+GetITR_Data_Exit:<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+'<br />
+GetITR_Data_Err:<br />
+&nbsp;&nbsp;&nbsp; MsgBox Err.Number &amp; ": " &amp; Err.Description<br />
+&nbsp;&nbsp;&nbsp; Resume GetITR_Data_Exit<br />
+End Sub<br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>RunSQL is intended to execute the SQL for an action query or a data definition query. You can't use it for a simple SELECT ... FROM ... statement because such a statement does not perform an action but returns records.</p>
+<p>&nbsp;</p>
+<p>From the help for DoCmd.RunSQL:</p>
+<p>&nbsp;</p>
+<p>"... a valid SQL statement for an action query or a data-definition query . It uses an INSERT INTO, DELETE, SELECT...INTO, UPDATE, CREATE TABLE, ALTER TABLE, DROP TABLE, CREATE INDEX, or DROP INDEX statement."</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What are you attempting to do here with the SQL statement?&nbsp; If you want to open it as a datasheet at each iteration of the loop, the following function will do this:<br />
+<br />
+Public Function OpenTempQuery(strSQL As String)<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim qdf As DAO.QueryDef<br />
+&nbsp;&nbsp;&nbsp; Static n As Integer<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; n = n + 1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; ' delete temporary querydef object if exists<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; CurrentDb.QueryDefs.Delete "Temp" &amp; n<br />
+&nbsp;&nbsp;&nbsp; Select Case Err.Number<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case 0<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' no error<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case 3265<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' temporary querydef does not exist<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' ignore error<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' unknown error<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MsgBox Err.Number, vbExclamation, "Error"<br />
+&nbsp;&nbsp;&nbsp; End Select<br />
+&nbsp;&nbsp;&nbsp; ' create temporary querydef object<br />
+&nbsp;&nbsp;&nbsp; Set qdf = CurrentDb.CreateQueryDef("Temp" &amp; n)<br />
+&nbsp;&nbsp;&nbsp; CurrentDb.QueryDefs("Temp" &amp; n).SQL = strSQL<br />
+&nbsp;&nbsp;&nbsp; ' open query and then delete temporary querydef object<br />
+&nbsp;&nbsp;&nbsp; DoCmd.OpenQuery "Temp" &amp; n<br />
+&nbsp;&nbsp;&nbsp; ' delete temporary querydef object<br />
+&nbsp;&nbsp;&nbsp; CurrentDb.QueryDefs.Delete "Temp" &amp; n<br />
+<br />
+End Function<br />
+<br />
+Note that the variable n is declared as Static, which means the function will open multiple datasheets if run more than once without closing the previous datasheet.&nbsp; They'll be named Temp1, Temp2 etc.<br />
+<br />
+So, having added the function to a standard module, instead of:<br />
+<br />
+DoCmd.RunSQL SQLStr1 &amp; SQLStr2 &amp; SQLStr3<br />
+<br />
+you'd use:<br />
+<br />
+OpenTempQuery SQLStr1 &amp; SQLStr2 &amp; SQLStr3<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia E90 Update software - Microsoft Community</title>
+<h3> uncle123  say:</h3>
+<h2>            Nokia E90 Update software</h2>
+                    
+<p>Hello i want to update software for my Nokia E90,</p>
+<p>&nbsp;</p>
+<p>In my phone&nbsp;</p>
+<p>Select Menu &gt; Applications &gt; SW Update﻿ ---- folder&nbsp;Applications﻿ is empty</p>
+<p>&nbsp;</p>
+<p>how can i updated my phone!</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Help</p>
+<p>&nbsp;</p>
+<p>S.O.S</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jayzteroid  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I have E90 and I have no idea which folder you mean.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> uncle123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Folder "Applications﻿"</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> uncle123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Can somebody Help!?&nbsp;</p>
+<p>&nbsp;</p>
+<p>Version on my phone (E90)&nbsp;</p>
+<p>&nbsp;</p>
+<p>----07.24.0.3</p>
+<p>&nbsp;</p>
+<p>I want to update today, put new version....</p>
+<p>&nbsp;</p>
+<p>What i will get with new version!?&nbsp;</p>
+<p>&nbsp;</p>
+<p>Please Help me :(</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jraduga---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>
+<hr />
+Uncle123 wrote:<br />
+<p>Can somebody Help!?&nbsp;</p>
+<p>&nbsp;</p>
+<p>Version on my phone (E90)&nbsp;</p>
+<p>&nbsp;</p>
+<p>----07.24.0.3</p>
+<p>&nbsp;</p>
+<p>I want to update today, put new version....</p>
+<p>&nbsp;</p>
+<p>What i will get with new version!?&nbsp;</p>
+<p>&nbsp;</p>
+<p>Please Help me :(</p>
+<hr />
+</blockquote>
+<p>have you tried just plugging the phone into PC suite/OVI Suite, and then checking thru there. If there are any updates available then it will be displayed there.</p>
+<p>&nbsp;</p>
+<p>the most current version from the online software update is listed in Australia as 400.34.93. but this maybe different for your location. I always found it easier to update thru the pc rather than OTA. I now no longer use the E90 however it is a grfeat phone.
+ I always had problems with the OTA updates, just use the pc much more reliable on this phone. ::smileyhappy:&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> uncle123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks, i download Nokia OVI and update softver...</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Version 210.34.75</p>
+<p>12-04-2008</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> williamthekkan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            guys can u pls tell me y is the camera in the nokia E90 communicator does not work???? When we have to make vedio calls d secondary camera (front camera) does not work
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> soumyajitguha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            well did you repaired the phone from any other place then nokia care? Coz you get flex cables which are cheap and doesn't have camera to make more profit they use this&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> franksanderson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            E90 updating software
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Seeing duplicate attachments &#91;two copies of same attachment&#93; - Microsoft Community</title>
+<h3> ben_721  say:</h3>
+<h2>            Seeing duplicate attachments &#91;two copies of same attachment&#93; when I open inbox</h2>
+                    <p>The steps:</p>
+<p>&nbsp;</p>
+<p>(1) To have a back-up of important documents, I sometimes mail a copy of the document to myself.</p>
+<p>&nbsp;</p>
+<p>(2) I compose new message, add a single attachment.&nbsp; I send the message to myself.</p>
+<p>&nbsp;</p>
+<p>(3) In the Sent folder, I see a single copy of the attachment.&nbsp; Later, when I re-open the message in Sent folder, I still see just a single copy of the attachment.</p>
+<p>&nbsp;</p>
+<p>(4) The message arrives in my inbox.&nbsp; I open message in Inbox folder, and see not one but two copies of the attachment.</p>
+<p>&nbsp;</p>
+<p>(5) The attachment I send can be .doc, .pdf, excel--it does not matter.&nbsp; I see two copies of the attachment when I open the message in my Inbox folder.</p>
+<p>&nbsp;</p>
+<p>(6) I have been using Outlook.com for 4 years.&nbsp; This problem only began 5 days ago.&nbsp; It never happened before.</p>
+<p>&nbsp;</p>
+<p>Thank you.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Ben,</p>
+<p>
+</p><p>Thank you for posting on Microsoft Communities.</p>
+<p>
+</p><p>I will be glad to help you with the issue you have with the computer. I understand the frustration when things don't work the way it should.</p>
+<p>
+</p><p>1. Does the recipient receive email twice?</p>
+<p>2. Does it happen with all the emails or it happens with the emails with attachments?</p>
+<p>3. Do you have any rules set up on the computer?</p>
+<p>
+</p><p>You might face this issues, if there are rules setup on your Outlook. Please follow the below steps to know if you have any rules set up on outlook:</p>
+<p>
+</p><p>1. Log in to Outlook.com.</p>
+<p>2. Click on the Gear icon on the top right hand corner.</p>
+<p>3. Click on Manage rules and check if you have any rules set up.</p>
+<p>
+</p><p>Please reply with the results, I will be glad to help you further.</p>
+<p>Thank you.</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ben_721  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Ruth,</p>
+<p>
+</p><p>Here are the details you requested.</p>
+<p>
+</p><p>(1) Does the recipient receive e-mail twice?</p>
+<p>
+</p><p>(a) When I send e-mail to others--with or without attachments--they receive it properly.</p>
+<p>(b) When others send e-mail to me--with or without attachments--I receive it properly.</p>
+<p>(c) The only problem is when I send e-mail to myself--for example, when I include myself as one of the five recipients of the e-mail. &nbsp;The other recipients receive this e-mail properly, just I do not. &nbsp;[See no. (2) below for more details.]</p>
+<p>
+</p><p>(2) Does it happen with all the e-mails or it happens with the e-mails with attachments?</p>
+<p>
+</p><p>(a) When I send a text message to myself (i.e., a message without attachments), it is received properly.&nbsp;</p>
+<p>(b) When I send an attachment to myself, and add a little text message in the Text box (for example, the words "Here is the file"), then the e-mail is again received properly.</p>
+<p>(c) When I send an attachment to myself <strong>and no text to accompany the attachment</strong>, it shows up as two e-mails when I open the e-mail in my Inbox folder. &nbsp;To be more precise, it is one e-mail in the Inbox folder but when I open it, the attachment
+ is there twice. &nbsp; &nbsp;[As I noted last time, this problem began just five days ago. &nbsp;I have been using Outlook.com for 4 years, and the problem did not occur before.]</p>
+<p>
+</p><p>To repeat the main point: &nbsp;The problem is only when I send an attachment with no words accompanying the attachment. &nbsp;As I noted last time, the attached file can be .doc, .pdf, excel, it does not matter. &nbsp;The attached file appears twice when I open the e-mail.</p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">3. Do you have any rules set up on the computer?</span><br />
+</p>
+<p><span style="color: rgba(51, 51, 51, 1)">No.</span></p>
+<p>Thank you, Ruth. &nbsp;I look forward to your response.</p>
+<p>
+</p><p>
+</p><p>
+&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ben_721  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello Ruth,</p>
+<p>
+</p><p>On Oct. 11, 2015, you asked me for some details on the problem I am experiencing and I responded promptly. &nbsp;I still await your response.</p>
+<p>
+</p><p>The problem that I explained above still remains.</p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>VBA and Yahoo Finance - Microsoft Community</title>
+<h3> kazmo311  say:</h3>
+<h2>            VBA and Yahoo Finance</h2>
+                    <p>So I have seen a ton of issues with VBA and Yahoo for Mac.</p>
+<p>
+</p><p>Well I have this 99% figured out due to all of those, but I am having one problem.
+</p>
+<p>Im sure its a simple solution but I am still just learning this as I go. </p>
+<p>
+</p><p>When I'm pulling the information from yahoo everything works perfectly, except for if the company has a comma in it.</p>
+<p>
+</p><p>I.E. KMI ( Kinder Morgan, Common Stock Inc) &nbsp;Well then this pushes everything to the right one cell and messes up other formulas. &nbsp;Here is my code and some screenshots. &nbsp;</p>
+<p>
+</p><p>Thank you, any help would be appreciated!&nbsp;</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/f3eab780-ddfb-4c53-8433-660478ba90eb" /><br />
+</p>
+&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;
+<p>
+</p><p>
+</p><p>Sub GetData()<br />
+<br />
+&nbsp; &nbsp; Dim QuerySheet As Worksheet<br />
+&nbsp; &nbsp; Dim DataSheet As Worksheet<br />
+&nbsp; &nbsp; Dim qurl As String<br />
+&nbsp; &nbsp; Dim i As Integer<br />
+<br />
+&nbsp; &nbsp; Application.ScreenUpdating = False<br />
+&nbsp; &nbsp; Application.DisplayAlerts = False<br />
+&nbsp; &nbsp; Application.Calculation = xlCalculationManual<br />
+<br />
+&nbsp; &nbsp; Set DataSheet = ActiveSheet<br />
+<br />
+&nbsp; &nbsp; Range("C7").CurrentRegion.ClearContents<br />
+&nbsp; &nbsp; i = 7<br />
+&nbsp; &nbsp; qurl = "http://download.finance.yahoo.com/d/quotes.csv?s=" + Cells(i, 1)<br />
+&nbsp; &nbsp; i = i + 1<br />
+&nbsp; &nbsp; While Cells(i, 1) &lt;&gt; ""<br />
+&nbsp; &nbsp; &nbsp; &nbsp; qurl = qurl + "+" + Cells(i, 1)<br />
+&nbsp; &nbsp; &nbsp; &nbsp; i = i + 1<br />
+&nbsp; &nbsp; Wend<br />
+&nbsp; &nbsp; qurl = qurl + "&amp;f=" + Range("C2")<br />
+&nbsp; &nbsp; Range("c1") = qurl<br />
+QueryQuote:<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;With ActiveSheet.QueryTables.Add(Connection:="URL;" &amp; qurl, Destination:=DataSheet.Range("C7"))<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .BackgroundQuery = True<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .TablesOnlyFromHTML = False<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .Refresh BackgroundQuery:=False<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; .SaveData = True<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; End With<br />
+<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Range("C7").CurrentRegion.TextToColumns Destination:=Range("C7"), DataType:=xlDelimited, _<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; TextQualifier:=xlDoubleQuote, ConsecutiveDelimiter:=False, Tab:=True, _<br />
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Semicolon:=False, Comma:=True, Space:=False, other:=False<br />
+<br />
+<br />
+'turn calculation back on<br />
+&nbsp; &nbsp; Application.Calculation = xlCalculationAutomatic<br />
+&nbsp; &nbsp; Application.DisplayAlerts = True<br />
+' &nbsp; &nbsp;Range("C7:H2000").Select<br />
+' &nbsp; &nbsp;Selection.Sort Key1:=Range("C8"), Order1:=xlAscending, Header:=xlGuess, _<br />
+' &nbsp; &nbsp; &nbsp; &nbsp;OrderCustom:=1, MatchCase:=False, Orientation:=xlTopToBottom<br />
+&nbsp; &nbsp; Columns("C:C").ColumnWidth = 25<br />
+&nbsp; &nbsp; Rows("7:2000").RowHeight = 16<br />
+&nbsp; &nbsp; Columns("J:J").ColumnWidth = 8.5<br />
+&nbsp; &nbsp; Range("h2").Select<br />
+<br />
+End Sub</p>
+<p>
+</p><p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="BobGreenblatt" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "BO"); this.style="display: inline-block";'
+<h3> bobgreenblatt  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I don't believe there is an easy way to do this. You'll have to scan through the results and delete a cell after the text to columns, or look before you do that and compare to a list of exceptions and delete the comma for those companies.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bondi_dan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Kazmo,</p>
+<p>
+</p><p>Did you get this working?</p>
+<p>
+</p><p>I'd like to get 'last sale' (individually) on a list of about 25 shares, from there I can compare to my previously entered buy price and calculate % Up/Down.</p>
+<p>
+</p><p>Sounds simple but the whole process is brutally complex to me :)</p>
+<p>
+</p><p>Dan</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>what&#39;s the difference between TTEST&#40;&#41; and - Microsoft Community</title>
+<h3> mike77_903  say:</h3>
+<h2>            what&#39;s the difference between TTEST&#40;&#41; and T.TEST&#40;&#41;&#63;&#63;</h2>
+                    what's the difference between TTEST() and T.TEST()??
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="j.e. mcgimpsey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> j.e. mcgimpsey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Did you look at XL Help?
+<div><br />
+<div><span>
+<p>
+"This function was replaced with one or more new functions that may provide improved accuracy and whose names better reflect their usage. This function is still available for compatibility with earlier versions of Excel. However, if backward compatibility is
+ not required, you should consider using the new functions from now on,? because they more accurately describe their functionality.</p>
+<p>
+I haven't noticed any difference between the results returned by TTEST() and T.TEST, so it appears to me that it's just a shift in nomenclature.</p>
+</span></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=mac">mac, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cortana flight tracking isn&#39;t automatic and now doesn&#39;t work - Microsoft Community</title>
+<h3> chrissherback  say:</h3>
+<h2>            Cortana flight tracking isn&#39;t automatic and now doesn&#39;t work at all</h2>
+                    <p>I used to be able to tell Cortana to track my flights when it stopped working automatically, but now it just takes me to a dead end URL at
+<a href="https://www.bing.com/card/suggestionwhen" target="_blank" rel="noreferrer nofollow">https://www.bing.com/card/suggestionwhen</a></p>
+<p>I click on YES to track my flight.</p>
+<p>
+</p><p>
+What is happening with Cortana? It's almost unusable.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi ChrisSherback,</p>
+<p>
+</p><p>Cortana may have trouble opening the app which lets it track flights, or it can be among the settings. Please perform the following:
+</p>
+<ul>
+<li>Check if there is any available updates for the track flights app.</li><li>Clear my device history for Cortana. Tap search icon&gt;Menu (3 horizontal lines)&gt; Settings, scroll down to
+<strong>Clear my device history</strong>.</li><li>Manually remove your Microsoft Account email (the one you used to set up the phone) do a
+<a href="https://answers.microsoft.com/en-us/mobiledevices/wiki/mdlumia-mdsettings/how-to-soft-and-hard-reset-your-windows-phone/4ec36474-c21e-4aec-ad1b-30f3afaf824d">
+soft reset</a> and add back email.</li></ul>
+<p>
+</p><p>Let us know how it works.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> chrissherback  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I do not have the track flights app installed on my Windows phone? Could that be the problem? Maybe I deleted it by mistake.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=cortana">cortana, </a> <br>
+<a href="/search?q=800-series">800-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 Pro Insider Preview Build 10547 Activation Error - Microsoft Community</title>
+<h3> mrsnowmobiling  say:</h3>
+<h2>            Windows 10 Pro Insider Preview Build 10547 Activation Error</h2>
+                    <p>An issue arrived when I went to the settings app &gt; update &amp; security &lt; recovery &lt; Reset this PC</p>
+<p>
+</p><p>A few days ago I wanted to do a clean install of the build 10547 on the insider program. Fearing I was going to loose my activation, I decided to use the feature built into windows to do a clean install. I chose to "keep my files and settings" and after
+ it finished, my windows was no longer activated. I now have a generic key that I cannot activate windows with even the customer support line...</p>
+<p>
+</p><p><strong><span style="text-decoration-line: underline">My PC WAS ACTIVATED BEFORE CHOOSING THE "RESET this PC"&nbsp;</span></strong><strong><span style="text-decoration-line: underline">OPTION</span></strong></p>
+<p>
+</p><p>How I activated windows...</p>
+<p>
+</p><p>1. Installed the Technical Preview before build 10240, the RTM release of windows.&nbsp;<em><span style="text-decoration-line: underline">Activated</span></em></p>
+<p>2. Windows was activated going into build 10240&nbsp;<em><span style="text-decoration-line: underline">Activated</span></em></p>
+<p>3. After upgrading to build 10240, windows was activated. It said I had&nbsp;<strong>WINDOWS 10 PRO</strong> with a non-generic key
+<em><span style="text-decoration-line: underline">Activated</span></em></p>
+<p>4. A few days later, I had the option to go into the insider program.&nbsp;<em><span style="text-decoration-line: underline">Activated</span></em></p>
+<p>5. I stayed in the program and started receiving Insider builds after the RTM release of windows.&nbsp;<em><span style="text-decoration-line: underline">Activated</span></em></p>
+<p>6. Everything was activated and genuine until using the "Reset this PC" option on build 10547</p>
+<p>
+</p><p>I have tired going to the next build and still did not activate. "Your previous version wasn't activated before updating" I downgraded back to build 10547 and used the "Reset this PC" option again, but instead backed up files, and deleted all files. Still
+ not activated. I still have the error code&nbsp;<strong>0xC004C003 </strong>and a locked out key.</p>
+<p>
+</p><p>I really would appreciate help getting my windows activated again. Also, for those that are going to ask, the forums says,&nbsp;<strong>Windows Technical&nbsp;Preview&nbsp;</strong>is considered a previous operating system and that I am entitled to a digital key. I am
+ not downgrading to windows 7 to fix this.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jmarco0921" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmarco0921  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Not sure but I believe even if you do not wish to go back to Windows you may have to get activated Windows 10.</p>
+<p>
+</p><p>Now, Microsoft has just changed the activation process a little with insider build 10565. With start of this build if insider has problem getting activated then user can use his/her previous activated Windows 7 or 8 product key when doing insider install.</p>
+<p>
+</p><p>From insider hub dated 10/12/15:</p>
+<p><span>........We have received a lot of feedback from Insiders on making it easier to activate Windows 10 on devices that take advantage
+ of the free upgrade offer to genuine Windows by using existing Windows 7, Windows 8 or Windows 8.1 product keys. If you install this build of the Windows 10 Insider Preview on a PC and it doesn’t automatically activate, you can enter the product key from Windows
+ 7, Windows 8 or Windows 8.1 used to activate the prior Windows version on the same device to activate Windows 10 by going to Settings &gt; Update &amp; security &gt; Activation and selecting Change Product Key. If you do a clean install of Windows 10 by booting off
+ the media, you can also enter the product key from prior Windows versions on qualifying devices during setup............</span></p>
+<p>
+</p><p>If you want to see if this can work for you without having to back to Windows 7.</p>
+<p>Build 10565 ISO file is available at this Microsoft website.</p>
+<p>
+</p><p>https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewiso</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Internet Explorer screen corruption - Microsoft Community</title>
+<h3> wraith_daquell  say:</h3>
+<h2>            Internet Explorer screen corruption</h2>
+                    <p>Hi! I have had issues with IE 9 and now 10 (I had Windows 7 installed and upgraded to 8). Apparently randomly (sometimes I have a lot of tabs open, sometimes just one), the webpage will go corrupt. Usually it blanks to white, but sometimes a link here or
+ there will appear. I can scroll up and down, and sometimes the page flashes on again and off again. If one tab blanks, usually the others do, too, but not always, and if I grab and "snap" a tab off into its own window, sometimes the corruption goes away. The
+ same things happens if I resize the window, but not consistently. I'm at my wits end on what to do! Here's what I've tried:</p>
+<ul>
+<li>Uninstalling any unnecessary software--I don't have crazy ad-ins or toolbars or such</li><li>Reinstalling the graphics driver. I can't imagine it's this because I'm just using the HD 4000 graphics on my i7 processor. I have the most updated drivers and have tried the most updated ones from Windows Update as well as the drivers from my motherboard's
+ page (I have an Asrock Z77 Extreme4 motherboard)</li><li>Running HijackThis, but there was nothing out of the ordinary</li><li>I have turned off hardware rendering in IE -- it still happens</li><li>I have changed where the Temporary Internet Files are stored (had them on a ramdrive initially) -- it still happens</li><li>I have deep scanned my RAM with multiple scanners to check for memory corruption errors</li><li>I have scanned my harddrive with chkdsk -- no problems</li></ul>
+<p>Any help? I love IE! I really, really don't want to switch to Firefox (or Chrome, *ugh*), but I use it for work and it's killing my productivity. Thanks!</p>
+<p>&nbsp;</p>
+<p>HijackThis log: <a href="http://sdrv.ms/ZUPESq" target="_blank" rel="noreferrer nofollow">http://sdrv.ms/ZUPESq</a></p>
+<p>System specs:</p>
+<ul>
+<li>OS: Windows 8 Pro w/ Media Center</li><li>Motherboard: Asrock Z77 Extreme 4</li><li>Processor: Core i7 (Ivybridge)</li><li>RAM: G.Skill Ripjaws 1600 (16Gb)</li></ul>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><font color="#000000"><font>Hi Wraith,</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>Thank you for choosing Windows 8 and giving us an opportunity to assist you.</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>From the issue description, I understand that Internet Explorer 10 is not working properly in Windows
+ 8.</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">We are glad to know that you like Internet Explorer.</font></span></p>
+<p>&nbsp;</p>
+<p><span><font color="#000000"><font>We will try to find out the reason behind the issue by running Internet Explorer performance troubleshooter
+ and then we will try to install latest updates for Internet Explorer from Windows update. If nothing works, then we will reset Internet Explorer settings to default and check.</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>Let’s try out these methods and check.</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><b><span><font color="#000000"><font>Method 1:</font></font></span></b></p>
+<p><b><span><font color="#000000"><font>Run Internet Explorer Performance Troubleshooter</font></font></span></b></p>
+<p><span><font color="#000000"><font>Follow these steps to run Internet Explorer Performance troubleshooter.</font></font></span></p>
+<p>
+<font color="#000000"><span><span><font>a.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Press
+<b>Windows key + W</b> and type <b>troubleshooting</b>.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>b.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Select
+<b>troubleshooting</b>.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>c.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Select
+<b>view all</b> on the top left corner.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>d.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Run
+<b>Internet Explorer Performance troubleshooter.</b></font></span></font></p>
+<p><b><span><font color="#000000">&nbsp;</font></span></b></p>
+<p><b><span><font color="#000000"><font>Method 2:</font></font></span></b></p>
+<p><span><font><font color="#000000">I would suggest you to go through the article and follow the steps given in the section “<b>What
+ if Internet Explorer crashes, stops working, or runs slowly?</b>” to update and reset Internet Explorer. Here is the link for your reference.</font></font></span></p>
+<p><b><span><font color="#000000">&nbsp;</font></span></b></p>
+<p><b><span><font color="#000000"><font>Videos won't play or webpages don't display correctly</font></font></span></b></p>
+<p><span><a href="http://windows.microsoft.com/en-us/internet-explorer/videos-dont-work#ie=ie-10" target="_blank" rel="noreferrer nofollow"><font>http://windows.microsoft.com/en-us/internet-explorer/videos-dont-work#ie=ie-10</font></a></span></p>
+<p><font color="#000000"><font><b><span>Disclaimer</span></b><span>: The Reset Internet
+ Explorer Settings feature might reset security settings or privacy settings that you added to the list of Trusted Sites. The Reset Internet Explorer Settings feature might also reset parental control settings. We recommend that you note these sites before
+ you use the Reset Internet Explorer Settings feature.</span></font></font></p>
+<p><span><font color="#000000"><font>&nbsp;</font></font></span></p>
+<p><span><font color="#000000"><font>I would also suggest you to send us the event viewer logs when Internet Explorer crashes.
+</font></font></span></p>
+<p><span><font color="#000000"><font>To get to event viewer in Windows 8:
+</font></font></span></p>
+<p>
+<font color="#000000"><span><span><font>a.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Go to the
+<b>Start Screen</b>. Type in <b>Event Viewer</b>. </font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>b.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>This will bring up the
+<b>Event Viewer box</b>. <b>Click to open</b> the event viewer.
+</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>c.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>In the left pane, expand out
+<b>Windows Logs</b>. </font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>d.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Click on
+<b>Application log</b>. Highlight the first event in the log and use your arrow keys to scroll down. Most of your event will be Information. You may see
+<b>Yellow Warnings or Red Errors.</b> If you see a red error, you can double click on it to bring it up and copy the contents to a document.</font></span></font></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>For any further queries related to Internet Explorer, feel free to write us. We will be glad to
+ help you. </font></font></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wraith_daquell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for your help. I have been actively trying to get this fixed for a long time.<br />
+<br />
+The troubleshooter returned no problems.<br />
+<br />
+I also updated and reset the browser. Again, no problems. There are no crash logs because the browser does not crash... the screen simply goes all weird. It accepts input, but it doesn't paint properly. I believe it happens to all tabs when any tab has Flash
+ content, but it's not consistent. I've run checks on my RAM--no problem. Hard disks are fine, too, and the computer is fairly new. New enough that I know the hardware is good, old enough to know that it works well.<br />
+<br />
+Here is a screenshot of what I experience. See the line for the cursor in the middle of the screen (the "links" are not operational where they are... but if you click where they should be they work).<br />
+<br />
+<a href="http://daquell.com/IECorrupt.png" target="_blank" rel="noreferrer nofollow">http://daquell.com/IECorrupt.png</a><br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><font color="#000000"><font>Hi Wraith,</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>Thank you for joining us again.</font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>I would suggest you to disable and enable Internet Explorer from Windows features turn on or off and check.</font></font></span></p>
+<p><span><font color="#000000"><font>Follow these steps:</font></font></span></p>
+<p>
+<font color="#000000"><span><span><font>a.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Press
+<b>Windows key + W</b> and type <b>Windows features on or off.</b></font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>b.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Select
+<b>Windows Features on or off</b>.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>c.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><b><span><font>Uncheck</font></span></b><span><font> the box for
+<b>Internet Explorer 10</b> and click ok.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>d.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><font><b><span>Restart</span></b><span> the computer.</span></font></font></p>
+<p>
+<font color="#000000"><span><span><font>e.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Again go to
+<b>Windows Features on or off</b> and <b>recheck</b> the box for
+<b>Internet Explorer 10</b>.</font></span></font></p>
+<p>
+<font color="#000000"><span><span><font>f.</font><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><font>Click ok and
+<b>restart</b> the computer.</font></span></font></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><b><span><font color="#000000"><font>Reference:</font></font></span></b></p>
+<p><b><span><font><font color="#000000">Turn
+<span>Windows</span> features on or off</font></font></span></b></p>
+<p><a href="http://windows.microsoft.com/en-US/windows-8/turn-windows-features-on-off" target="_blank" rel="noreferrer nofollow"><span><font>http://windows.microsoft.com/en-US/windows-8/turn-windows-features-on-off</font></span></a></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000"><font>Do let us know if you have any further queries.<br />
+</font></font></span></p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_10">internet_explorer_10, </a> <br>
+<a href="/search?q=windows_8">windows_8, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to change skype username&#63; - Microsoft Community</title>
+<h3> sufficeinfotech  say:</h3>
+<h2>            How to change skype username&#63;</h2>
+                    Hello All,<br />
+<br />
+My email id is set as my skype username. Is there any method to change it?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> julie_s1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/ebf647e7-bdfe-4630-8f9e-7d542d10a8ec" title="SufficeInfotech">
+<p>
+</p><p>Please be advised that there is no option to change the Skype name. If you have created your account using your email address, your Skype name will then be live:youremail.</p>
+<p>
+</p><p>For example, the email is julie123@hotmail.com Most probably the Skype name will be live:julie123
+</p>
+<p>
+</p><p>Should you have further questions, please do not hesitate to reply to this post.
+<br />
+Thank you!<br />
+&nbsp;<br />
+&nbsp;<br />
+Julie_S1<br />
+Skype Community Moderator</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=account_and_paid_services">account_and_paid_services, </a> <br>
+<a href="/search?q=account_setup_and_maintenance">account_setup_and_maintenance, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia 1616 - FM radio &#39;connect enhanc.&#39; error message - Microsoft Community</title>
+<h3> benicek---01  say:</h3>
+<h2>            Nokia 1616 - FM radio &#39;connect enhanc.&#39; error message</h2>
+                    
+<p>Whenever I try to activate the FM radio on my Nokia 1616 I get a 'connect enhanc.' error message. I have connected the Nokia headphones that came with the phone but I still get this error message. What am I doing wrong? Is my phone faulty?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>When you see the message.. pull the Headphone jack slightly out&nbsp; (with a slow movement..) or give a little more push.. or a slight turning movement and see if that makes any difference..</p>
+<p>&nbsp;</p>
+<p>--------------------------------------------------​--------------------------------------------------------​--------------------------------------------------​--If you find this helpful, pl. hit the White Star in Green Box...<br />
+.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benicek---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No. It didn't help.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Since I do not have this phone.. not sure about the Menu options.. but is there any options available for setting / selecting Enhancements ? If so is something else is set as default instead of Headphone ?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benicek---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No, there are not.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> zone1111  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>problem is either enhancement or ur phone jack-first try another headset-then clean ur headset jack-if still same go&nbsp; service center</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Favorites list disappeared - Microsoft Community</title>
+<h3> elizabethkuske  say:</h3>
+<h2>            Favorites list disappeared</h2>
+                    OT : favorites list&nbsp;&nbsp; <br />
+my favorites list has totaly disappeared what happened to it not even favorite is at the top where I can click on to redo it
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Vijay B" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "VB"); this.style="display: inline-block";'
+<h3> vijay b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi ElizabethKuske,<br />
+<br />
+1. Which operating system are you using?<br />
+2. Did you make any changes to the computer recently?</span></p>
+<p><span><span><br />
+<b><u>Method 1<br />
+</u></b>This can happen when the location that your computer looks for your Favorites has been set to a non-existent location. You can test/fix this by:</span></span></p>
+<p><span><span><span><span>a.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Start</span></strong> </span>
+</span></span></p>
+<p><span><span><span><span>b.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Computer</span></strong>
+<span>&nbsp;</span>or <b>My Computer </b>for windows XP.</span></span></span></p>
+<p><span><span><span><span>c.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span><span>&nbsp;</span>In the address bar, paste this location:
+<strong><span>%userprofile%</span></strong></span></span></span></p>
+<p><span><span><span><span>d.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Press
+<strong><span>Enter</span></strong> on your keyboard</span></span></span></p>
+<p><span><span><span><span>e.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Make sure you have a
+<strong><span>Favorites</span></strong> folder listed in the
+<strong><span>%userprofile%</span></strong> folder</span></span></span></p>
+<p><span><span><span><span>f.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>If there isn’t a Favorites folder listed, create a new folder and name it
+<strong><span>Favorites</span></strong></span></span></span></p>
+<p><span><span><span><span>g.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Right click
+<strong><span>Favorites</span></strong></span></span></span></p>
+<p><span><span><span><span>h.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Properties</span></strong></span></span></span></p>
+<p><span><span><span><span>i.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click the
+<strong><span>Location</span></strong> tab</span></span></span></p>
+<p><span><span><span><span>j.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Restore Default</span></strong></span></span></span></p>
+<p><span><span><span><span>k.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>OK</span></strong></span></span></span></p>
+<p><span><span><span>&nbsp;</span></span></span></p>
+<p><span><span><span><br />
+<b><u>Method 2<br />
+</u></b>If that doesn’t help, you can edit the registry to direct the Shell:Favorites location to the location of your Favorites folder. You can do this by:</span></span></span></p>
+<p><span><span><span>&nbsp;</span></span></span></p>
+<p><span><span><span>Modifying REGISTRY settings incorrectly can cause serious problems that may prevent your computer from booting properly. Microsoft cannot
+ guarantee that any problems resulting from the configuring of REGISTRY settings can be solved. Modifications of these settings are at your own risk.<br />
+</span></span></span><a href="http://support.microsoft.com/kb/322756" target="_blank" rel="noreferrer nofollow"><span><span><span>http://support.microsoft.com/kb/322756</span></span></span></a><span><span><span><br />
+<br />
+</span></span></span></p>
+<p><span><span><span><span>a.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Press
+<strong><span>Windows key + R</span></strong> on your keyboard to open the run dialog</span></span></span></p>
+<p><span><span><span><span>b.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>In the
+<strong><span>Open: </span></strong>field, type
+<strong><span>regedit</span></strong></span></span></span></p>
+<p><span><span><span><span>c.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>OK</span></strong></span></span></span></p>
+<p><span><span><span><span>d.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Yes</span></strong> on the
+<strong><span>User Account Control</span></strong> (if prompted)</span></span></span></p>
+<p><span><span><span><span>e.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Navigate to
+<strong><span>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders</span></strong></span></span></span></p>
+<p><span><span><span><span>f.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Right click
+<strong><span>Favorites</span></strong></span></span></span></p>
+<p><span><span><span><span>g.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>Modify…</span></strong></span></span></span></p>
+<p><span><span><span><span>h.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>In the
+<strong><span>Value data:</span></strong> field, paste
+<strong><span>%userprofile%\Favorites</span></strong></span></span></span></p>
+<p><span><span><span><span>i.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Click
+<strong><span>OK</span></strong></span></span></span></p>
+<p><span><span><span><span>j.<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Exit
+<strong><span>Registry Editor</span></strong></span></span></span></p>
+<span><br />
+<b><u>Method 3<br />
+</u></b>If you are using windows 7, you may try the steps from the following link:<br />
+<br />
+<b>Favorites may not show up in the Internet Explorer 8 address bar after upgrading to Windows 7<br />
+</b><a href="http://support.microsoft.com/kb/974852" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/974852</a></span>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel moves working location for Personal.xlsb - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Excel moves working location for Personal.xlsb</h2>
+                    <p>How do I stop excel from coping Personal.xlsb from Office14&gt;Xlstart folder to Roaming&gt;Mircorsoft&gt;Xlstart and causing macros to fail?
+</p>
+<p>
+</p><p>When I put a macros in the ribbon, Excel looks for the macro in the original location and will not find it in the new location that Excel decided is the one it wants to use.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Since no one has an answer, how do I report the bug?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Report here -</p>
+<p>
+</p><p><a href="https://excel.uservoice.com/" target="_blank" rel="noreferrer nofollow">https://excel.uservoice.com/</a></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks Vijay, this will be a big help to others also to get the issue resolved.<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>TMobile Wing Can&#39;t select Synch settings&#47;greyed out - Microsoft Community</title>
+<h3> hansb1  say:</h3>
+<h2>            TMobile Wing Can&#39;t select Synch settings&#47;greyed out</h2>
+                    I have had my Tmobile Wing for about a month, and have been synching fine (outlook, contacts, calendar).&nbsp; Last night after connecting to my PC, my Wing had no data on it (email, contacts, calendar...all were gone).&nbsp; Normally it synched on its own.&nbsp; I opened
+ up the Mobile Device center, and saw that the synch settings had been unselected (not by me!)....I re-selected them, synched up, and my data was back...Today, it happened again when I connected to my PC via USB, but this time, I can't select the synch settings,
+ they are greyd out, only the bottom two (Files and Mobile Favorites are selectable)....<br />
+<br />
+Any ideas why this is happening and&nbsp; what to do?<br />
+<br />
+Thanks,<br />
+<br />
+Hans<br />
+<br />
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm not sure why that happens but I have heard it before.&nbsp; I think if it were my device my first inclination would be to delete the partnership on the PC and device and re-establish a new one.</p>
+<p>&nbsp;</p>
+<p>Hopefully the issue will not reoccur...</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            And if it happens again, I would consider unintalling WMDC, rebooting the PC and installing again. Keep us posted.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hansb1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It hasn't happened in a few days, but I have a theory which I haven't had time to test.&nbsp; I'm running Vista, and suspect the problem happens when you switch users while the Wing is attached to the computer (??and synching ??).&nbsp; Since the Wing needs to be
+ attached for charging, this can happen frequently over the course of a week.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Interesting observation Hans.&nbsp; Keep us informed ... others will benefit.
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hansb1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            So far I haven't been able to reproduce the problem.&nbsp; The only thing I have done was to re-select the items I wanted to synch (contacts, email, etc.) in the Windows mobile device center (how they become de-selected I'm not sure, but that seems to have
+ been the problem).&nbsp; <br />
+<br />
+Until it happens again..Cheers,<br />
+<br />
+Hans<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hansb1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This problem keeps happening from time to time, without any pattern that I can detect.&nbsp; I just lost some calendar entries I made today when I connected my phone to my computer....I don't understand why the options for synching Outlook email and calendar
+ and contacts get deselected in the Windows Mobile Device Center all by themselves....which leads to all my data getting removed from my phone.&nbsp; The Mobile Favorites and Files for some reason never are deselected.
+<br />
+<br />
+Once they are deselected, it takes many tries to get them re-selected... this is getting frustrating.....Any ideas or things to try?<br />
+<br />
+Hans<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I'm baffled why that happens ... I've never experienced it before.</p>
+<p>&nbsp;</p>
+<p>Am I correct that you maintain more than one user account on that PC?</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hansb1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I do have more than one account, but I've only been trying to synch when connected to the account the partnership was established under.&nbsp; At one point I thought the settings were lost if accounts were being switched while connected/synching, but I've lost
+ the settings (and subsequently data from the phone) without switching accounts....Only the connections to Outlook are reset, could it have something to do with the fact that I'm using a German version of Office/Outlook?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> hansb1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Today I found a clue to narrow down the problem.&nbsp; In Mobile Device Center, when trying to setup the Sync settings ("Contacts", Calendar, etc.) I saw a small message when hovering over the check box saying "Outlook has not been Installed", yet I have MS
+ Outlook running in the background.<br />
+<br />
+The problem, therefore, is that Windows mobile Device center *SOMETIMES* detects Outlook on my computer, and sometimes it does not...when it doesn't detect it, it unchecks all the sync boxes that have to do with outlook, and when I try to synch my Tmobile wing,
+ all the data related to outlook is removed....<br />
+<br />
+Who is to blame?&nbsp; Is it MS Office/Outlook? Is it Vista? Is it Windows Mobile Device Center?&nbsp; Help!<br />
+<br />
+I'm running Vista home Premium, MS Office Professional Outlook 2003 SP2 (it is a German version), and the Windows mobile Device center that comes with vista.....Any ideas what to try next?<br />
+<br />
+Thanks, Hans <br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What version of WMDC do you use? Is it 6.1?
+<p>&nbsp;</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cortana is using Precise location and not default&#33; - Microsoft Community</title>
+<h3> mesteele101  say:</h3>
+<h2>            Cortana is using Precise location and not default&#33;</h2>
+                    <p>This is very frustrating and is going to be an issue when the Anniversary Edition is released.</p>
+<p>
+</p><p>CORTANA, STATIONARY PC (HOME PC) NEVER MOVES. PLEASE INVOKE THE USE OF THE DEFAULT LOCATION INSTEAD OF THE PRECISE LOCATION. WINDOWS 10 TRACKS THE ISP LOCATION AS THE PRECISE LOCATION AND IN MY CASE IT'S NOT EVEN IN THE SAME STATE.</p>
+<p>
+</p><p>Unless I'm missing something how do I FORCE Cortana to use my default location instead of the precise location!&nbsp;I'm tired of Cortana flip flopping around. At time it is correct and possibly after a new fast build it reverts back to Cortana displaying news
+ events, restaurants, etc. in a different state.</p>
+<p>
+</p><p>I can ask Cortana where I am and Cortana tells me the location which in is another state...</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stranger_hanyo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Open Cortana&gt;notebook&gt;weather and shut off 'nearby forecasts' and add a default city. It should work.&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="mesteele101" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "ME"); this.style="display: inline-block";'
+<h3> mesteele101  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>Open Cortana&gt;notebook&gt;weather and shut off 'nearby forecasts' and add a default city. It should work.&nbsp;
+</blockquote>
+<p>
+</p><p>Nope, didn't help. My weather cards are good as I set them as cities to track.</p>
+<p>
+</p><p>The News shows as Lincoln, Nebraska. Also Cortana thinks I'm also located in Lincoln, Nebraska. I need to get Cortana to see me in Raleigh, North Carolina.</p>
+<p>
+</p><p>
+</p><p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stranger_hanyo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Weird, it works for me though. Delete all the added cities and re-add the one of your choice.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="mesteele101" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "ME"); this.style="display: inline-block";'
+<h3> mesteele101  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I've tried several things and it appears Cortana is all screwed up. Cortana&nbsp;tells me I'm in Lincoln, Nebraska, and it's displaying news items, and restaurants in Lincoln, Nebraska. Tracing my ISP I'm in Chicago, Illinois. However I'm really in Raleigh, North
+ Carolina.</p>
+<p>
+</p><p>Very frustrating because you would think that Windows 10 is getting very close to a major update, and if I'm getting this sort of behavior from Cortana, it's going to be a major Cortana fail when Microsoft releases the Anniversary edition.</p>
+<p>
+</p><p>I did revert back&nbsp;10586.420, and this same behavior is happening. I'm guessing there is something with my MSN account, but there should be a solution.</p>
+<p>
+</p><p>Is there a way to completely wipe out all my MSN data, and start my account from scratch. I don't think deleting my current profile and then re-creating it will start everything over from scratch?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stranger_hanyo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Try changing the city to a default one in the MSN weather app.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="mesteele101" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "ME"); this.style="display: inline-block";'
+<h3> mesteele101  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Apparently there is an issue with this last fast build that breaks the location. I'm guessing it has something to do with the MSN sync settings seeing the problem only showed up after I installed the last fast build. Now that I have installed 14379, my production
+ build now is showing the same symptoms when I image it back.</p>
+<p>
+</p><p>I have no idea how the Precise location could be&nbsp;Lincoln, Nebraska when my IP lookup shows me in Chicago, Illinois.</p>
+<p>
+</p><p>Now when I ask Cortana "Where am I",&nbsp;Cortana is telling me I am now in Fargo, North Dakota...</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="mesteele101" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "ME"); this.style="display: inline-block";'
+<h3> mesteele101  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Now Cortana tells me I'm in:</p>
+<ul>
+<li>Zacisze, Warsaw, Mazowieckie, Poland</li><li>52.285561, 21.070391</li></ul>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stranger_hanyo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Enable location and open the maps app. Does it display the proper location? Try the same process with a few other weather and navigation apps from the store. Are all of them displaying the correct location?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="mesteele101" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "ME"); this.style="display: inline-block";'
+<h3> mesteele101  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Ok, so I'm on a VPN and my IP&nbsp; is located in Chicago, ILL. Maps, and Weather show me in Chicago, ILL. I installed GPS Maps and it shows me in Chicago, ILL.</p>
+<p>
+</p><p>When I type in Cortana "Where am I, Cortana tells me I'm in Warsaw, Poland.</p>
+<p>
+</p><p>I'm actually located in Raleigh, North Carolina</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stranger_hanyo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>So your GPS is working fine.&nbsp;</p>
+<p>Now try these to reset Cortana-</p>
+<p>
+</p><p>1.Open settings&gt;privacy&gt;speech,inking &amp; typing.</p>
+<p>2.Click on 'stop getting to know me'. When the warning comes, hit 'turn off'.</p>
+<p>3.Now soft reset your phone.</p>
+<p>4.Open Cortana and set her up again. Fortunately this should work.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=cortana_and_search">cortana_and_search, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>need to remove a fon powerpoint 2016 - Microsoft Community</title>
+<h3> bobj215  say:</h3>
+<h2>            need to remove a fon powerpoint 2016</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>i am having an issue with try in to convert and save a presentation every time i try i get a message some of your fonts cannot be saved reason not true type see below</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/018b393a-3c8f-496e-9ae8-851f773ba6ac" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/018b393a-3c8f-496e-9ae8-851f773ba6ac" /></a></p>
+<p>how do i find and remove this. i have tried to send presentation to word as hand out but about half way through this it stops saying cant write to word. i have tried to find and replace don't work. I do need to embed fonts as i use a specialist pictograph
+ font so needs to be portable. ihave also been trying this at work on office 2013 with same issue.</p>
+<p>Also when trying to save i get another message see below</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/39688bd2-519f-41b5-9ecc-c33aae4cd959" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/39688bd2-519f-41b5-9ecc-c33aae4cd959" /></a></p>
+<p>So now completely frustrated i have also tried save as renaming makes no difference. and this is happening on several presentations.</p>
+<p>
+</p><p>Sorry for being a bit long winded, thanks in advance</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> bobj215  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi All,</p>
+<p>
+</p><p>Thanks for help, in the end I deleted the copy I was using and started again, first saved&nbsp; as a PPTX then converted the file to latest version and this seemed to work ok. but have to say that all the Office applications both 2013 and 2016 don't seem very
+ stable when using the converter option when the file is open in compatibility mode.</p>
+<p>
+</p><p>Again thanks for help</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>having trouble updating to the latest build - Microsoft Community</title>
+<h3> stephen j. mayer  say:</h3>
+<h2>            having trouble updating to the latest build</h2>
+                    <p>I am having an issue updating to the newest build on my developer computer where it goes through the update process but after the update it restarts and hangs on a black screen and the fan on the laptop that has the developer software just keeps running
+ very hard</p>
+<p>Just out of curiosity is this supposed to happen with this particular update and also are other Insiders having this issue with their computers because mine has been like this for a week</p>
+<p>Any help with this is much appreciated </p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi Stephen,</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span>Thank you for posting your query in Microsoft Community.
+</span></p>
+<p><span><span>I understand that you are having a tough time working on the computer.
+</span></span></p>
+<p><span><span>I will certainly help you to resolve the issue.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>There can be many reasons for booting to a black screen.&nbsp;
+</span></span></p>
+<p><span><span>These screens may appear with or without the mouse pointer.&nbsp;
+</span></span></p>
+<p><span><span>The main causes observed are:
+</span></span></p>
+<ul>
+<li>
+<span>Problems with the driver for your display adapter. </span></li><li>
+<span>The video output is being sent to an unexpected port.&nbsp;</span><span>&nbsp;
+</span></li></ul>
+<p><span><span>I suggest you to refer to the following discussion and check if it helps.</span></span></p>
+<p><strong><span>Black screen after upgrading to Windows 10</span></strong></p>
+<p><a href="http://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/black-screen-after-upgrading-to-windows-10/cf3b4559-67d8-40e0-9cf2-ebf4528e1e78"><span><span style="color: rgba(5, 99, 193, 1)">http://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/black-screen-after-upgrading-to-windows-10/cf3b4559-67d8-40e0-9cf2-ebf4528e1e78</span></span></a></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Hope it helps.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<div>
+<p>
+<span><span>Do let us know if you have any further query on Windows, we are glad to assist you further.</span></span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Stephen J. Mayer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "SJ"); this.style="display: inline-block";'
+<h3> stephen j. mayer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p><span><span>Hi Stephen,</span></span></p>
+<p>
+</p><p><span>Thank you for posting your query in Microsoft Community. </span></p>
+<p><span><span>I understand that you are having a tough time working on the computer.
+</span></span></p>
+<p><span><span>I will certainly help you to resolve the issue.</span></span></p>
+<p>
+</p><p><span><span>There can be many reasons for booting to a black screen.&nbsp; </span></span></p>
+<p><span><span>These screens may appear with or without the mouse pointer.&nbsp; </span>
+</span></p>
+<p><span><span>The main causes observed are: </span></span></p>
+<ul>
+<li><span>Problems with the driver for your display adapter. </span></li><li><span>The video output is being sent to an unexpected port.&nbsp;</span><span>&nbsp; </span>
+</li></ul>
+<p><span><span>I suggest you to refer to the following discussion and check if it helps.</span></span></p>
+<p><strong><span>Black screen after upgrading to Windows 10</span></strong></p>
+<p><a href="http://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/black-screen-after-upgrading-to-windows-10/cf3b4559-67d8-40e0-9cf2-ebf4528e1e78"><span><span style="color: rgba(5, 99, 193, 1)">http://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/black-screen-after-upgrading-to-windows-10/cf3b4559-67d8-40e0-9cf2-ebf4528e1e78</span></span></a></p>
+<p>
+</p><p><span><span>Hope it helps.</span></span></p>
+<p>
+</p><div>
+<p><span><span>Do let us know if you have any further query on Windows, we are glad to assist you further.</span></span></p>
+</blockquote>
+<p>I tried doing the iso files that some one in the community recommended doing and my computer is at 92% done updating and taking a long time to update and the fan on my laptop has been working extra hard while my laptop is updating</p>
+<p>Also my developer laptop is 4 years old and it has a 3rd generation i3 processor</p>
+<p>could that be a reason the update is taking so long&nbsp; or is it that my computer cant handle the update</p>
+<p>also my developer computer was used before for doing developer work with windows 8 RTM and then back to windows 7</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>iSilo License Key - Microsoft Community</title>
+<h3> rockyxu  say:</h3>
+<h2>            iSilo License Key</h2>
+                    <p>I purchased an app iSilo. Should I get some license key in case I need to reinstall? I have not got any key. I know with old version you got a license key.</p>
+<p>&nbsp;</p>
+<p>Not sure if this is the right forum, but any help is appreciated. Thanks.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Entegy" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "EN"); this.style="display: inline-block";'
+<h3> entegy  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Purchasing apps on the Windows Phone Marketplace do not need keys. Purchases are tied to your Zune account, so if you delete the app from your phone, you can simply visit the Marketplace again and download it free of charge. If you move to a new phone/need
+ to reset this phone, juse the same Windows Live ID and you'll have access to all the apps you've purchased.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=music,_movies_&#38;_tv">music,_movies_&#38;_tv, </a> <br>
+<a href="/search?q=groove_music">groove_music, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Bad windows update on Build 9926 - Microsoft Community</title>
+<h3> zwakele  say:</h3>
+<h2>            Bad windows update on Build 9926</h2>
+                    <p>This update forced me to reload windows twice!<br />
+</p>
+<p>once it is installed, the next time I login I get a blank screen o can only see the mouse moving. if I try to reset settings, the process is successful but I the start icon and keyboard shortcut doesn't work....basically I no Start option.</p>
+<p>
+</p><p>this time I created a system restore point and was lucky to restore back but I now have 3 new updates installed. I haven’t rebooted my PC as yet as I know what will happen.</p>
+<p>
+</p><p>How can i fix this</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/915093a4-0a8f-496f-8b9c-d280069f86ff" /></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay B" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "VB"); this.style="display: inline-block";'
+<h3> vijay b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi,<br />
+<br />
+Thank you for being a part of Windows 10 Technical Preview testing. <span style="color: rgba(51, 51, 51, 1)">
+You have reached the right place. Let us work together to find the root cause of this issue and try resolving it.<br />
+<br />
+What is the exact and complete error message you get when you try to install Windows updates?<br />
+<br />
+<br />
+</span><span style="color: rgba(0, 0, 0, 1)">This problem may occur if one or more of the following conditions are true:</span></span></p>
+<ul>
+<li><span style="color: rgba(0, 0, 0, 1)">If the Windows Update database is corrupted.</span></li><li><span style="color: rgba(0, 0, 0, 1)">If the Background Intelligent Transfer Service (BITS) service does not receive a content link header.</span></li><li><span style="color: rgba(0, 0, 0, 1)">If a required system file is registered incorrectly.</span></li></ul>
+<p><span><span>I would request you to provide us the error code or message of the updates that have failed to install on your computer. Also reset Windows update components and see if that helps.<br />
+<br />
+How do I reset Windows Update components?<br />
+</span><a href="http://support.microsoft.com/kb/971058" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(5, 99, 193, 1)">http://support.microsoft.com/kb/971058</span></a>
+<span><br />
+<br />
+Note: </span></span><span style="color: rgba(31, 73, 125, 1)"><span>To do so: Important this section, method, or task contains steps that tell you how to modify the registry. However, serious problems might occur if you modify the registry incorrectly. Therefore, make sure
+ that you follow these steps carefully. For added protection, back up the registry before you modify it. Then, you can restore the registry if a problem occurs. For more information about how to back up and restore the registry, click the following article
+ number to view the article in the Microsoft Knowledge Base: 322756 (http://support.microsoft.com/kb/322756/ )<br />
+<br />
+Post us the results after you try the above steps.</span></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Question?????</p>
+<p>I have never seen an update look like that.</p>
+<p>
+</p><p>Are you using Settings, Update and Recovery? Or are you using something else?</p>
+<p>
+</p><p>Most of the updates are automatic in Win 10 TP</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> zwakele  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I don’t get any error messages, after the update installation and the PC reboots I can see the win logo but after that just a blank screen. Therefore I cannot troubleshoot or get an error code.</p>
+<p>&nbsp;</p>
+<p>This problem doesn’t happen during the update process, the updates installs fine but once I reboot the problem starts so it must be the latest update installed.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> zwakele  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>LawrenceCrumb, yes I’m using the default Settings, Update and Recovery which is on automatic update.</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>old VBA versions - Microsoft Community</title>
+<h3> netser david  say:</h3>
+<h2>            old VBA versions</h2>
+                    Hi, i am currently using excel 2010 and i am trying to open macros i have created in office 2003 , i get a message box saying that a component is missing and that the file will open without the VBA project, do you know how to fix this? thx, david&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Seeing your code may help us to help you.</p>
+<p>
+</p><p>My first guess is you're missing some Control item.</p>
+<p>
+</p><p>Gord</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> netser david  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Seeing your code may help us to help you.</p>
+<p>
+</p><p>My first guess is you're missing some Control item.</p>
+<p>
+</p><p>Gord</p>
+</blockquote>
+<p>Gord, thx for your response, i cant see the code this is what i am trying to do, rgds, david&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Have a read here. . . . . .</p>
+<p>
+</p><p><a href="http://office.microsoft.com/en-ca/excel-help/change-macro-security-settings-in-excel-HP010342232.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-ca/excel-help/change-macro-security-settings-in-excel-HP010342232.aspx</a></p>
+<p>
+</p><p>Gord</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> netser david  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Have a read here. . . . . .</p>
+<p>
+</p><p><a href="http://office.microsoft.com/en-ca/excel-help/change-macro-security-settings-in-excel-HP010342232.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-ca/excel-help/change-macro-security-settings-in-excel-HP010342232.aspx</a></p>
+<p>
+</p><p>Gord</p>
+</blockquote>
+<p>Gord, </p>
+<p>Many thx once again, but even when i enabled all macros the problem appeared once again, if you have any other ideas i would be happy to hear, thx and rgds, david&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Norman David Jones" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "ND"); this.style="display: inline-block";'
+<h3> norman david jones  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Hi, i am currently using excel 2010 and i am trying to open macros i have created in office 2003 , i get a message box saying that a component is missing and that the file will open without the VBA project, do you know how to
+ fix this? thx, david&nbsp;</blockquote>
+<p>Hi David, see:</p>
+<p>
+</p><p><a href="http://support.microsoft.com/kb/926430" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/926430</a></p>
+<p>
+</p><p>If this does not help, please post the complete text of your error message.</p>
+<p>
+</p><p>
+</p><p>===</p>
+<p>Regards,</p>
+<p>Norman</p>
+<p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=windows_other">windows_other, </a> <br>
+<a href="/search?q=office_2010">office_2010, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Internet Explorer 11 tells me it&#39;s outdated, but I&#39;m already - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            Internet Explorer 11 tells me it&#39;s outdated, but I&#39;m already running IE 11</h2>
+                    <p>Internet Explorer 11 tells me it's outdated, but I'm already running IE 11.&nbsp; I've tried to run the upgrade anyway, but it tells me I'm already on IE 11.&nbsp; The articles I found with similar symptoms seem to be related to IE 8 or 9.&nbsp; I've done a lot of deleting
+ browser history, but&nbsp;I figure it's maybe something in a registry setting or ???&nbsp; Any suggestions?&nbsp; Thanks!</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Don Varnau" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "DV"); this.style="display: inline-block";'
+<h3> don varnau  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Changing the User Agent string from Developer Tool tells the website you're running IE9, 10 or 11, whichever you selected. The version in IE&gt; Help&gt; About won't change.</p>
+<p>
+</p><p>Emulating another version of IE may be more trouble than is justified, just to stop the "outdated" message from one website. I would simply ignore the "outdated" message. It's the websites problem, not yours.&nbsp; ;-)</p>
+<p>
+</p><p>I wouldn't do this just because of one website, but you can uninstall IE11 and the previous version of IE will be restored.</p>
+<p>
+</p><p>Install or uninstall Internet Explorer: <br />
+<a href="http://windows.microsoft.com/en-in/internet-explorer/install-ie#ie=ie-11-win-7" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-in/internet-explorer/install-ie#ie=ie-11-win-7</a></p>
+<p>
+</p><p>Don</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to convert Office 365 group to security group - Microsoft Community</title>
+<h3> rangarajvidyakar  say:</h3>
+<h2>            How to convert Office 365 group to security group</h2>
+                    <p>Hi Guys</p>
+<p>
+</p><p>I have few Office365 groups and need to convert them to security groups. I searched for some solutions online but no luck. Is there anyway we can achieve this via powershell?&nbsp;</p>
+<p>
+</p><p>Regards</p>
+<p>Ran</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Iry Chen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "IC"); this.style="display: inline-block";'
+<h3> iry chen msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Ran,</p>
+<p>
+</p><p>From your description, you want to convert office 365 group to security group. Actually, it’s also not feasible to achieve it via PowerShell.</p>
+<p>
+</p><p>You are welcomed to submit your valuable feedback <a href="https://office365.uservoice.com/" target="_blank" rel="noreferrer nofollow">
+here</a>, we can know where our products need to get improved based on your feedback and comments.
+</p>
+<p>
+</p><p>Thanks for your understanding,</p>
+<p>Iry</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lenovo EasyCamera in Lenovo Ideapad U350 not working - Microsoft Community</title>
+<h3> tindernikos  say:</h3>
+<h2>            Lenovo EasyCamera in Lenovo Ideapad U350 not working</h2>
+                    <p>Hi there</p>
+<p>
+</p><p>I have a Lenovo Ideapad U350 with Windows 10 and with Lenovo EasyCamera in it, but it is not working.</p>
+<p>
+</p><p>Whenever i try to start the camera a "blue screen" pops and the message about kernel_security_check_failure comes up.
+</p>
+<p>After some seconds my laptops reboots.</p>
+<p>
+</p><p>What should I do? The camera is crucial for me.</p>
+<p>
+</p><p>Thanks a lot</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Have you checked Device manager for activation and Driver update?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tindernikos  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yes but still the "blue screen" appears again. Lenovo does not provide camera drivers for windows 10 for this model..</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tom A - Windows Virtual Desktop Team &#91;MSFT&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "TA"); this.style="display: inline-block";'
+<h3> tom a - windows virtual desktop team &#91;msft&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello <a href="http://answers.microsoft.com/en-us/profile/714fa7eb-8981-40a7-80ac-1b373aa69d0b" title="TinderNikos">
+<p>
+</p><p>A bluescreen is certainly a driver issue. Can you go through the steps in this troubleshooting document, uninstall your current driver and see if the generic webcam driver will work for you?</p>
+<p>
+</p><p><a href="http://windows.microsoft.com/en-US/Windows-10/fix-windows-camera-app-problems-with-usb-web-cameras" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-US/Windows-10/fix-windows-camera-app-problems-with-usb-web-cameras</a></p>
+<p>
+</p><p>Thanks,</p>
+<p>Tom</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia 8600 - change language HELP&#33; - Microsoft Community</title>
+<h3> giustin  say:</h3>
+<h2>            Nokia 8600 - change language HELP&#33;</h2>
+                    Hi Guys,<br />
+<br />
+Recently I picked up a 8600 .. nice phone<br />
+<br />
+xpt ... the language is set to chinese ... and I can't read chinese ... so therefore I can't read the settings to change to english ... doh!<br />
+<br />
+Can anyone give me a step by step rundown of how to do this<br />
+<br />
+something like ... push button 3 time, go down 2 option, click right button etc etc<br />
+<br />
+thanks<br />
+<br />
+G
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> psychomania---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The quickest, easiest way to get it back to english is to call in at a nokia care point.<br />
+<br />
+They will be able to do it in minutes if it's a genuine nokia.<br />
+<br />
+<font color="GREEN"><b>Care points/service centres and repair info:</b><br />
+<br />
+<a href="http://www.nokia.co.uk/A4228006" target="_blank" rel="noreferrer nofollow">UK</a> • <a href="http://europe.nokia.com/A4388379" target="_blank" rel="noreferrer nofollow">
+Europe</a> • <a href="http://www.nokia-asia.com/A4416070" target="_blank" rel="noreferrer nofollow">Asia-Pacific</a> •
+<a href="http://www.nokiausa.com/A4410046" target="_blank" rel="noreferrer nofollow">USA</a> •<br />
+<a href="http://www.nokia.ca/A4489011" target="_blank" rel="noreferrer nofollow">Canada</a> • <a href="http://mea.nokia.com/A4382046" target="_blank" rel="noreferrer nofollow">
+Middle East and Africa</a><br />
+<br />
+Elsewhere: <a href="http://www.nokia.com" target="_blank" rel="noreferrer nofollow">Click here</a>, select your country, go to the support section, then select repair.</font>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grschinon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'd bet anything you have a Chinese fake. No Nokia defaults to Chinese, they all default to English as far as I know − even those made for the Chinese market. For your sake I'd love to be proven wrong here.<br />
+<br />
+Where did you "pick it up"? If off eBay then it furthers the case for it being a fake (are there
+<i>any</i> genuine articles up for sale on eBay?).
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Logon Screen in Windows 10 - Microsoft Community</title>
+<h3> shanmuganathanpranavanthran  say:</h3>
+<h2>            Logon Screen in Windows 10</h2>
+                    <p>
+</p><p>Hi,</p>
+<p>
+</p><p>How do I change my logon Screen in Windows 10?</p>
+<p>
+</p><p>Windows 8.1 also has the same logon screen.</p>
+<p>
+</p><p>How will I know if I am running Windows 10 or Windows 8.1 at the startup Screen?</p>
+<p>
+</p><p>I am coping this to Mr. Gabe Aul, but he may not have time for this.</p>
+<p>
+</p><p>Pranavanthran</p>
+<p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Pranavanthran,</p>
+<p>
+</p><p>Thank you for posting your query in Microsoft forums. </p>
+<p>From the issue description, I understand that you need to know the difference&nbsp;of Windows 10 TP start screen from Windows 8.1.</p>
+<p>
+</p><p>I like to inform you that&nbsp;in Windows 10 TP preview you&nbsp;got a water mark on the right bottom corner stating the Build number. There are no other changes between the start screen of these two Operating Systems.</p>
+<p>
+</p><p>Please post back if you have any issues related to Windows and we will be glad to assist you further.
+</p>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=program_announcements_and_registration">program_announcements_and_registration, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Different width of New mail message and sent mail message - Microsoft Community</title>
+<h3> coolphil  say:</h3>
+<h2>            Different width of New mail message and sent mail message</h2>
+                    
+<p>An email created in "New mail message" is wider than the email message that is sent.&nbsp; The result is lines of text do not fit on the page that is sent, hence the text line is wrapped around into a new line.&nbsp; The result is a poorly constructed and disjointed
+ presentation. Are there settings to adjust so that the typed message will fit into the standard page width.</p>
+<p>Any answers please.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Roady &#91;MVP&#93;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "R"); this.style="display: inline-block";'
+<h3> roady &#91;mvp&#93;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>In which message format are you composing? Plain Text, HTML or Rich Text?<br />
+How exactly are you reviewing you message? From the Reading Pane or by opening it?</p>
+<p>HTML and Rich Text messages wrap automatically based on the horizontal space that is available. Plain Text messages wrap by default at 76 characters but Outlook can also clean up line breaks so that it behaves more similar to HTML messages. Note that this
+ is just a (local) presentation change and not an actual alteration of the message itself.</p>
+<p>Each receiving mail client can behave differently again so you never can be 100% sure of your presentation this way.</p>
+<p>If you want to force a specific width, then you can use an HTML formatted message and place the contents in a table and set a width for the table.</p>
+<hr />
+<br />
+Robert Sparnaaij <a href="https://mvp.support.microsoft.com/default.aspx/profile/robert.sparnaaij" target="_blank" rel="noreferrer nofollow">
+[MVP-Outlook]</a><br />
+Outlook guides and more: <a href="http://www.howto-outlook.com" target="_blank" rel="noreferrer nofollow">HowTo-Outlook.com</a><br />
+Outlook Quick Tips: <a href="http://www.msoutlook.info" target="_blank" rel="noreferrer nofollow">MSOutlook.info</a>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> coolphil  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>Thanks for your response.&nbsp; The message is a HTML message, I have tried many methods included sending the email to myself so as to view the presentation.&nbsp; Nothing I try seems work.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

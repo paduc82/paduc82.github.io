@@ -1,0 +1,2161 @@
+    <title>Editable Dynamic Combo Box &#40;very little vba&#41; - Microsoft Community</title>
+<h3> harlan siegel  say:</h3>
+<h2>            Editable Dynamic Combo Box &#40;very little vba&#41;</h2>
+                    Hello,
+<div>I would like to add &nbsp;combo box to a workbook (either form control or active x control). &nbsp;I would like it to be editable and dynamic, meaning, I want the user to be able to type in a new item for the list, and the item automatically added to the list that
+ the combo box refers to. &nbsp;If at all possible, I would like as little VBA as possible, not because I am not comfortable with VBA, but more that I would like it to be as easy to use as possible. &nbsp;</div>
+<div>Is this doable? &nbsp;Or do I need some VBA? &nbsp;Is there another way to do this without the controls? &nbsp;</div>
+<div>Thanks</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cristin Yan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "CY"); this.style="display: inline-block";'
+<h3> cristin yan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>&nbsp;</p>
+<p>For&nbsp;Form Controls (with no VBA code):</p>
+<p>Right-click&nbsp;ComboBox&nbsp;&gt;&gt; Format Control &gt;&gt; Click the Control tab&nbsp;&gt;&gt;&nbsp;Input range &gt;&gt; drag&nbsp;the mouse to&nbsp;select a range</p>
+<p>&nbsp;</p>
+<p>For ActiveX Controls, please put the following code in Sheet1 (with very little VBA code):</p>
+<p>Private Sub Worksheet_Change(ByVal Target As Range)<br />
+&nbsp;&nbsp;&nbsp; Application.EnableEvents = False<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; If Not Application.Intersect(Target, Range("A1")) Is Nothing Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ComboBox1.AddItem Range("A1").Value<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; Application.EnableEvents = True<br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>How does&nbsp;this sample code work?</p>
+<p>Type something in A1, then the content in A1 will&nbsp;be added&nbsp;to&nbsp;<strong>ComboBox1</strong> automatically.</p>
+<p>&nbsp;</p>
+<p>Cheers,</p>
+<p>Cristin</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="rich007a" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "RI"); this.style="display: inline-block";'
+<h3> rich007a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Try this, which will only add <strong>new</strong> items to the list:</p>
+<p>First add an ActiveX ComboBox (assumed it's called ComboBox1).</p>
+<p>Set up your ListFillRange via the Properties window to: <strong>Sheet1!$A$1</strong></p>
+<p>Put the initial value for your list in cell A1</p>
+<p>Also add a LinkedCell: Sheet1!$D$1</p>
+<p>Now right-click on the sheet's tab and paste this code:</p>
+<p>Option Explicit</p>
+<p>Private Sub ComboBox1_Update()<br />
+&nbsp;&nbsp;&nbsp; Dim c As Range<br />
+&nbsp;&nbsp;&nbsp; Dim nextRow As Long<br />
+&nbsp;&nbsp;&nbsp; Application.EnableEvents = False<br />
+&nbsp;&nbsp;&nbsp; If ComboBox1.Value = "" Then GoTo ExitPoint<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; For Each c In Range(ComboBox1.ListFillRange)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If ComboBox1.Value = CStr(c.Value) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GoTo ExitPoint<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; Next c<br />
+&nbsp;&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp;&nbsp; 'Checked all existing values so need to add<br />
+&nbsp;&nbsp;&nbsp; nextRow = Rows(Range(ComboBox1.ListFillRange).Rows.Count).Row + 1<br />
+&nbsp;&nbsp;&nbsp; Sheets("<strong>Sheet1</strong>").Range("<strong>A</strong>" &amp; nextRow).Value = ComboBox1.Value<br />
+&nbsp;&nbsp;&nbsp; ComboBox1.ListFillRange = "=<strong>Sheet1!$A$1:$A$</strong>" &amp; nextRow</p>
+<p>ExitPoint:<br />
+&nbsp;&nbsp;&nbsp; Application.EnableEvents = True<br />
+End Sub</p>
+<p>Private Sub ComboBox1_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)<br />
+&nbsp;&nbsp;&nbsp; If KeyCode = 13 Then Call ComboBox1_Update<br />
+End Sub</p>
+<p>Private Sub ComboBox1_LostFocus()<br />
+&nbsp;&nbsp;&nbsp; Call ComboBox1_Update<br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>Back in Excel, exit design mode and select the intial value from your ComboBox.&nbsp; Now try typing a new value.</p>
+<p>With the above code, the list will only be updated when either the user hits Enter, or the user leaves the ComboBox.&nbsp; If you want to move your ListFillRange elsewhere, I've highlighted in bold the parts of the code you will need to change.&nbsp; You could change
+ the code so you only have to enter these detail once in the code - I'll leave that to you.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=microsoft_office_programming">microsoft_office_programming, </a> <br>
+<a href="/search?q=office_2010">office_2010, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>agps - Microsoft Community</title>
+<h3> vcresearch  say:</h3>
+<h2>            agps</h2>
+                    does wm support agps api?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="TitinaZG" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "TI"); this.style="display: inline-block";'
+<h3> titinazg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>&nbsp;</p>
+<p>Hello VCResearch,</p>
+<p>Please have a look&nbsp;at &nbsp;this thread,</p>
+<p><a href="http://answers.microsoft.com/en-us/winphone/forum/wp7-wpfeatures/a-gps/2c627c71-9a98-48f5-8097-a7af1902c83b">http://answers.microsoft.com/en-us/winphone/forum/wp7-wpfeatures/a-gps/2c627c71-9a98-48f5-8097-a7af1902c83b</a></p>
+<p>&nbsp;</p>
+<p>thanks for posting!</p>
+<p>&nbsp;</p>
+<p>Andres M</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>ADFS and office 365 - Diferent ad domain name and mail domain name - Microsoft Community</title>
+<h3> matiasmalpica  say:</h3>
+<h2>            ADFS and office 365 - Diferent ad domain name and mail domain name</h2>
+                    
+<p>Hello i am facing a problem, i am using office 365 as my exchange provider and now i want to synchronize AD with it, the problem is that the domain names and nomenclature for both of them are completly different:</p>
+<p>AD: *** Email address is removed for privacy ***</p>
+<p>O365:*** Email address is removed for privacy ***</p>
+
+<p>I was looking at alternative login ID but i am not sure if it will help or if i am doomed to migrate one of them...</p>
+<p>Any ideas?</p>
+<p>Thanks!</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sukhdeepsingh_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You can add a same O365 domain name suffix in your local AD under "Domain and trusts" MMC</p>
+<p>Like the name of my O365 domain is abc.com and local AD is abc.local</p>
+<p>You can add abc.com suffix in your local AD and change the LOGON name under user properties to abc.com</p>
+<p>More information about the Configuring Alternate Login ID can be found here.</p>
+<p><a href="https://technet.microsoft.com/en-us/library/dn659436.aspx" target="_blank" rel="noreferrer nofollow">technet.microsoft.com/.../dn659436.aspx</a></p>
+<p>This is not a good choice when you have Exchange Hybrid set-up.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> brookzhang_msft8047  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi MatiasMalpica,</p>
+<p>We haven’t heard from you for a while. Do you have any updates?</p>
+<p>Thanks,</p>
+<p>Brook </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> matiasmalpica  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yes, just a follow up, does this mean that users will be able to log to resources using their AD account and email with their o365 account as normal and just have their accounts synchronized? Or will they use one or another for individual resources?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> neo yu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi MatiasMalpica,</p>
+<p>Once you have ADFS service deployed, the user can use the on-premises credential to access both the on-premises and Office 365.</p>
+<p>Once Office 365 detects the user is using a domain which is federated with Office 365, the sign in page will redirect the user to the on-premises AD for authentication.&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> neo yu msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi MatiasMalpica,<br />
+</span><br />
+Please feel free to post back with the latest updates.&nbsp;</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>When will an iPad app for office be released&#63; - Microsoft Community</title>
+<h3> adamfann  say:</h3>
+<h2>            When will an iPad app for office be released&#63;</h2>
+                    I have used many apps for ipad that offer iPad the office functionality such as quickofficeHD and many others. &nbsp;I heard that with a office 365 subscription that microsoft decided to work with ipad users. &nbsp;I rushed out and bought a 365 subscription and
+ came home to set it up. &nbsp;To my disappointment the office app available is only a phone app. &nbsp;Is microsoft working on an ipad app? &nbsp;Is there any date for expected app release? &nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I too have been reading about the iPhone release. None of the articles have any mention of a version of iPad,.<br />
+<br />
+<div>
+<span>2013 06 14- Office “Mobile” (365) on iPhone</span>
+<p><a href="http://winsupersite.com/office-365/office-mobile-iphone-review" target="_blank" rel="noreferrer nofollow">http://winsupersite.com/office-365/office-mobile-iphone-review</a></p>
+<div>
+<p>
+<span>You need any Office 365 license to use this version. </span>Office Mobile for iPhone does not count against your five PCs/Macs limit because it’s a mobile offering. So now there is a new category of mobile devices, where each Office 365 subscriber
+ can also attach up to 5 Office Mobile installs to their account.</p>
+<p>
+Includes Word, Excel, and PowerPoint Mobile, but not OneNote Mobile, which is available as a separate free download.<span>&nbsp;
+</span></p>
+<p>
+<span>No Office for iPad yet, but I understand that (free) Office Web Apps work reasonably well in the Safari browser.</span></p>
+<div>
+<span>2013 06 14- </span><span>Microsoft rolls out Office Mobile for iPhone</span>
+<p><a href="http://www.zdnet.com/microsoft-rolls-out-office-mobile-for-iphone-7000016846/" target="_blank" rel="noreferrer nofollow"><span>http://www.zdnet.com/microsoft-rolls-out-office-mobile-for-iphone-7000016846/</span></a></p>
+<p><a href="http://office-watch.com/t/n.aspx?a=1864" target="_blank" rel="noreferrer nofollow"><span>http://office-watch.com/t/n.aspx?a=1864</span></a><span> Office Mobile for iPhone</span></p>
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia N8 Insert Sim Card - Microsoft Community</title>
+<h3> jimmyspinner  say:</h3>
+<h2>            Nokia N8 Insert Sim Card</h2>
+                    
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>Does anyone else know when a software update will be out to solve issues with the Nokia N8?</p>
+<p>&nbsp;</p>
+<p>I convinced my friend to get one and hers is now completely dead, won't charge, won't turn on and won't do anything! The nice people at Vodafone told her she would get an exchange today and then rang her this morning to say she'd have to wait two weeks before
+ she could get a replacement!!! She's miffed!!!</p>
+<p>&nbsp;</p>
+<p>As for me I'm just happy mine is working on O2&nbsp;but I do get an issue of the phone displaying a message of 'Insert Sim Card' every other day which is getting annoying but I can cope with. I have to turn the phone off, take out the sim, then put it back in
+ and switch it back on and that usually works. I can't keep doing this though as it must be a fault with the phone.</p>
+<p>&nbsp;</p>
+<p>Has anyone else had this issue? Any software updates ready yet? What about my friend who is thinking of getting any other phone than this one!! Even a stupid iPhone!</p>
+<p>&nbsp;</p>
+<p>Cheers</p>
+<p>&nbsp;</p>
+<p>Dave</p>
+<p>&nbsp;</p>
+<p>aka Jimmyspinner</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> psychomania---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I used to get that issue on an N96, turned out the problem was with my sim being a bit old or faulty. Replacing the sim solved the issue for me. O2 will replace it for free without loss of number or credit.<br />
+<br />
+Have you tried another sim in the phone to see if that behaves the same way? If it behaves ok then a new sim is the solution.<br />
+<br />
+If that still has issues then it looks like you may have a hardware fault.</p>
+<p>&nbsp;</p>
+<p>It is unknown when any future updates will be released, it's just a case of waiting.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> akuma07  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Im not too sure about it being the sim card.</p>
+<p>&nbsp;</p>
+<p>I went and got a brand new 128K sim card the other day, and after putting it in, that night, my phone asked me to insert my sim card about 2-3 times. After a reboot it hasnt happened since.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> psychomania---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Not sure about your country but in the UK problems caused by old/worn/faulty sim cards are actually quite common.<br />
+<br />
+Many of our networks don't issue a new sim when getting a new phone and eventually sims can become worn/scuffed so they don't connect correctly or sometimes they just develop faults.<br />
+<br />
+There's absolutely no harm in ruling out the sim before instantly assuming a it's a hardware issue and going through the hassle of swapping the phone for a new one just to see the same problem happen again.<br />
+<br />
+Do you have any better suggestions akuma07?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vvaino---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>@jimmyspinner,</p>
+<p>&nbsp;</p>
+<p>Have she tried the "push-the-on/off-button-for-8-secs" method?</p>
+<p>And it is also said, that if you battery is completely dead, you</p>
+<p>have take the charger off from the phone and put it back. Then</p>
+<p>it can take several minutes it to recover.</p>
+<p>&nbsp;</p>
+<p>-vvaino</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> akuma07  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Umm. I think you misunderstand.<br />
+<br />
+I was simply stating that I have had this same problem, with a brand new sim card.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> psychomania---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I think you are the one that misunderstood, as not once did I say it was definitely the sim, only suggested it as a possibility to be ruled out before messing about with repairs etc. There was no indication given to the age or capacity of the sim. &nbsp;At no
+ stage have I ruled out hardware or software issues.<br />
+<br />
+I was not talking about your brand new 128k sim as in the UK we get the sim that our network gives us, rarely do we go out and buy sims listed as a specific capacity.&nbsp;If you have an issue with your 128k sim feel free to start a new topic about it. There has
+ been problems mentioned in the past on other models about sims like that.<br />
+<br />
+As for this topic if it's O2 UK the user is talking about it could well be a older/worn sim as they rarely give you a new sim unless you specifically request one.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> emily_rose---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi, </p>
+<p>&nbsp;</p>
+<p>Kindly reply in a civil manner.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Kind regards.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> akuma07  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I don't really appreciate being flamed by another user. For simply replying to a thread.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> psychomania---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>@ akuma07, firstly please watch your attitude as you have done nothing but disrupt this thread with it. No one has "flamed" you, all that has happened is that you took something the wrong way and got a little upset.<br />
+<br />
+Just because something isn't the solution to you with your "128k sim card" it does not mean that it's not worth trying. You offered no alternatives or solutions that could possibly help this user.<br />
+<br />
+I don't want to argue with you akuma07 so I suggest you calm down and back away from the thread. If you have something that may help this user feel free to add it but please don't turn this into a petty argument and keep it civil as requested by "Emily_Rose".</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> akuma07  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You know what, seeing as though you're not capable of moving on, and all you want to do is argue.... I'll move on for everyone.</p>
+<p>&nbsp;</p>
+<p><strong>Back on topic.....</strong></p>
+<p>&nbsp;</p>
+<p>I have had this problem, my phone asked me for a sim card, the sim card that was in there was about 3 hours old. But it only happened once.</p>
+<p>So OP if a new sim card doesn't work, then its Nokia's problem :)</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Add Start Date and End Date to Report Header - Microsoft Community</title>
+<h3> steveg.  say:</h3>
+<h2>            Add Start Date and End Date to Report Header</h2>
+                    I have a report that runs a query that asks you to select the Start Date and End Date. The report runs correctly and presents the proper information.&nbsp; What I would like to do is to have the dates that I run the report for to appear in the header of the
+ report.&nbsp; So that later&nbsp;you can easily tell what time period the report has been run for. Does anyone have any ideas?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bill Mosca" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "BM"); this.style="display: inline-block";'
+<h3> bill mosca  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Steve</p>
+<p>Just put those exact same prompts as control source for a text box like this.</p>
+<p>Let's say your query prompts (Parameters) are [Enter Start Date] and [Enter End<br />
+Date]. Put a text box in the report or page header with this controlsource:<br />
+="Time Period " &amp; [Enter Start Date] &amp; " Through " &amp; [Enter End Date]</p>
+<hr />
+Bill Mosca<br />
+http://www.thatlldoit.com <br />
+http://tech.groups.yahoo.com/group/MS_Access_Professionals
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yes, do not use parameter prompt queries. Parameter prompts are very limiting. And you cannot do what you want with them.</p>
+<p>Instead create a form with two text boxes named txtStart and txtEnd. In the query change the criteria to:</p>
+<p>BETWEEN Forms!formname!txtStart AND Forms!formname!txtEnd</p>
+<p>On your report add two text boxes to your header. Set the Controlsource of the textboxes respectively to:</p>
+<p>=Forms!formname!txtStart</p>
+<p>=Forms!formname!txtEnd</p>
+<p>Add a button to the form to run the report and you should have the dates n the header.</p>
+<hr />
+Hope this helps, Scott&lt;&gt; P.S. Please post a response to let us know whether our answer helped or not. Microsoft Access MVP 2010 Blog: http://scottgem.wordpress.com Author: Microsoft Office Access 2007 VBA Technical Editor for: Special Edition Using Microsoft
+ Access 2007 and Access 2007 Forms, Reports and Queries
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Autofilter macro to ignore blank textboxes - Microsoft Community</title>
+<h3> code numpty  say:</h3>
+<h2>            Excel Autofilter macro to ignore blank textboxes</h2>
+                    <p>I have a form with different text boxes to apply a variety of filters to data. Not all text boxes may be used at one time &amp; I would like the macro to ignore any empty boxes and only apply filters for those that have been filled in.</p>
+<p>This is my code so far.</p>
+<p>&nbsp;</p>
+<p><strong>&nbsp;&nbsp;&nbsp; Dim LogQty As Variant<br />
+&nbsp;&nbsp;&nbsp; Dim MyInput As Date<br />
+&nbsp;&nbsp;&nbsp; Dim MyInput2 As Date<br />
+&nbsp;&nbsp;&nbsp; Dim MyInput4 As Date<br />
+&nbsp;&nbsp;&nbsp; Dim MyInput5 As Date<br />
+&nbsp;&nbsp;&nbsp; Dim FindCountry As String<br />
+&nbsp;&nbsp;&nbsp; Dim RefTitle As String<br />
+&nbsp;&nbsp;&nbsp; Dim PCode As String<br />
+&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; <br />
+Private Sub CommandButtonApplyfilters_Click()<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; ActiveSheet.AutoFilterMode = False<br />
+&nbsp;&nbsp;&nbsp; </strong></p>
+<p><strong>&nbsp;&nbsp;&nbsp; <br />
+&nbsp;&nbsp;&nbsp; MyInput = TextBox1<br />
+&nbsp;&nbsp;&nbsp; MyInput2 = TextBox2<br />
+&nbsp;&nbsp;&nbsp; MyInput4 = TextBox4<br />
+&nbsp;&nbsp;&nbsp; MyInput5 = TextBox5<br />
+&nbsp;&nbsp;&nbsp; FindCountry = TextBox3<br />
+&nbsp;&nbsp;&nbsp; RefTitle = TextBox8<br />
+&nbsp;&nbsp;&nbsp; PCode = TextBox9<br />
+&nbsp;&nbsp;&nbsp; </strong></p>
+<p><strong>&nbsp;&nbsp;&nbsp; With Range("A1:L1")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter<br />
+&nbsp;&nbsp;&nbsp; 'Chase Date Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=6, Criteria1:="&gt;=" &amp; Format(MyInput, "mm/dd/yy"), Operator:=xlAnd, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Criteria2:="&lt;=" &amp; Format(MyInput2, "mm/dd/yy")<br />
+&nbsp;&nbsp;&nbsp; 'Log Date Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=1, Criteria1:="&gt;=" &amp; Format(MyInput4, "mm/dd/yy"), Operator:=xlAnd, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Criteria2:="&lt;=" &amp; Format(MyInput5, "mm/dd/yy")<br />
+&nbsp;&nbsp;&nbsp; 'Country Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=7, Criteria1:=FindCountry<br />
+&nbsp;&nbsp;&nbsp; 'Ref/Title Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=11, Criteria1:=RefTitle<br />
+&nbsp;&nbsp;&nbsp; 'P.Code Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=12, Criteria1:=PCode<br />
+&nbsp;<br />
+&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; </strong></p>
+<p><strong>End Sub</strong></p>
+<p>&nbsp;</p>
+<p>I&nbsp;presume that I need some sort of If Then&nbsp;statement to only apply the filters where text boxes&nbsp;have been completed &amp; ignore the blanks. I can then get rid of the&nbsp;On Error Resume Next.</p>
+<p>Grateful for any help on this.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Per Jessen" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "PJ"); this.style="display: inline-block";'
+<h3> per jessen  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi</p>
+<p>You will need an If... Then statment for each filter:</p>
+<p>&nbsp;</p>
+<p>With Range("A1:L1")<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter<br />
+&nbsp;&nbsp;&nbsp; If MyInput &gt; 0 And MyInput2 &gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Chase Date Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=6, Criteria1:="&gt;=" &amp; Format(MyInput, "mm/dd/yy"), Operator:=xlAnd, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Criteria2:="&lt;=" &amp; Format(MyInput2, "mm/dd/yy")<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; If MyInput4 &gt; 0 And MyInput5 &gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Log Date Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=1, Criteria1:="&gt;=" &amp; Format(MyInput4, "mm/dd/yy"), Operator:=xlAnd, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Criteria2:="&lt;=" &amp; Format(MyInput5, "mm/dd/yy")<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; If FindCountry &lt;&gt; "" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Country Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=7, Criteria1:=FindCountry<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; If RefTitle &lt;&gt; "" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Ref/Title Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=11, Criteria1:=RefTitle<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; If PCode &lt;&gt; "" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'P.Code Filter<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AutoFilter Field:=12, Criteria1:=PCode<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End With</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how do I import favorites into Windows 8 - Microsoft Community</title>
+<h3> larry and betty mendolia  say:</h3>
+<h2>            how do I import favorites into Windows 8</h2>
+                    <p>I just purchased a new Surface Pro 3, and this is my first experience using Windows 8.</p>
+<p>
+</p><p>I have downloaded (exported)&nbsp;all my Favorites from my PC onto a Flash drive, and I want to IMPORT them into Windows 8 on the Surface Pro 3.&nbsp; But, every instruction I find on how to do that references clicking on a favorites button, and choosing Import from
+ a drop-down list.&nbsp; This works on Windows 7, but I do cannot find&nbsp;a Favorites button&nbsp;in Windows 8.&nbsp; I may be thinking too much about Windows 7, but you import favorites by right clicking on the STAR icon at the top of Win 7 screens, which gives you that drop-down
+ option.&nbsp; The ONLY Favorites star icon I can find in Win 8 is the one at the bottom, and there are no options to import favorites --- only to add the existing screen.</p>
+<p>
+</p><p>Can someone please&nbsp;give me step-by-step instructions on how to do this?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Xircal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "XI"); this.style="display: inline-block";'
+<h3> xircal  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Larry and Betty, </p>
+<p>
+</p><p>I assume you're talking about browser favorites. That being the case, please see this tutorial on how to import them into IE11:
+<a href="http://windows.microsoft.com/en-gb/internet-explorer/add-view-organize-favorites#ie=ie-11" target="_blank" rel="noreferrer nofollow">
+http://windows.microsoft.com/en-gb/internet-explorer/add-view-organize-favorites#ie=ie-11</a></p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Where can I download spelling dictionaries for IE11 of Microsoft with - Microsoft Community</title>
+<h3> ramon23  say:</h3>
+<h2>            Where can I download spelling dictionaries for IE11 of Microsoft with &#34;Windows 8.1&#34; compatibiilty</h2>
+                    <p>My lenguaje is Spanish then when I write in IE11 I need spelling dictionaries.</p>
+<p>
+</p><p>In this link there aren't compatible with "Windows 8.1"</p>
+<p>
+</p><p><a href="http://www.microsoft.com/en-pk/download/details.aspx?id=40289" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/en-pk/download/details.aspx?id=40289</a></p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jderek.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hey Yaqub K</p>
+<p>
+</p><p>I tried to install the spelling dictionary in clean bot. Put the computer in clean boot&nbsp; and then download the Toolbar or Extension for spelling dictionary from Internet Explorer Gallery.. I am sure it will not stuck... This had worked for me...</p>
+<p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to get only redstone 4 updates - Microsoft Community</title>
+<h3> pankaj sarupariya  say:</h3>
+<h2>            how to get only redstone 4 updates</h2>
+                    i have a insider preview account in it i am receiving redstone 3 updates and i want to use only restone 4 updates for that i have to install redstone 4 updates manually so how can i avoid redstone 3 updates on my devices.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Don Cuthbert" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "DC"); this.style="display: inline-block";'
+<h3> don cuthbert  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>After the next public release, Windows Insider builds will shift to the rs_prerelease lab branch, which will be RS4 builds.</p>
+<p>
+</p><p>Some Insider devices are currently setup to get rs_prerelease builds, but they are no longer accepting any new devices at this time. You would need to install a Windows image of a current rs_prerelease build, such as build 16273 rs_prerelease.</p>
+<p>
+</p><p>RS3 builds are from the rs3_release branch, which will end in September, with the public release of the Fall Creator's Update (RS3).</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Cbarnhorst" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "CB"); this.style="display: inline-block";'
+<h3> cbarnhorst  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can't.&nbsp; Redstone 4 previews are from the Fast Ring Skip-Ahead branch only (<em>rs-prerelease</em>).&nbsp; That branch is closed for new participants. &nbsp;
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Disable &#34;Minimize Ribbon&#34; option. - Microsoft Community</title>
+<h3> samedysam  say:</h3>
+<h2>            Disable &#34;Minimize Ribbon&#34; option.</h2>
+                    
+<p>I teach computers. One of my frustrations is when students "minimize the ribbon". I find they struggle more and fall behind the lesson.</p>
+<p>Is there anyway to make it so the ribbon can't be minimized? So the option isn't there anymore, or the option is inactive?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>That doesn't appear to be possible. At best you can disable the Ctrl+F1 keyboard shortcut, which runs the built-in command ToggleRibbon, by removing that key assignment in the Word Options &gt; Customize &gt; Keyboard Shortcut Customize dialog. That has no effect
+ on the other two ways the ribbon can be minimized, by double-clicking any ribbon tab or by right-clicking the ribbon or the Quick Access Toolbar and choosing "Minimize the Ribbon".</p>
+<p>I think it would be far better to spend a couple of minutes at the beginning of the course explaining all three ways, and demonstrating how to restore the ribbon. If you somehow disabled the option on the computers in your classroom and didn't teach them
+ about the toggle, the students would still be vulnerable to accidental minimization as soon as they go to another computer.</p>
+<hr />
+<b>Jay Freedman</b><br />
+MS Word MVP&nbsp;&nbsp;FAQ: <a href="http://word.mvps.org" target="_blank" rel="noreferrer nofollow">http://word.mvps.org</a>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gunter Avenius" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "GA"); this.style="display: inline-block";'
+<h3> gunter avenius  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello SamedySam,</p>
+<p>SamedySam wrote:</p>
+<blockquote>
+<p>I teach computers. One of my frustrations is when students "minimize<br />
+the ribbon". I find they struggle more and fall behind the lesson. <br />
+<br />
+Is there anyway to make it so the ribbon can't be minimized? So the<br />
+option isn't there anymore, or the option is inactive?</p>
+</blockquote>
+<p>No.</p>
+<p>See also:<br />
+<a href="http://www.accessribbon.de/en/index.php?FAQ:FAQ_Access_2010:1" target="_blank" rel="noreferrer nofollow">http://www.accessribbon.de/en/index.php?FAQ:FAQ_Access_2010:1</a></p>
+<p>HTH<br />
+Gunter</p>
+<hr />
+<p>Access FAQ: <a href="http://www.donkarl.com" target="_blank" rel="noreferrer nofollow">http://www.donkarl.com</a></p>
+<p>&nbsp; &nbsp; &nbsp; <a href="http://www.avenius.com" target="_blank" rel="noreferrer nofollow">http://www.avenius.com</a> -<a href="http://www.AccessRibbon.com" target="_blank" rel="noreferrer nofollow">http://www.AccessRibbon.com</a><br />
+<a href="http://www.ribboncreator.com" target="_blank" rel="noreferrer nofollow">http://www.ribboncreator.com</a> -<a href="http://www.ribboncreator2010.com" target="_blank" rel="noreferrer nofollow">http://www.ribboncreator2010.com</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> leon951  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>I know this is an old topic, but I can say this still is causing problems for a lot of people. I run a small IT support company and have many customers with bad hand/mouse coordination who keep on hiding the ribbon by mistake again and again and then
+ call me for help. Not to mention the others confusions caused by </span><span>bad hand/mouse coordination such as
+</span><span>not being aware that mail programs have a sort-by-topic or sort-by-sender function buttons or folders disappearing in to subfolders in mail programs or windows explorer when moving the mouse and leaning too hard on the mouse buttons while moving
+ the mouse.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wagh  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have solution.</p>
+<p>
+</p><p>MS Office 2007: Double click tab that is displayed or right click quick access bar deselect 'Minimize the Ribbon' last option</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/eb6774dd-ce4d-442c-8adf-27ddd51e9704" /></p>
+<p>
+</p><p>MS Office 2010/2013:</p>
+<p>At upper right corner there is up arrow in square. long left click it and you will get following options shown in below image. Click 'Show Tabs and Commands'. &nbsp;You are all done.</p>
+<p>
+</p><p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/543499fc-c645-4661-a949-4a054d0b290c" /></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Sorry, but that isn't a solution to the original problem -- it doesn't prevent anyone from accidentally minimizing the ribbon. It's only how to restore the ribbon after it's minimized.</p>
+<p>
+</p><p>Many posts in this forum and others indicate that a lot of users just think their Office program is broken, because they can't see how to restore it.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>server 2016 video problem - Microsoft Community</title>
+<h3> abhomer  say:</h3>
+<h2>            server 2016 video problem</h2>
+                    <div>
+<div>
+<span style="color: rgba(34, 34, 34, 1)"><span style="color: rgba(34, 34, 34, 1)">I have installed the 2016
+ 2016 standard version of "evaluation" and everything looks good but no video is loading.</span>
+<span style="color: rgba(34, 34, 34, 1)">
+I can not play any MP4 or any YouTube video.</span> <span style="color: rgba(34, 34, 34, 1)">
+If Chrome is installed it plays very well.</span> <span style="color: rgba(34, 34, 34, 1)">
+On IE it can not load. Chrome installation is not&nbsp; solution because the system I'm going to buy has to be fully functional and if it does not play back movies - it's not ... There are no reasonable solutions or I could not find them so I'm asking for help</span>
+<span style="color: rgba(34, 34, 34, 1)">
+forum users</span><span style="color: rgba(34, 34, 34, 1)">.</span>
+<span style="color: rgba(34, 34, 34, 1)">
+It looks like it's either an IE11 problem or a server configuration but my problem&nbsp; is that I can not get solution for this&nbsp; the problem.</span>
+<span style="color: rgba(34, 34, 34, 1)">
+Can someone help me?</span><br />
+<span style="color: rgba(34, 34, 34, 1)"></span></span></div>
+</div>
+<div>
+<div>
+<div>
+<div>
+</div>
+</div>
+<div>
+</div>
+<div>
+</div>
+<div>
+</div>
+</div>
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> reza ameri  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Are you running Windows Server?</p>
+<p>Does it display any error message or warning?</p>
+<p>May be you will need to install Flash Player.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhomer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Flash player is installed , OS is server 2016 standard&nbsp; (evaluation) Browser IE11 and can't play any YouTube video and also can't play any mp4 from other sites ....&nbsp; I don't know why,&nbsp; because on chrom everything is working ... I think this is Microsoft
+ produkt so everything should be working excellent&nbsp; but is not ...Thanks for your replay !&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhomer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            one think more ... there is no one warning or message ... Just loading video and loading&nbsp; without end ...
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="网游" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> 网游  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>server versions of windows use an Enhance Protected Mode and are locked down with restricted internet security zones and user profiles... Generally they are not suited for casual browsing of the internet or the debugging of hosted sites.
+</p>
+<p>
+</p><p>In the real world.... servers are usually physically locked down without a keyboard or screen and physical access is restricted and are managed remotely from a windows client.</p>
+<p>
+</p><p>Use a Windows Client version of windows instead to connect to the domain network that you have created on your server.</p>
+<p>
+</p><p>or</p>
+<p>
+</p><p>You could install a Client VM on your server with a pro or enterprise edition of windows on it.</p>
+<p>
+</p><p>or</p>
+<p>
+</p><p>you could use an AZure VM instead of managing your own in-house file servers. Depending on the number of seats in your organization... using cloud resources can have a very significant impact on your IT costs.</p>
+<p>
+</p><p>'video' can be served in a number of different formats.... MOV, WMP, MP4. FLA, FLV...&nbsp;and may require third-party&nbsp;software or&nbsp;the latest versions of Java JRT or MS Silverlight&nbsp;to be installed on the 'client' computer... Its helpful to include links to the
+ websites that you are having problems with your questions, so that we can visit the same sites as you to do some tests.</p>
+<p>
+</p><p>these are consumer (windows client) forums.</p>
+<p>
+</p><p>Questions about managing a domain network or setup and configuration&nbsp;with windows server versions can be posted to</p>
+<p>
+</p><p>https://social.technet.microsoft.com/Forums/windowsserver/en-US/home?category=windowsserver</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abhomer  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for your answer. I will asking again until I will understand for what this restriction was build in&nbsp; ... I don't know how it make sens. If server has&nbsp;<span>physical access restricted,&nbsp; and can be&nbsp; managed remotely from
+</span><span>a windows client, &nbsp; how and why &nbsp; everything is working with Chrom????.&nbsp; Why cant be working same way on IE11 ??? I have on my website some movies and without working player on it I can't check how is playing my movie. Do I have use other
+ os or another computer&nbsp; for just check ??? I need one machine , one OS and all working service I will pay so much money for OS .... or I should get tools for configuring&nbsp; my system with my way and my needs.... is there any way for to play video file on this
+ system ? This is for me&nbsp; very importance. (Sorry for my English) and thank you very much for your answer ... I will try&nbsp; looking&nbsp; for help on server forum also ...</span>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Language problem - brazil portuguese thesaurus and spellcheck not - Microsoft Community</title>
+<h3> elianacals  say:</h3>
+<h2>            Language problem - brazil portuguese thesaurus and spellcheck not working</h2>
+                    <p>We are using word 2010, </p>
+<p>&nbsp;</p>
+<p>Today have purchased Portuguese language pack and downloaded and installed. </p>
+<p>&nbsp;</p>
+<p>- language preference shows Portuguese brazil&nbsp;enabled and proofing tools installed tick ok</p>
+<p>&nbsp;</p>
+<p>- under set proofing tools only shows Portuguese brazil with no tick</p>
+<p>&nbsp;</p>
+<p>when trying to check spelling and thesaurus does not work in&nbsp;Portuguese brazil
+</p>
+<p>&nbsp;</p>
+<p>bought this specifically to check&nbsp;text documents..</p>
+<p>&nbsp;</p>
+<p>can you suggest answer thank you </p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Daniel Jackson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "DJ"); this.style="display: inline-block";'
+<h3> daniel jackson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)">Hello,<br />
+<br />
+Thank you for choosing Microsoft Office Community.<br />
+<br />
+I understand your concern and will assist you with this issue.<br />
+<br />
+Follow instructions mentioned in the below article on how to troubleshoot spelling and grammar checker issue in Office 2010 and see if it helps:<br />
+<a href="http://office.microsoft.com/en-us/visio-help/the-spelling-or-grammar-checker-isn-t-checking-words-in-a-different-language-correctly-HA010354287.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-us/visio-help/the-spelling-or-grammar-checker-isn-t-checking-words-in-a-different-language-correctly-HA010354287.aspx</a><br />
+<br />
+You may also refer to the following thread which discusses about similar issue and see if it helps:<br />
+<a href="http://answers.microsoft.com/en-us/office/forum/office_2010-outlook/language-pack-for-office-2010-spell-check-not/46175c78-7e6b-e011-8dfc-68b599b31bf5?page=1">http://answers.microsoft.com/en-us/office/forum/office_2010-outlook/language-pack-for-office-2010-spell-check-not/46175c78-7e6b-e011-8dfc-68b599b31bf5?page=1</a><br />
+<br />
+Hope it helps. Please take your time to try the suggestion and let me know the results at your earliest convenience.<br />
+<br />
+Thank You.</span></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t call my own mobile number - Microsoft Community</title>
+<h3> mareemcinnes  say:</h3>
+<h2>            Can&#39;t call my own mobile number</h2>
+                    When I call my mobile number from Skype I get an engaged signal even though the phone is not engaged. I can send a message though. I can also call other mobile numbers. Have been waiting to talk to a person from Skype today for hours!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It depends upon telecom service providers (TSP) of called party phone numbers. Some TSPs allow calls without caller ID and some don't.       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=skype_to_phone">skype_to_phone, </a> <br>
+<a href="/search?q=skype_for_windows">skype_for_windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Turning off notifications for second email account on Office 365 - Microsoft Community</title>
+<h3> aliforester  say:</h3>
+<h2>            Turning off notifications for second email account on Office 365 Outlook on Macbook</h2>
+                    <p>I have recently got a Macbook Pro and have Office 365 Outlook app on there for work. &nbsp;My work email is set up fine and works great. &nbsp;However, sometimes I need to reply from our universal business email address. &nbsp;I have only worked out how to do this by adding
+ the second account as a delegate. &nbsp;Unfortunately this means I get email notifications from the main business inbox. &nbsp;Is there way to turn off notifications for the second account but keep them for my main account? &nbsp;I don't even need to access the inbox, I
+ just need to be able to chose the business email in the "From" field. &nbsp;</p>
+<p>
+</p><p>Any help appreciated.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Monique Tang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "MT"); this.style="display: inline-block";'
+<h3> monique tang msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span style="color: rgba(51, 51, 51, 1)">Hi Alice,</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Sorry for my mistake. I have now understood the situation.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">If you want to turn off the notifications for the business inbox, you can use Inbox rule. Except Inbox, new emails come to other folders will not give you
+ notifications.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Create a personal folder below business Inbox. Set rule as below:</span></p>
+<p><br />
+<a href="https://filestore.community.support.microsoft.com/api/images/de48dbb9-c8d1-4a17-8381-e576e6c2b78a" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/de48dbb9-c8d1-4a17-8381-e576e6c2b78a" /></a><br />
+<a href="https://filestore.community.support.microsoft.com/api/images/efe737ce-2d72-489a-8a45-0306e85d373e" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/efe737ce-2d72-489a-8a45-0306e85d373e" /></a></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Regards,</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Monique</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>achive data of my phone service - Microsoft Community</title>
+<h3> varunsaini1985  say:</h3>
+<h2>            achive data of my phone service</h2>
+                    <p>I want to know that whether the archived data of my phone will be saved to sky drive or not?</p>
+<p>I also want to know that how to save my phone data to PC</p>
+<p><a href="http://support.microsoft.com/kb/2557520" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/2557520</a></p>
+<p>already read the above article, but not able to do.</p>
+<p>In sky drive where the data will be stored, as i already searched the drive but not able to find it.</p>
+<p>&nbsp;</p>
+<p>How can i get the CD/DVD of the data from microsoft?</p>
+<p>I am using ASUS P750 windows 6.1 mobile</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Julie fka profjulie" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> julie fka profjulie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Doesn't sound like you read the article very carefully.....I've quoted the portions of the knowledgebase article (that I copied &amp; pasted below) you provided a link to that applies to your questions:<br />
+<br />
+Microsoft will migrate both current and archived content to your SkyDrive account:
+<br />
+<br />
+"On August 7, 2011, Microsoft will begin automatic migration of users' contacts, calendar entries, SMS messages, and photos from the My Phone service to Windows Live SkyDrive.
+<br />
+Once the migration is completed Microsoft will send you a confirmation email (have you received a confirmation email from Microsoft yet?):<br />
+<br />
+"Users will receive a confirmation email from Microsoft indicating that their data has been transferred to
+<a href="http://go.microsoft.com/fwlink/?linkid=100731" target="_blank" rel="noreferrer nofollow">Windows Live SkyDrive
+</a>. Users can then logon to Windows Live SkyDrive with the Windows Live ID they used to register for the My Phone service to review, retrieve, or use their data transferred from the My Phone service."<br />
+<br />
+After you receive the confirmation email from Microsoft, then you can go to your SkyDrive account and download the data to your computer.<br />
+<br />
+You can request a CD/DVD after October 6th (when the migration is completed) by contacting Microsoft Support via the link provided in the article:<br />
+<br />
+"Starting on October 6, 2011, users can request physical media (CD or DVD-ROM) containing all information saved to their My Phone account. This opportunity will be available to users for a full year, until October 5, 2012. Users should contact
+<a href="http://www.microsoft.com/windowsphone/en-us/howto/support.aspx" target="_blank" rel="noreferrer nofollow">
+Microsoft Support </a>to submit a request."<br />
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>E70 - Saving numbers sent by text&#59; small fonts. - Microsoft Community</title>
+<h3> trainj  say:</h3>
+<h2>            E70 - Saving numbers sent by text&#59; small fonts.</h2>
+                    There's no 'Use detail' from within a text facility, so can't save numbers. Even Save Business card is complicated. I have to send incoming messages to my 6230i, then extract what I want, then send as a business card via Bluetooth to the E70 - which then
+ lets me save the business card. Surely there's a solution to this? E70 is much too complicated and the fonts (unchangeable) are too small to read quickly.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> korngear  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            About fonts: Psiloc Maginifier is a cool application that increases font size.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Why won&#39;t videos play on my msn.com site&#63;&#63; - Microsoft Community</title>
+<h3> jo anneroberts  say:</h3>
+<h2>            Why won&#39;t videos play on my msn.com site&#63;&#63;</h2>
+                    Im using chrome on my samsungg galaxy pro 10.1 tab and videos won't play on msn. &nbsp;Anyone have a fix? &nbsp;I've cleared history, cleared ram. &nbsp; Done everything I thought would fix this but not!!! &nbsp;The video just keeps loading until i get to thd "awe snap" &nbsp;page.
+ &nbsp;Reload it, and still nothing.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for contacting Microsoft Community.</p>
+<p>
+</p><p>Please confirm if you are able to play MSN videos on Internet Explorer.</p>
+<p>
+</p><p>If you are able to play Videos on Internet explorer then there could be a possibly Google Chrome Browser issue.</p>
+<p>
+</p><p>Then I suggest you to contact Google Support.</p>
+<p>
+</p><p>If issue persist in Internet Explorer also then <span>I would suggest you to check in no Add-on mode and check if it helps:</span></p>
+<p>
+</p><p>Add-ons are apps that Internet&nbsp;Explorer uses to interact with web content like videos and games. Refer to the mentioned article and check if it helps:</p>
+<p>
+</p><p>
+<a href="http://windows.microsoft.com/en-US/internet-explorer/manage-add-ons#ie=ie-11" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-US/internet-explorer/manage-add-ons#ie=ie-11</a>
+</p><p>
+</p><p><span>&nbsp;</span></p>
+<p><span><br />
+</span></p>
+<p>Hope this helps.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Use the Feedback link at the bottom of the webpage and let Support know you're having issues with Videos.&nbsp; Include your tablet and browser information.</p>
+        </p>
+<a href="/search?q=msn">msn, </a> <br>
+<a href="/search?q=using_msn.com_and_msn_apps">using_msn.com_and_msn_apps, </a> <br>
+<a href="/search?q=content">content, </a> <br>
+<a href="/search?q=video">video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia Lumia 525 Display Problem after Lumia Denim Update - Microsoft Community</title>
+<h3> dineshkumar ramasamy  say:</h3>
+<h2>            Nokia Lumia 525 Display Problem after Lumia Denim Update</h2>
+                    <p><span>I am using Nokia Lumia 525 which was recently updated to Lumia Denim (India). After the Denim Update, my Nokia Lumia Screen's backlight glow even after the screen turned off. It's like you can see the white light glowing in the
+ black screen along the side of the screen. Again if I press the lock button, the light goes off. This was particularly happening, when I used to charge my mobile. When I connect the charger, the phone's screen turn on showing the lock screen picture along
+ with Battery charging icon, then the screen dims off and turn off eventually. But the backlight associated along the sides of the screen didn't turn off. Hope you understand what issue I'm facing.</span></p>
+<p>
+</p><p><span>Before Lumia Denim update, my phone was working good. Only after the Lumia Denim update, this problem started happening.</span></p>
+<p>
+</p><p><span>However I remember some problems I had during Lumia Denim update. During the update, my phone restarted and it stuck with spinning gears for more than 2 hours (this is because I haven’t removed my SD card from my phone - found
+ this solution in Internet but I didn’t do that) and it drained my battery. So, I tried switching off my phone by long pressing power off button but it didn't turn off. So, I removed the battery, put it back and turned on the phone again. This time I put my
+ phone on charge and turned it on, again it showed spinning gears. After 4 -5 hours, the update had completed (without removing my SD card).</span></p>
+<p>
+</p><p><span>I don't know whether because of the spinning gear problem, my phone's software got corrupted making this display problem. I just wanted to clearly tell you what had happened during the update so that you can give me a clear picture.
+ I had tried soft resetting the phone, restarting, clearing unwanted files, cache etc. But still I'm getting the display problem.</span></p>
+<p>
+</p><p><span>So, kindly let me know how to resolve this Issue.</span></p>
+<p>
+</p><p><span>Thanks in Advance!!!</span></p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Dineshkumar Ramasamy,</p>
+<p>
+</p><p>
+</p><p>Thanks for posting!</p>
+<p>
+</p><p>I would suggest you to use Recovery Tool and check, if that will make a difference;</p>
+<p><a href="http://www.microsoft.com/en-gb/mobile/support/faq/?action=singleTopic&amp;topic=FA142987" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/en-gb/mobile/support/faq/?action=singleTopic&amp;topic=FA142987</a></p>
+<p>
+</p><p>If the issue persists I would advise you to contact Nokia care point, or place of purchase, most likely it is a hardware related issue;</p>
+<p><a href="http://www.microsoft.com/en-gb/mobile/support/care-point/" target="_blank" rel="noreferrer nofollow">http://www.microsoft.com/en-gb/mobile/support/care-point/</a></p>
+<p>
+<span><span>
+</span></span></p><p>Thank you for your contribution to the forum!</p>
+<p>
+</p><p>Kind Regards,</p>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Image help - Microsoft Community</title>
+<h3> phoebepants  say:</h3>
+<h2>            Image help</h2>
+                    Hi<br />
+<br />
+If i take a picture on my n95 and then use it as a wallpaper, the image stretches and just doesnt look right, howeever when i view the image in the gallery the image is fine.<br />
+<br />
+Is there anything that can be done to rectify this?<br />
+<br />
+Many thanks<br />
+<br />
+Michelle
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grschinon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Unfortunately, no.<br />
+<br />
+If you want an image not to look anamorphic on the standby screen, you have to take one in portrait mode rather than landscape.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phoebepants  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for the reply,<br />
+<br />
+I have tried this in portriat and it look worse!<br />
+<br />
+Thanks anyway<br />
+<br />
+Michelle
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> vistal---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If there's no other way of doing it right, you'd need to edit your image using a picture editing program in your PC, and then edit the photo (i.e. resize it to fit your screen and needs), transfer it to mobile, and then set as wallpaper.<br />
+<br />
+As your screen is 320x240 pixels size, you should resize your photos to one of these sizes: 320x240 or 240x240.<br />
+<br />
+240x240 works better on my phone having 240x320 sized screen.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Office 365 for Mac - uninstall and reinstall. - Microsoft Community</title>
+<h3> stelladmn  say:</h3>
+<h2>            Microsoft Office 365 for Mac - uninstall and reinstall.</h2>
+                    <p>I have an iMac which I am about to reformat/reinstall all my software for a clean start.<br />
+I have a five licence subscription to Office 365 for Mac.<br />
+</p>
+<p>I cannot find the bit on your website where I can tell it I want to uninstall whilst I reformat the iMac, then reinstall it again afterwards.<br />
+<br />
+Please advise. &nbsp;</p>
+<p>
+</p><p>I have searched all over Microsoft site for it, but no joy. &nbsp;Your site is almost as bad as HM Revenue and Customs for finding things :(</p>
+<p>I'd appreciate your help in finding the place I need to be. &nbsp;I've done this before and struggled then to find it.</p>
+<p>
+</p><p>Thank you</p>
+<p>
+</p><p>Stella DMN</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Jim Gordon MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "JG"); this.style="display: inline-block";'
+<h3> jim gordon mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You can use Time Machine to restore your installation. That would be my first choice. I would definitely make sure Time Machine has updated before erasing your drive.</p>
+<p>
+</p><p>Since you're going to reformat the drive, which erases everything, there's no need to uninstall. You can simply do a fresh, new install after you've erased your drive. Just be sure you have your product key handy before you erase your drive.</p>
+<p>
+</p><p>Use this installer so you don't have to go through an update process:</p>
+<p><span>The latest Office 2016 for Mac installer can be downloaded from this link:</span></p>
+<p><span><span>&nbsp;</span><span style="text-decoration-line: underline"><span style="color: rgba(0, 0, 255, 1)"><a href="https://go.microsoft.com/fwlink/?linkid=525133" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">https://go.microsoft.com/fwlink/?linkid=525133</span></a></span></span></span></p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Open the Finder in the Dock
+<br />Open Applications
+<br />Select each Office application (Word, Excel, PowerPoint, Outlook and OneNote).
+<br />
+<br />Right click the icon then click Move to Trash
+<br />Thats how you uninstall it.
+<br />
+<br />To reinstall Office for Mac:
+<br />
+<br />
+<br />Step 1: Sign in and install Office
+<br />
+<br />    Go to <a href="http://www.office.com" target="_blank" rel="noreferrer nofollow">http://www.office.com</a> and if you're not already signed in, select Sign in.
+<br />
+<br />    Note: If you bought Office for personal use through your company's Microsoft HUP benefit, you may not be able to sign in here. Find installation help at Install Office through HUP. <a href="https://support.office.com/en-us/article/install-office-through-hup-d99c6e4a-6756-4ece-99a0-b1df654ec7d3?wt.mc_id=scl_installoffice_homemac" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/instal...</a>
+<br />
+<br />    Sign in with the account you associated with this version of Office.
+<br />
+<br />    Tip: Depending how you got Office, this account can be a Microsoft account or work or school account. If you forgot your account details, see I forgot the account I use with Office. <a href="https://support.office.com/en-us/article/i-forgot-the-account-i-use-with-office-eba0b4a2-c0ae-472c-99f6-bc63ee2425a8?wt.mc_id=scl_installoffice_mac" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/i-forg...</a>
+<br />
+<br />    On the Office home page, do the following depending on your version of Office.
+<br />
+<br />    Select Install Office &gt; Install if you signed in with a Microsoft account.
+<br />
+<br />    Select Install Office Apps &gt; Office 2016 if you signed in with a work or school account.
+<br />  
+<br />
+<br />    This begins the download of Office. Follow the prompts on your screen to complete the install.
+<br />
+<br />
+<br />Step 2: Install Office
+<br />
+<br />    Once the download has completed, open Finder, go to Downloads, and double-click Microsoft_Office_2016_Installer.pkg (the name might vary slightly).
+<br />
+<br />    Tip: If you see an error that says the Microsoft_Office_2016_Installer.pkg can't be opened because it is from an unidentified developer, wait 10 seconds and then try double-clicking the installer package again. If you're stuck at the Verifying…. progress bar, close or cancel the progress bar and try again.
+<br />
+<br />    On the first installation screen, select Continue to begin the installation process.
+<br />    First Mac 2016 installation screen with "Continue" highlighted
+<br />
+<br />    Review the software license agreement, and then click Continue.
+<br />
+<br />    Select Agree to agree to the terms of the software license agreement.
+<br />
+<br />    Choose how you want to install Office and click Continue.
+<br />
+<br />    Review the disk space requirements or change your install location, and then click Install.
+<br />
+<br />    Note: If you want to only install specific Office apps and not the entire suite, click the Customize button and uncheck the programs you don't want.
+<br />
+<br />    Enter your Mac login password, if prompted, and then click Install Software. (This is the password that you use to log in to your Mac.)
+<br />
+<br />    The software begins to install. Click Close when the installation is finished. If Office installation fails, see What to try if you can't install or activate Office 2016 for Mac.       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Surface Book &#43; Surface Dock&#58; frequent Bugcheck access - Microsoft Community</title>
+<h3> fadhb ar bith  say:</h3>
+<h2>            Surface Book &#43; Surface Dock&#58; frequent Bugcheck access violation in igdkmd64.sys &#40;Intel HD graphics&#41; &#40;build 14328 x64&#41;</h2>
+                    <p>I have a Surface Book and Surface Hub with 2 4K external monitors. The machine falls over frequently, it appears to be an access violation in igdkmd64.sys (drivers for Intel HD graphics 520): igdkmd64+0x23db2d.
+</p>
+<p>
+</p><p>The driver appears to be up to date (version 20.19.15.4409 released on March 20, 2016).</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)">Hello,</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Thank you for posting your query in Microsoft Community.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span>We do understand your concern and we will be happy to help you regarding this.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">I request you to try the following steps:</span><span>&nbsp;
+</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Uninstall and Reinstall the Graphics Card Drivers.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Step 1: Uninstall the
+</span><span style="color: rgba(51, 51, 51, 1)">Graphics Card
+</span><span style="color: rgba(51, 51, 51, 1)">Drivers</span></p>
+<ol>
+<li>
+<p style="color: rgba(0, 0, 0, 1)">
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+</span><span style="color: rgba(51, 51, 51, 1)">Graphics Card
+</span><span style="color: rgba(51, 51, 51, 1)">from the device list, right click on it and then select “Uninstall”. On the un-installation window, if you have an option: “Delete the driver software for this device”
+ you may select that and then remove the corrupted drivers from the computer.</span></p>
+</li><li>
+<p style="color: rgba(0, 0, 0, 1)">
+</li></ol>
+<p><span style="color: rgba(51, 51, 51, 1)">After the restart, please go ahead with the next steps to install the latest drivers and check if that resolves the issue.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Step 2: Go to the Computer or
+</span><span style="color: rgba(51, 51, 51, 1)">Graphics Card
+</span><span style="color: rgba(51, 51, 51, 1)">manufacturer’s website and search for the latest Windows 10 drivers available for the
+</span><span style="color: rgba(51, 51, 51, 1)">Graphics Card
+</span><span style="color: rgba(51, 51, 51, 1)">model and then install it by following the instructions given in the website.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">I hope this helps you. If you have any further query in future, feel free to contact us. We will be happy to help you.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Thank you.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>playing videos from the web - Microsoft Community</title>
+<h3> latinhispanicguy  say:</h3>
+<h2>            playing videos from the web</h2>
+                    
+<p>i have a T-mobile dash and i was wondering what i would need to download in order to get it to play videos from the web such as the ones found on&nbsp; youtube.com</p>
+<p>&nbsp;</p>
+<p>any help would be appreciated. thanks in advance.&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jack Cook - aka Help_Line" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jack cook - aka help_line  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I use TCMP for a lot of videos I get.&nbsp; As for YouTube, there is a new flash plugin but I&nbsp;was not able to&nbsp;get it to work ... I gave up.&nbsp; Actually, it just is not worth the time spent to download it.&nbsp; I'd rather wait and watch YouTube when I get back to
+ my PC
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> latinhispanicguy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            what is the name of the new flash plug-in? i have a job where i have a lot of down time, so i really need it.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> benjo2020  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I also tried to download adobe flash player, &amp; keep receiving message that my java script is "off" and/or I have an old version of "something", I dont understand. How can I set the java script???
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cortana to replace Windows Speech Recognition &#91;Windows 10 - Microsoft Community</title>
+<h3> m. andries  say:</h3>
+<h2>            Cortana to replace Windows Speech Recognition &#91;Windows 10 Preview&#93;</h2>
+                    <p>Since Windows 7-8.1, I've used Windows Speech Recognition and had to adapt a different manner of speaking in order to effectively use it. Since using my Windows Phone 8.1, I absolutely love how&nbsp;easy it is to converse with Cortana. If that same engine could
+ be applied to Windows desktop OS, I believe it could truly be a high selling point. Also, it would definitely aid in unifying the OS across the various platforms (i.e. desktop, mobile, xbox one).</p>
+<p>
+</p><p>I'm curious about other people's thoughts regarding this...</p>
+<p>
+</p><p>Also, I would love to see it added within the coming months as an update.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    49 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Ronnie Vernon" role="img">
+<h3> ronnie vernon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi</p>
+<p>
+</p><p>There are some solid rumors that Cortana will be added to Windows 10 in the future.</p>
+<p>
+</p><p>The default Speech Recognition component has not been mentioned yet, but it will be available in the Bing Search functions and individual apps for developers to use.</p>
+<p>
+</p><p>I would recommend that you use the Windows 10 TP Feedback app to request this feature to be added.
+</p>
+<p>
+</p><p>
+</p><p>Regards</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronrod606  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I have only tried Cortana a few times. Initially, I&nbsp; was unable to have it recognize my ATR-4750 mic. Now, it hears my voice but only recognizes the sound and not the pronunciation. I have had Dragon for years and they have a voice test/tutorial and I
+ suspect Cortana does also, I just have not yet found it. I am searching for it right now.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davewhitte  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Amen to that.&nbsp; The development group responsible for Microsoft Speech Recognition should be fired immediately.&nbsp; Microsoft really layed an egg with keeping these bureaucrats.&nbsp; The Cortana speech recognition engine is wonderful and even competitive with the
+ google technology, congratulations to these engineers.</p>
+<p>
+</p><p>&nbsp; Down with bloated bureaucracy like this in Microsoft, they have a **** product in "speech recognition" and everyone knows it.&nbsp; Go with the Cortana engineers, up with creative destruction.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronaldbuttarazzi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>no sound and no sound for voice recognition.</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> edgaranderson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            When I dictate, the words that are exhibited are not even close to what I said. How do I open the training?&nbsp;I used Naturally Speaking since ver. 4. How can I open the wizard? Nothing works in speech recognition. Why can't I just&nbsp;learn &nbsp;A, B, C, etc.?
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=personalization_and_ease_of_access">personalization_and_ease_of_access, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Access to Word export - Microsoft Community</title>
+<h3> garynoelrussell  say:</h3>
+<h2>            Access to Word export</h2>
+                    Why is that MS Access Reports don't integrate with MS Word with full formatting.&nbsp; They give an option of an rtf file but this loses out on the formatting. It should export to a docx file.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gina Whipp" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GW"); this.style="display: inline-block";'
+<h3> gina whipp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Unfortunately, that is the way it has always been.&nbsp; You might want to consider a Mail Merge...</p>
+<p><a href="http://kallal.ca/msaccess/msaccess.html" target="_blank" rel="noreferrer nofollow">http://kallal.ca/msaccess/msaccess.html</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I've had to deal with this and made my reports in Access. I provide my users with the RTF export if they need to edit the final. Its rarely used. because there is too much editing.&nbsp;
+<div><br />
+<div>You could export to PDF and convert to Doc.</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Amy Baggott" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "AB"); this.style="display: inline-block";'
+<h3> amy baggott  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It should, but it doesn't.&nbsp; Does the report need to be modified once it is exported?&nbsp; If you're only exporting it so it can be attached to an email, you might be better off exporting it as a PDF.&nbsp; Otherwise, Gina's suggestion of using the query that drives
+ the report as the data source for a Word merge is probably the best idea.
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

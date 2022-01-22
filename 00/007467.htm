@@ -1,0 +1,2288 @@
+    <title>Code compatibility Windows vs. Mac of usual Excel &#47; VBA methods - Microsoft Community</title>
+<h3> andreas killer  say:</h3>
+<h2>            Code compatibility Windows vs. Mac of usual Excel &#47; VBA methods</h2>
+                    <p>Hello,</p>
+<p>
+</p><p>I'm an experienced developer for Office on Windows systems.</p>
+<p>
+</p><p>I have a customer that has a Mac with Office 20016 and he reports a compile error:</p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/68a3ca5d-d13c-497f-be06-1ace26ad41af" /></p>
+<p>
+</p><p>This function is called from within the Worksheet_Change event routine, means the VBA code in general runs.
+<span><span>But</span> what is
+<span><span>But</span> what is
+<span>causing</span> <span>the compiler</span> <span>
+<span>causing</span> <span>the compiler</span> <span>
+error</span><span>?</span></span></p>
+<p>The whole function is below. Thanks for any idea about that.</p>
+<p>Andreas.</p>
+<p>
+</p><p>
+</p><p>Function FindAll(ByVal Where As Range, ByVal What, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal After As Variant, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal LookIn As XlFindLookIn = xlValues, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal LookAt As XlLookAt = xlWhole, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal SearchOrder As XlSearchOrder = xlByRows, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal SearchDirection As XlSearchDirection = xlNext, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal MatchCase As Boolean = False, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal SearchFormat As Boolean = False) As Range<br />
+&nbsp; 'Find all occurrences of What in Where<br />
+&nbsp; Dim FirstAddress As String<br />
+&nbsp; Dim c As Range<br />
+&nbsp; 'From FastUnion:<br />
+&nbsp; Dim Stack As New Collection<br />
+&nbsp; Dim Temp() As Range, Item<br />
+&nbsp; Dim i As Long, j As Long<br />
+<br />
+&nbsp; If Where Is Nothing Then Exit Function<br />
+&nbsp; If SearchDirection = xlNext And IsMissing(After) Then<br />
+&nbsp;&nbsp;&nbsp; 'Set After to the last cell in Where to return the first cell in Where in front if _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; it match What<br />
+&nbsp;&nbsp;&nbsp; Set c = Where.Areas(Where.Areas.Count)<br />
+&nbsp;&nbsp;&nbsp; 'BUG in XL2010: Cells.Count produces a RTE 6 if C is the whole sheet<br />
+&nbsp;&nbsp;&nbsp; 'Set After = C.Cells(C.Cells.Count)<br />
+&nbsp;&nbsp;&nbsp; Set After = c.Cells(c.Rows.Count * CDec(c.Columns.Count))<br />
+&nbsp; End If<br />
+<br />
+&nbsp; Set c = Where.Find(What, After, LookIn, LookAt, SearchOrder, _<br />
+&nbsp;&nbsp;&nbsp; SearchDirection, MatchCase, SearchFormat:=SearchFormat)<br />
+&nbsp; If c Is Nothing Then Exit Function<br />
+<br />
+&nbsp; FirstAddress = c.Address<br />
+&nbsp; Do<br />
+&nbsp;&nbsp;&nbsp; Stack.Add c<br />
+&nbsp;&nbsp;&nbsp; If SearchFormat Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'If you call this function from an UDF and _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; you find only the first cell use this instead<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set c = Where.Find(What, c, LookIn, LookAt, SearchOrder, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SearchDirection, MatchCase, SearchFormat:=SearchFormat)<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If SearchDirection = xlNext Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set c = Where.FindNext(c)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set c = Where.FindPrevious(c)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; 'Can happen if we have merged cells<br />
+&nbsp;&nbsp;&nbsp; If c Is Nothing Then Exit Do<br />
+&nbsp; Loop Until FirstAddress = c.Address<br />
+<br />
+&nbsp; 'FastUnion algorithm © Andreas Killer, 2011:<br />
+&nbsp; 'Get all cells as fragments<br />
+&nbsp; ReDim Temp(0 To Stack.Count - 1)<br />
+&nbsp; i = 0<br />
+&nbsp; For Each Item In Stack<br />
+&nbsp;&nbsp;&nbsp; Set Temp(i) = Item<br />
+&nbsp;&nbsp;&nbsp; i = i + 1<br />
+&nbsp; Next<br />
+&nbsp; 'Combine each fragment with the next one<br />
+&nbsp; j = 1<br />
+&nbsp; Do<br />
+&nbsp;&nbsp;&nbsp; For i = 0 To UBound(Temp) - j Step j * 2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Temp(i) = Union(Temp(i), Temp(i + j))<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; j = j * 2<br />
+&nbsp; Loop Until j &gt; UBound(Temp)<br />
+&nbsp; 'At this point we have all cells in the first fragment<br />
+&nbsp; Set FindAll = Temp(0)<br />
+End Function<br />
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>I'm new to Mac, my apologize if it doesn't help.
+</blockquote>
+<p>I've found the issue, the usual Windows-Code of Excel is <strong>not </strong>
+compatible with Mac.</p>
+<p>
+</p><p>In my special case the function CDec causes this error. Furthermore Range.Find doesn't support the Searchformat argument in Mac.</p>
+<p>
+</p><p>Below is the function that works on Mac.</p>
+<p>
+</p><p>Thanks anyway for your response. Best regards,</p>
+<p>Andreas.</p>
+<p>
+</p><p>Function FindAll(ByVal Where As Range, ByVal What, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal After As Variant, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal LookIn As XlFindLookIn = xlValues, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal LookAt As XlLookAt = xlWhole, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal SearchOrder As XlSearchOrder = xlByRows, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal SearchDirection As XlSearchDirection = xlNext, _<br />
+&nbsp;&nbsp;&nbsp; Optional ByVal MatchCase As Boolean = False) As Range<br />
+&nbsp; 'Find all occurrences of What in Where<br />
+&nbsp; Dim FirstAddress As String<br />
+&nbsp; Dim c As Range<br />
+&nbsp; 'From FastUnion:<br />
+&nbsp; Dim Stack As New Collection<br />
+&nbsp; Dim Temp() As Range, Item<br />
+&nbsp; Dim i As Long, j As Long<br />
+<br />
+&nbsp; If Where Is Nothing Then Exit Function<br />
+&nbsp; If SearchDirection = xlNext And IsMissing(After) Then<br />
+&nbsp;&nbsp;&nbsp; 'Set After to the last cell in Where to return the first cell in Where in front if _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; it match What<br />
+&nbsp;&nbsp;&nbsp; Set c = Where.Areas(Where.Areas.Count)<br />
+&nbsp;&nbsp;&nbsp; If Val(Application.Version) &gt; 11 Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set After = c.Cells(c.Cells.CountLarge)<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set After = c.Cells(c.Cells.Count)<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp; End If<br />
+<br />
+&nbsp; Set c = Where.Find(What, After, LookIn, LookAt, SearchOrder, SearchDirection, MatchCase)<br />
+&nbsp; If c Is Nothing Then Exit Function<br />
+<br />
+&nbsp; FirstAddress = c.Address<br />
+&nbsp; Do<br />
+&nbsp;&nbsp;&nbsp; Stack.Add c<br />
+&nbsp;&nbsp;&nbsp; 'If you call this function from an UDF and _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; you find only the first cell use this instead<br />
+&nbsp;&nbsp;&nbsp; 'Set C = Where.Find(What, C, LookIn, LookAt, SearchOrder, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SearchDirection, MatchCase)<br />
+&nbsp;&nbsp;&nbsp; If SearchDirection = xlNext Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set c = Where.FindNext(c)<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set c = Where.FindPrevious(c)<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; 'Can happen if we have merged cells<br />
+&nbsp;&nbsp;&nbsp; If c Is Nothing Then Exit Do<br />
+&nbsp; Loop Until FirstAddress = c.Address<br />
+<br />
+&nbsp; 'FastUnion algorithm © Andreas Killer, 2011:<br />
+&nbsp; 'Get all cells as fragments<br />
+&nbsp; ReDim Temp(0 To Stack.Count - 1)<br />
+&nbsp; i = 0<br />
+&nbsp; For Each Item In Stack<br />
+&nbsp;&nbsp;&nbsp; Set Temp(i) = Item<br />
+&nbsp;&nbsp;&nbsp; i = i + 1<br />
+&nbsp; Next<br />
+&nbsp; 'Combine each fragment with the next one<br />
+&nbsp; j = 1<br />
+&nbsp; Do<br />
+&nbsp;&nbsp;&nbsp; For i = 0 To UBound(Temp) - j Step j * 2<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set Temp(i) = Union(Temp(i), Temp(i + j))<br />
+&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; j = j * 2<br />
+&nbsp; Loop Until j &gt; UBound(Temp)<br />
+&nbsp; 'At this point we have all cells in the first fragment<br />
+&nbsp; Set FindAll = Temp(0)<br />
+End Function</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I can&#39;t print more than one copy of documents with Word or Excel - Microsoft Community</title>
+<h3> haroldrudisill  say:</h3>
+<h2>            I can&#39;t print more than one copy of documents with Word or Excel 2010 - HP 1200 Laserjet</h2>
+                    I just started up a new Gateway computer with Windows 7 Home Premium.&nbsp; Windows recognized the printer and installed a driver.<br />
+<br />
+I have Word and Excel 2010.&nbsp; No matter what I do, I cannot print more than one copy of a document.<br />
+<br />
+With Adobe Acrobat Viewer, I can print as many copies as I want.&nbsp; Does anyone know where to get a solution?&nbsp; HP on line help says they do not support this printer.&nbsp; The printer works fine and I can still purchase laser cartridges so I want to continue using
+ the printer.<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Anula D&#39;Souza" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> anula d&#39;souza  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>How many computers are connected to the printer?</p>
+<p>Are the other computers able to print the documents?</p>
+<p>Try to change the default printer and check if it helps:</p>
+<p><a href="http://windows.microsoft.com/en-US/windows-vista/Change-your-default-printer" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-US/windows-vista/Change-your-default-printer</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Query is too complex - Microsoft Community</title>
+<h3> john_wood_544  say:</h3>
+<h2>            Query is too complex</h2>
+                    <p>I am working with basketball stats and ACCESS 2013.&nbsp; I am trying to find the total for a 10 game span.&nbsp; It takes me 2 queries to find the number of rebounds for each game.&nbsp; I run a query and have 1269 players with a total for the 10 games.&nbsp; I can tell this
+ running slow, but it easily shows me the totals within 2 minutes.&nbsp; But the top 20 results are just 4 people with their 10 game span, just starting at a different game.&nbsp; C.W. has the top 5 results whether it starts with game 6 or game 11.</p>
+<p>This is a 'good' SQL:</p>
+<p>SELECT<br />
+&nbsp;Most_V_Reb_g10_v1_Query.Player_ID,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.Roster_ID,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.Name,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g1_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g2_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g3_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g4_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g5_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g6_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g7_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g8_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g9_Rb,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g10_Rb,<br />
+&nbsp;Val(Nz([g1_Rb]))+Val(Nz([g2_Rb]))+Val(Nz([g3_Rb]))+Val(Nz([g4_Rb]))+Val(Nz([g5_Rb]))+Val(Nz([g6_Rb]))+Val(Nz([g7_Rb]))+Val(Nz([g8_Rb]))+Val(Nz([g9_Rb]))+Val(Nz([g10_Rb])) AS Tot, Most_V_Reb_g10_v1_Query.Game_ID,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.Season_ID,<br />
+&nbsp;Most_V_Reb_g10_v1_Query.[Game_#],<br />
+&nbsp;Most_V_Reb_g10_v1_Query.g10_Gnum<br />
+<br />
+FROM Most_V_Reb_g10_v1_Query<br />
+<br />
+ORDER BY Val(Nz([g1_Rb]))+Val(Nz([g2_Rb]))+Val(Nz([g3_Rb]))+Val(Nz([g4_Rb]))+Val(Nz([g5_Rb]))+Val(Nz([g6_Rb]))+Val(Nz([g7_Rb]))+Val(Nz([g8_Rb]))+Val(Nz([g9_Rb]))+Val(Nz([g10_Rb])) DESC , Most_V_Reb_g10_v1_Query.Game_ID;</p>
+<p>
+</p><p>When I try to allow only 1 entry per season, I then get an error:&nbsp; 'Query is too complex'</p>
+<p>This is the SQL that is having problems:</p>
+<p>SELECT DISTINCT TOP 30 A.Player_ID, A.Roster_ID, A.Name, A.Tot_Reb AS g1_Rb, B.g2_Rb, B.g3_Rb, F.g4_Rb, F.g5_Rb, F.g6_Rb, F.g7_Rb, F.g8_Rb, F.g9_Rb, F.g10_Rb, F.Tot, A.Game_ID, A.Season_ID, A.[Game_#], F.g10_Gnum<br />
+<br />
+FROM ((Most_V_Reb_2g_v1_Query AS A <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INNER JOIN [Most_V_Reb_3/4g_v2_Query] AS B ON (A.Game_ID = B.Game_ID) AND (A.Roster_ID = B.Roster_ID))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INNER JOIN Most_V_Reb_g10_TOT_v1_Query AS F ON (A.Game_ID = F.Game_ID) AND (A.Roster_ID = F.Roster_ID))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; INNER JOIN (Select Roster_ID, Max(Tot) AS MAX_TOT
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM Most_V_Reb_g10_TOT_v1_Query GROUP BY Roster_ID) AS S<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ON (A.Roster_ID = S.Roster_ID) AND (F.Tot = S.MAX_TOT)<br />
+<br />
+ORDER BY 14 DESC , 15;</p>
+<p>I tried using Query A since that was the original that I used for the first games rebounds, and much of that data was carried thru on the 20 other queries.</p>
+<p>I ran into the same problem when I ran everything just from F instead of using A and C, except this seemed to go further before the error showed.</p>
+<p>Any ideas (meaning solutions) would be greatly appreciated.&nbsp; I'm sorry if that appears cynical.&nbsp; I appreciate ideas that help correct the problem, not somebody telling me I have a problem, or your queries should be written differently.&nbsp; How should they be
+ re-written.</p>
+<p>I ran 5 game span and it seems to work fine.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john_wood_544  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Even saving the query takes a long time - about a minute. <br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="QA Guy CommElec" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "QG"); this.style="display: inline-block";'
+<h3> qa guy commelec  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><strong>&nbsp;Most_V_Reb_g10_v1_Query.g1_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g2_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g3_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g4_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g5_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g6_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g7_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g8_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g9_Rb,</strong><br />
+<strong>&nbsp;Most_V_Reb_g10_v1_Query.g10_Rb</strong>,</p>
+<p>
+</p><p>These fields need to be <strong>separate RECORDS</strong>!&nbsp;&nbsp; When you chain queries together Access treat them as one big &amp; long query.</p>
+<p>
+</p><p>What is the structure of your base table where the data is stored?</p>
+<p>
+</p><p>Post the SQL of Most_V_Reb_g10_v1_Query.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What do your tables look like?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john_wood_544  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I made my query that had the 10 games and their total into a Table, using the Make Table option for queries.&nbsp; I was then able to make a new query using my new table and INNER JOIN with Roster_ID and MAX(Tot) and it ran quickly (and I believe correctly).</p>
+<p>By making the new table, it appears to have the numbers available without going thru the extended processing that my queries were doing.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john_wood_544  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I'm thinking that it is easy to 'update' my new table by just re-running my 'first' query with the totals.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="QA Guy CommElec" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "QG"); this.style="display: inline-block";'
+<h3> qa guy commelec  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>As Scott&nbsp;and I asked&nbsp;-- What do your tables look like? </p>
+<p>
+</p><p>It appears your table structure is wrong - having a field per game instead of record per game.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john_wood_544  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>What is the best way for me to show you the design of my tables?</p>
+<p>Do I need put each table design on EXCEL and then copy it to WORD?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="QA Guy CommElec" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "QG"); this.style="display: inline-block";'
+<h3> qa guy commelec  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Type in a response like this --</p>
+<p>table - SomeName</p>
+<p>field - Xyz - text</p>
+<p>field - Abc - number long integer</p>
+<p>field&nbsp; - Opk memo</p>
+<p>
+</p><p>table - OtherName</p>
+<p>field -&nbsp;Fro - text</p>
+<p>field -&nbsp;Rty - number currency </p>
+<p>field&nbsp; -&nbsp;Hud text</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> john_wood_544  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Can I copy and paste from EXCEL or WORD?</p>
+<p>I guess I can.&nbsp; This is the first table copied from EXCEL.</p>
+<p>
+<table>
+<tbody>
+<tr>
+<td colspan="2">Game_Stats Table</td>
+</tr>
+<tr>
+<td>
+</td><td>
+</td></tr>
+<tr>
+<td>GS_ID</td>
+<td>AutoNumber</td>
+</tr>
+<tr>
+<td>Game_ID</td>
+<td>Short Text</td>
+</tr>
+<tr>
+<td>Roster_ID</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Game_Played</td>
+<td>Yes/No</td>
+</tr>
+<tr>
+<td>Start</td>
+<td>Yes/No</td>
+</tr>
+<tr>
+<td>Quarters</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Minutes</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Seconds</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Baskets_Made</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Baskets_Attempted</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Field_Goals_Made</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Field_Goals_Attempted</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>3pt_Baskets</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>3pt_Attempts</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Free_Throws_Made</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Free_Throws_Attempted</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Points</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Cal_Pts_1</td>
+<td>Calculated</td>
+</tr>
+<tr>
+<td>Cal_Pts_2</td>
+<td>Calculated</td>
+</tr>
+<tr>
+<td>Offensive_Rebounds</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Defensive_Rebounds</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Unknown_Rebounds</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Assists</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Steals</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Blocked_Shots</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Turn_Overs</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Personal_Fouls</td>
+<td>Number</td>
+</tr>
+<tr>
+<td>Fouled_Out</td>
+<td>Yes/No</td>
+</tr>
+</tbody>
+</table>
+</p><p>And a second table - typed in EXCEL copied to WORD and now here</p>
+<table>
+<tbody>
+<tr>
+<td colspan="2">Games Table </td>
+</tr>
+<tr>
+<td>
+</td><td>
+</td></tr>
+<tr>
+<td>Game_ID </td>
+<td>Short Text </td>
+</tr>
+<tr>
+<td>Season_ID </td>
+<td>Short Text </td>
+</tr>
+<tr>
+<td>Skill_Level </td>
+<td>Short Text ComboBox </td>
+</tr>
+<tr>
+<td>Game_# </td>
+<td>Number </td>
+</tr>
+<tr>
+<td>Game_Date </td>
+<td>Date/Time </td>
+</tr>
+<tr>
+<td>Home_Away </td>
+<td>Short Text ComboBox </td>
+</tr>
+<tr>
+<td>Opponent </td>
+<td>Short Text </td>
+</tr>
+<tr>
+<td>Marion_Score </td>
+<td>Number </td>
+</tr>
+<tr>
+<td>Opponent_Score </td>
+<td>Number </td>
+</tr>
+<tr>
+<td>Overtimes </td>
+<td>Number </td>
+</tr>
+<tr>
+<td>Forfeit </td>
+<td>Yes/No </td>
+</tr>
+<tr>
+<td>County_Game </td>
+<td>Yes/No </td>
+</tr>
+<tr>
+<td>Conference_Game </td>
+<td>Yes/No </td>
+</tr>
+<tr>
+<td>State_tourney </td>
+<td>Yes/No </td>
+</tr>
+<tr>
+<td>Tourney_level </td>
+<td>Short Text ComboBox </td>
+</tr>
+<tr>
+<td>#_Tourney_Level </td>
+<td>Calculated </td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+I have 3/5 other tables that I will send hopefully tomorrow.<br />
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="QA Guy CommElec" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "QG"); this.style="display: inline-block";'
+<h3> qa guy commelec  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Now post the SQL of &nbsp;Most_V_Reb_g10_v1_Query.&nbsp;&nbsp;&nbsp;&nbsp; </p>
+<p>
+</p><p>Where does data for &nbsp;Most_V_Reb_g10_v1_Query.Name come from as I do not see a 'Name' field in thetables you posted?</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Age verification - Microsoft Community</title>
+<h3> lmakbfg  say:</h3>
+<h2>            Age verification</h2>
+                    Hello, I keep being told that I need my parents to confirm my age but I'm 41 and that seems a little excessive! I don't particularly see why I as an adult should have to hand over personal info like my credit card or id to prove who I am, given that I've
+ been happily using microsoft services since the early 1990s! Is this a scam?&nbsp; The url that I keep getting sent to is account.live.com which doesn't look particularly trustworthy.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> yohandicrespo  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello my name is Yohandi
+<br />
+<br />It is a pleasure to have your participation in the Microsoft Community.
+<br />
+<br />I recommend that you check the information that appears in the link below related to Age verification for parental consent in Outlook.
+<br />
+<br />Age verification for parental consent
+<br /><a href="https://support.microsoft.com/en-us/help/4090292/microsoft-account-age-verification-for-parental-consent" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-us/help/409029...</a>
+<br />
+<br />I wish you an excellent day! ;)
+<br />
+<br />I hope it works for you       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Printing emails sent on behalf of another individual - Microsoft Community</title>
+<h3> andrew binne  say:</h3>
+<h2>            Printing emails sent on behalf of another individual</h2>
+                    One of my clients is having an issue with printing emails, and the name shown in the from field.
+<br />
+<br />
+My client, John, is using Outlook 2007, in Windows 7, and has two pop3 email accounts set up in his profile; his email account, and Jane's email account. John is set up with the ability to send email on behalf of Jane.
+<br />
+<br />
+Sending email is OK, however when John goes to print off an email (from sent items) that was sent on behalf of Jane, the printed email shows John's name at the top of the printed email, not Jane.
+<br />
+<br />
+John informs me that this is only a recent development, but I am stumped as to the cause, and how to fix it. Any advice would help.
+<br />
+<br />
+Thanks. <br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Pollardie" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "PO"); this.style="display: inline-block";'
+<h3> pollardie  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>Unfortunately I did not set up the email accounts, or the send on behalf feature, so I am unfamiliar with the steps that were taken.
+<br />
+</blockquote>
+AFAIK On behalf of is exchange type feature... Contact the IT team and remove it. then send couple of emails and print to see what happens...<br />
+<br />
+You can hide the information from header and then try to print: <a href="http://support.microsoft.com/kb/2301453" target="_blank" rel="noreferrer nofollow">
+http://support.microsoft.com/kb/2301453</a><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to force insider 14942 to update - Microsoft Community</title>
+<h3> robj w  say:</h3>
+<h2>            How to force insider 14942 to update</h2>
+                    <p>I received the 14942 update, </p>
+<p>Had a problem rolled back to previous that went ok, </p>
+<p>Thought I fixed the problem.</p>
+<p>Updated again...found another problem, would not rollback.</p>
+<p>Went via Recovery, Go to earlier build, that went ok. 1607 14936.1000</p>
+<p>All appears fine and resolved..</p>
+<p>
+</p><p>Windows will not update/find 14942.</p>
+<p>What procedure is required to move forward.</p>
+<p>Thanks</p>
+<p>Rob</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Right click Start, click on Run and enter regedit and hit enter.&nbsp; This takes you to the registry.<br />
+<br />
+Navigate to Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\WindowsSelfHost\Applicability<br />
+<br />
+Under EnablePreviewBuild change the Dword to 2<br />
+<br />
+Also if under Applicability there is RecoveredFrom.&nbsp; You will find a build number.&nbsp; Change the Dword to 0<br />
+<br />
+Then get out, reboot, and go to Settings, Updates, Check for updates.<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="lacrumb" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "LA"); this.style="display: inline-block";'
+<h3> lacrumb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>It has been a while.&nbsp; You are lucky that U remembered.&nbsp; I have a lot of these little things on a USB stick and use Note Pad to copy them.</p>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook will not send emails with attachments larger than 2mb - Microsoft Community</title>
+<h3> gettingfedupwithmicrosoft  say:</h3>
+<h2>            Outlook will not send emails with attachments larger than 2mb</h2>
+                    
+<p>I have already taken this up with my ISP and they claim it is not a connectivity or network problem, so they suggested contacting Microsoft.</p>
+<p>&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> niranjan i k  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Check for solutions provided in the thread below, that speaks about the same issue:</span></p>
+<p><span><a href="http://social.answers.microsoft.com/Forums/en-US/outlooksend/thread/8da64f2d-1c6e-4c96-be3f-1e96ee206035" target="_blank" rel="noreferrer nofollow"><span>http://social.answers.microsoft.com/Forums/en-US/outlooksend/thread/8da64f2d-1c6e-4c96-be3f-1e96ee206035</span></a></span></p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Antivirus or account time out is the usual cause. What Antivirus do you use and does it scan outgoing email?
+<hr />
+<br />
+Diane Poremsky [MVP - Outlook]<br />
+<a href="http://www.outlook-tips.net/" target="_blank" rel="noreferrer nofollow">Outlook Daily Tips</a> | <a href="http://www.slipstick.com" target="_blank" rel="noreferrer nofollow">
+Outlook &amp; Exchange Solutions Center</a><br />
+Exchange Messaging Outlook weekly newsletter <br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>where do I read my mail on hotmail - Microsoft Community</title>
+<h3> lainsaynickemhome  say:</h3>
+<h2>            where do I read my mail on hotmail</h2>
+                    I do not see where I can read my mail..?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Go to Outlook.com and login with your username and password.</p>
+<p>Then from your Inbox you can open messages and read them.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>can&#39;t get my cross references to stay in superscript format&#63; - Microsoft Community</title>
+<h3> darrenloo  say:</h3>
+<h2>            can&#39;t get my cross references to stay in superscript format&#63; even after editing field to insert reference mark.</h2>
+                    Whilst doing my dissertation I find myself continuously reformatting cross-references as word seems to forget my request for superscript and keeps unsuperscripting itself.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Okay, you're inserting a cross-reference to an endnote. So you're using References | Captions | to Endnote. Instead of selecting "Endnote number" and then applying superscript formatting, select "Endnote number (formatted)." This assumes that the Endnote
+ Reference character style is defined as "Default Paragraph Font + Superscript."</p>
+<p>&nbsp;</p>
+<p>If you're referring to the article at <span>
+<a href="http://word.mvps.org/faqs/formatting/FootnoteFAQContent.htm#TextAfterNotes" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://word.mvps.org/faqs/formatting/FootnoteFAQContent.htm#TextAfterNotes</font></a>, I don't know of a better explanation, though this
+ article has not been updated for Ribbon versions of Word. To insert a section break, use Page Layout | Page Setup | Breaks | Section Breaks | Next Page.</span></p>
+<p>&nbsp;</p>
+<p><span>Then access the endnotes dialog by clicking the dialog launcher (the small arrow in the bottom right corner) in the Footnotes group on the References tab. Select the Endnotes radio button and choose "End of
+ section" instead of "End of document." Leave the other settings as selected and click Apply.</span></p>
+<p>&nbsp;</p>
+<p><span>To suppress the endnotes, access the Page Setup dialog by clicking the dialog launcher in the Page Setup group of the Page Layout tab. On the Layout tab, you can check the box for "Suppress endnotes" with "Whole
+ document" selected for "Apply to," then go to the next-to-last section (the one after which you want the endnotes to appear), select "This section" for "Apply to," and clear the check box.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Suddenly changing playback speed on both music and podcast - Microsoft Community</title>
+<h3> rasmuslaage kring  say:</h3>
+<h2>            Suddenly changing playback speed on both music and podcast</h2>
+                    <p>I have an issue with playback speed on my Windows Phone. First the specs:</p>
+<p>
+</p><p>Model: SAMSUNG GT-I8750</p>
+<p>Software: Windows Phone 8.1 Update</p>
+<p>All software is up to date.</p>
+<p>
+</p><p>I often listen to either music (Spotify) and podcasts on my phone. Usually this works with no issues but at time the playback speed is changed. These changes go across both music and podcast. My guess is that the playback speed is changed to 1.50. It doesn't
+ make the sound unbearable but it is still very annoying. Usually this issue goes away when I don't use the phone for a couple of hours or when I reboot it. But this time I have tried rebooting several times and it still won't go away.</p>
+<p>
+</p><p>I don't see an option to change playback speed in any of my apps or on the phone in general, so my conclusion if that this is not happening because of something I did. I also have no apps installed that allows me to do this.</p>
+<p>
+</p><p>In short I would very much like to know, what is causing my phone to do this and possibly how to stop it.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jg2yang1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <a href="https://answers.microsoft.com/en-us/profile/97e232f3-275e-4fc9-bf8e-571ed9fc4a07" title="RasmusLaage Kring">
+RasmusLaage Kring</a>. Thank you for posting on the community. We really cannot say if it's a software of hardware related issue. What we could recommend is contacting your phone manufacturer for resets that you can try on your phone. We look forward to your
+ reply.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rasmuslaage kring  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It took for than two months to get a generic answer. That is quite simply not impressive; Actually, it is completely useless.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jg2yang1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <a href="https://answers.microsoft.com/en-us/profile/97e232f3-275e-4fc9-bf8e-571ed9fc4a07" title="RasmusLaage Kring">
+RasmusLaage Kring</a>. We do understand where you are coming from. However, as of the moment we really cannot say if this is a software or hardware related issue. Doing a reset will help us isolate what is causing this to happen. But before doing that, we'd
+ suggest contacting your phone manufacturer to see if they have other recommendations aside from doing a reset. We look forward to your reply.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=other_windows_mobile_devices">other_windows_mobile_devices, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+<a href="/search?q=windows_phone_8">windows_phone_8, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Series Lines - Microsoft Community</title>
+<h3> montana_x  say:</h3>
+<h2>            Series Lines</h2>
+                    <p>I want to apply&nbsp; Series Lines between chart columns, but I only want one line between each columns. Is is possible to apply a single line between series? PowerPoint by default applies two lines and both lines need to be formatted the same.&nbsp;Other than manually
+ drawing the lines, is there another option?</p>
+<p>&nbsp;</p>
+<p>Thank you!</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="rich007a" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "RI"); this.style="display: inline-block";'
+<h3> rich007a  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>If I understand your question correctly, you are using a Stacked Column chart?</p>
+<p>If you add Series Lines, there will be one line per series between each column.&nbsp; If you only want one line (at the top?) you'd need to have only one series.</p>
+<p>But what you could do is add an extra series who's columns are the height of the sum of the other series...&nbsp; Then you can move the new series to the secondary axis, then with that series selected apply Series Lines to the chart.&nbsp; You can then format the
+ line and fill formatting for the new series to no fill/line to hide it, then delete the legend entry by clicking once, then once again on the legend entry and then pressing delete.</p>
+<p>Make sense?</p>
+<p>Cheers<br />
+Rich</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to talk to team of skype &#63;iam blind and find much diffcult in - Microsoft Community</title>
+<h3> saraahmed1  say:</h3>
+<h2>            how to talk to team of skype &#63;iam blind and find much diffcult in new version of skype for computer .i want skype team let classic skype work for us and not stop working of classic skype for computer</h2>
+                    <p>
+</p><p>how to talk to team of skype ?iam blind and find much diffcult in new version of skype for computer .i want skype team let classic skype work for us and not stop working of classic skype for computer it much diffcult&nbsp;&nbsp; for blind people .classic skype is
+ much important for blind people</p>
+<p>&nbsp;how to talk to team of skype ?iam blind and find much diffcult in new version of skype for computer .i want skype team let classic skype work for us and not stop working of classic skype for computer it much diffcult&nbsp;&nbsp; for blind people</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> stefenhudson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Are you using JAWS&nbsp; or NVDA? If JAWS, you can find scripts at:</p>
+<p>http://www.dlee.org/skype/electron</p>
+<p>If NVDA, you can find an addon at:</p>
+<p>http://www.dlee.org/skype/electron/skype.nvda-addon</p>
+<p>
+</p><p>Since Skype 8 seems to have many, many problems at this point, I'd recommend holding off on using it for now and going back to Skype 7. You can download that here.</p>
+<div><a href="http://go.skype.com/classic.skype" target="_blank" rel="noreferrer nofollow">http://go.skype.com/classic.skype</a>
+<p>
+</p><p>Just uninstall Skype 8 before installing Skype 7 to avoid any craziness.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> josephv_a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/e4071a50-bdeb-485b-86b1-a7af8cb65175" title="saraahmed1">
+<p>
+</p><p>
+</p><p>Thank you for reaching out to us and for your feedback. We will definitely have this raised&nbsp;with our developers.
+</p>
+<p>
+</p><p>We currently do not have phone support. However, if you wish to be assisted real-time, kindly get in touch with our live chat support:
+<a href="https://support.microsoft.com/en-gb/contactus/skype/" target="_blank" rel="noreferrer nofollow">
+Contact Skype Support</a></p>
+<p>
+</p><p>
+</p><p>Regards, </p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_skype_for_windows_desktop">&#40;archived&#41;_skype_for_windows_desktop, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+<a href="/search?q=download,_install_and_upgrade">download,_install_and_upgrade, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to install without a connection to the internet&#63; - Need an - Microsoft Community</title>
+<h3> toqu  say:</h3>
+<h2>            how to install without a connection to the internet&#63; - Need an offline installer for Internet Explorer</h2>
+                    OK so I had to delete a corrupted version on my old desktop running XP Pro and now I have no direct link to the internet from that computer.&nbsp; Flummoxed.&nbsp; Can I download a copy thru my Vista laptop which is able to connect (via IE)?&nbsp; My ideas are&nbsp;to 1)
+ maybe save the download to a CD&nbsp;which I can&nbsp;load onto my desktop?&nbsp; Or 2) use some creative cabling to get these 2 computers linked up&nbsp;during a download so I can download&nbsp;indirectly to the&nbsp;desktop.&nbsp; A USB&nbsp;cable between the 2 doesnt seem to allow the computers
+ to see each other.&nbsp; But I am new at this and don't know what to look for.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Joelsbraun" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> joelsbraun  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Here's a link to an offline install package for internet explorer 8. Download and transfer to the pc and install.</p>
+<p>http://download.microsoft.com/download/C/C/0/CC0BD555-33DD-411E-936B-73AC6F95AE11/IE8-WindowsXP-x86-ENU.exe</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="PA Bear - MS MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "PB"); this.style="display: inline-block";'
+<h3> pa bear - ms mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>I had to delete a corrupted version on my old desktop running XP Pro and now I have no direct link to the internet from that computer.</blockquote>
+<p><br />
+You had to delete a corrupted version of what and how did you delete it?</p>
+<p>Is WinXP SP3 installed on the computer?</p>
+<hr />
+~Robear Dyer (PA Bear) ~ MS MVP (IE, Mail, Security, Windows &amp; Update Services) since 2002 ~ Disclaimer: MS MVPs neither represent nor work for Microsoft
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Looking for a simple solution for sharing an Access Database between - Microsoft Community</title>
+<h3> marlinp  say:</h3>
+<h2>            Looking for a simple solution for sharing an Access Database between two offices.</h2>
+                    
+<div>
+<div>
+<p>We are trying to share a Microsoft Access database between two offices in different Cities.&nbsp; (One Vista and Access 2007, the other XP SP@ with Access 2002) We have recently changed from an Excel sheet that we stored on Office Live.&nbsp; Office Live does not
+ support Database applications.&nbsp; The file is slightly smaller than 50mb now but will grow to larger than 50mb very soon so Sky-Drive is out.&nbsp; Would like to store data at a hosted website or cloud with ability for each office to open, edit, develop and print
+ reports locally and to save a copy on the local computer to use off-line as reference, updating the main file only weekly or so.&nbsp; Having trouble figuring out best solution.&nbsp; Mesh and Sync do not seem to be solution as they will constantly be trying to update
+ each other.&nbsp; Any ideas on a possible solution??</p>
+<p>Thanks for any assistance.</p>
+</div>
+</div>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Albert D. Kallal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> albert d. kallal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span><span>You have a number of options here, first of all when you say&nbsp;50 MB. If that amount&nbsp;after you split your database, and then do a compact + repair? Then&nbsp;how large is
+ the data file?<span>&nbsp; </span></span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>I ask the above since while the office live does not support linked access tables for shareing data, Ofifce Live small Business DOES support linked tables, and it still
+ free. (I think the 1st 500 megs is free).</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>So don’t confuse office live and office live small business.<span>&nbsp; Keep in mind that offive live small business (OLSB)&nbsp;</span>does not work well fo large
+ tables with access 2007. And this solution&nbsp;does not&nbsp;work well if your application has lots of related tables. Because of these limitations&nbsp;that is why I asked for&nbsp;some general numbers such as how large is your data file when you split the application. And,
+ what is the number of rows in the largest table?</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>So, keep in mind that office lives small business does support Access Data as linked tables being shared in different locations or even different cities.
+</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>However, it does not not work well for very large files. There a great demo here</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><a href="http://office.microsoft.com/en-us/access/HA101672561033.aspx" target="_blank" rel="noreferrer nofollow"><span>http://office.microsoft.com/en-us/access/HA101672561033.aspx</span></a></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>(right now, the office.microsoft.com sites have not been working for a few days, I not sure if they the above site is going to come back, but the above link is a great
+ demo on using office live small business with access). Why those links are down right now is strange, so try the above in a day or so, as the article + demo is worth watching.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>So one free way to consider is to use OLSB.&nbsp;It does allow multiple uses in different locations to actually share data live with linked tables to the offive live small
+ business site. And this means you don’t have to have a convoluted file transfer type system, you’re simply sharing live data at all times.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>If your application has a lot of related tables or the table sizes tend to be in excess of 5000 rows, then office live with 2007 probably will not perform very well.
+ For access&nbsp;2010 performance is REALLY good, but it is un-known at this time if OLSB will support 2010 performance enhancements.
+</span></span></p>
+<p><span><span>Another great&nbsp;solution to consider is using SQL server for the backend. You can set up one of the many several free editions of sql server.<span>&nbsp;
+</span>This solution would also allow users in different locations to connect to that data OVER the internet&nbsp;even when the applications installed on their desktop. You have to setup a VPN to accomplish this, but it works well.</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Another solution that I’m actually using for several of my clients is using a web hosting package that supports connections to SQL server.
+<span>&nbsp;</span>Normally the connections to SQL server are reserved for uploading data that the websites going to use.<span>&nbsp;
+</span>However for those web hosting providers that allow this ODBC type of connection, it also means you can get very low cost distributed computing and simply can install the access front end on any computer. With that conneciton, they are sharing data live.
+ These low cost web providers can be had for a few dollars per month. I am doing this now wtih great success for a good number of clients.</span></span></p>
+<p><span><span>I also have an article that outlines some additonal&nbsp;possibilities and ways to work with data over the Internet here:</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><a href="http://www.members.shaw.ca/AlbertKallal/Wan/Wans.html" target="_blank" rel="noreferrer nofollow"><span>http://www.members.shaw.ca/AlbertKallal//Wan/Wans.html</span></a></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Albert D. Kallal<span>&nbsp;
+</span>(Access MVP)</span></span></p>
+<p><span><span>Edmonton, Alberta Canada</span></span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 for Mac Shortcuts - Microsoft Community</title>
+<h3> stormy girl  say:</h3>
+<h2>            Outlook 2016 for Mac Shortcuts</h2>
+                    I'm trying to find as many Outlook for Mac keyboard shortcuts as possible. I use Windows version and like to use things like shift del to permanently delete. Is there a list somewhere online? Other shortcuts I like are quick steps and anything really that's
+ a great time saver. I know quick steps aren't available but is there an alternative e.g macros etc? I just want a list of cool features please like sharing folders with other users etc! Hope you can help. Thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Alison Wang MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "AW"); this.style="display: inline-block";'
+<h3> alison wang msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi Stormy Girl,</span></p>
+<p>
+</p><p><span>Here is an article for your reference:</span></p>
+<p>
+</p><p><span><span><a href="https://support.office.com/en-us/article/Keyboard-shortcuts-for-Outlook-2016-for-Mac-07ae68c8-b7af-4010-b225-324c04ac7335?ui=en-US&amp;rs=en-US&amp;ad=US" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Keyboard-shortcuts-for-Outlook-2016-for-Mac-07ae68c8-b7af-4010-b225-324c04ac7335?ui=en-US&amp;rs=en-US&amp;ad=US</a></span></span></p>
+<p>
+</p><p><span>Moreover, I found an article about the method of creating a custom keyboard shortcut.</span></p>
+<p>
+</p><p><span><a href="https://support.office.com/en-us/article/Create-a-custom-keyboard-shortcut-for-Office-2016-for-Mac-6bbeb90e-96d9-4e03-b199-fc026ebdc321" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Create-a-custom-keyboard-shortcut-for-Office-2016-for-Mac-6bbeb90e-96d9-4e03-b199-fc026ebdc321</a></span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Alison</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Sorting by date automatically - Microsoft Community</title>
+<h3> kyleworthy21  say:</h3>
+<h2>            Sorting by date automatically</h2>
+                    <p>Hello, I am new to Macros and unfamiliar with certain functions.</p>
+<p>
+</p><p>I have a list of names (Column A), and a list of dates&nbsp;(Column C)&nbsp;associated with those names in a separate column, same row.</p>
+<p>There is also 4 rows of headers before beginning the data.</p>
+<p>
+</p><p>I change the dates that are associated with those names and sort them from Oldest to newest.
+</p>
+<p>
+</p><p>I would like my changes to be reflected automatically and sorted&nbsp;every time I enter in new data.</p>
+<p>
+</p><p>I have no idea how to use a macro to accomplish this. </p>
+<p>
+</p><p>Thank You</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Automatically would mean VBA.</p>
+<p>
+</p><p>I do not recommend auto-sorting.</p>
+<p>
+</p><p>If an incorrect entry is made it will be hard to find after an autosort sort has taken place.</p>
+<p>
+</p><p>Enter your data, check it twice then do your sort using Data&gt;Sort</p>
+<p>
+</p><p>
+</p><p>Gord</p>
+<p>
+</p><p>
+</p><p><br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kyleworthy21  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><blockquote>
+<p>I do not recommend auto-sorting.</p>
+</blockquote>
+<p>No offense, but I'm not looking for a recommendation. Just a code</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kyleworthy21  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Figured it Out</p>
+<p>
+</p><p>Private Sub Worksheet_Change(ByVal Target As Range)<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; Range("C4").Sort Key1:=Range("C467"), _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Order1:=xlAscending, Header:=xlYes, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OrderCustom:=1, MatchCase:=False, _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Orientation:=xlTopToBottom<br />
+End Sub</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No offense taken.</p>
+<p>
+</p><p>Gord</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Deleting outlook templates - Microsoft Community</title>
+<h3> paulbeale  say:</h3>
+<h2>            Deleting outlook templates</h2>
+                    I have created outlook email templates and saved them to the desktop. I cannot now however delete them. When I right click and select delete the computer the dialogue box show s "preparing to recycle...." and " discovering items.
+<div><br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Deepa Raj" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> deepa raj  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>Does this issue occur while only deleting the email templates saved on the desktop? You may try to empty the recycle bin and then try deleting the template to check if &nbsp;it helps.</div>
+<div>&nbsp;</div>
+<div>Are you able to delete other files from the desktop or from&nbsp;other locations, Verify if you can delete the temp files, Click on Start &gt; All Programs &gt; Accessories &gt; Run &gt; %temp% hit on Enter.</div>
+<div>&nbsp;</div>
+<div>If you get the same message ‘preparing to recycle’, you may also consider posting your question on the Windows forums.</div>
+<div><a href="http://answers.microsoft.com/en-us/windows/forum/performance">http://answers.microsoft.com/en-us/windows/forum/performance</a></div>
+<div>&nbsp;</div>
+<p>​</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Maps 3.6 update has taken all my memory - Microsoft Community</title>
+<h3> spamthroat  say:</h3>
+<h2>            Maps 3.6 update has taken all my memory</h2>
+                    Before I installed the update there was 17MB free in the phone memory. Now after there is 1.4MB.<br />
+<br />
+Where has it all gone?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aspergerguy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Had you previously updated maps application on device from that pre-installed in device firmware?</p>
+<p>&nbsp;</p>
+<p>You might find that you need to apply v3.06 to a freshly formatted device.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> spamthroat  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I did think of that or something similar. I noticed on ovi suite there is an option to reinstall the system software. Might give it a go if a simplier answer is not found. Also the update is listed in the log as 3.6 but all the other posts here are for
+ 3.06 are we talking the same thing?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aspergerguy  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&nbsp;</p>
+<blockquote>
+<hr />
+spamthroat wrote:<br />
+Also the update is listed in the log as 3.6 but all the other posts here are for 3.06 are we talking the same thing?
+<hr />
+</blockquote>
+<p>Correct, the successor to OVI Maps &nbsp;v3.04 is v3.06.</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> spamthroat  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            So why the 3.6 / 3.06 difference then?<br />
+<br />
+Also I have no problem installing a third party file browser and go deleting things from the system directories if I know it is safe.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How can I prepare my Hotmail account before travelling overseas&#63; - Microsoft Community</title>
+<h3> trk80  say:</h3>
+<h2>            How can I prepare my Hotmail account before travelling overseas&#63;</h2>
+                    <p>* Original Title: Hotmail in Europe</p>
+<p>
+</p><p>How can I prepare my Hotmail account before travelling overseas?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JMH3143" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmh3143  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Re travelling...</p>
+<p>
+</p><p>
+</p><div>
+<p><span style="color: rgba(77, 77, 77, 1)">We have recently implemented a security update called Familiar location protection to keep our customers’ accounts secure.
+</span></p>
+<p><span style="color: rgba(77, 77, 77, 1)">The message "You haven't signed in from this location recently." will occur if you are signing in from a location
+<strong>more than 300 miles from your normal location. </strong></span></p>
+<p><span style="color: rgba(77, 77, 77, 1)">The Microsoft account service will prompt you for an additional challenge to complete the log in.
+</span></p>
+<p><span style="color: rgba(77, 77, 77, 1)"><strong>A code can be sent to your SMS number or alternate email if configured.</strong></span></p>
+<p>
+</p><p><strong>To prevent this you will need to configure your computer as your trusted PC and other security information for added protection to your account.</strong></p>
+<p>
+</p><p>With the new system update, you can remove old inaccessible security information on your account automatically after 30 days.
+</p>
+<p>To do that:</p>
+<p>
+</p><p>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Log in to this<span>&nbsp;</span><a href="https://account.live.com/proofs/Manage" target="_blank" rel="noreferrer nofollow"><strong>link</strong></a>. &nbsp;</p>
+<p>2.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Click<span>&nbsp;</span><strong>Delete</strong><span>&nbsp;</span>on the security information you do not have access to. (Alternate email, Trusted PC, Mobile number)</p>
+<p>3.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Select&nbsp; "<strong>No, I Don't have access</strong>" button. (The date on when the security information will be removed will appear )</p>
+<p>4.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Click<span>&nbsp;</span><strong>Delete Security Info</strong>.</p>
+<p>5.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Update the account with new Security Info.</p>
+<p>6.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Click<span>&nbsp;</span><strong>Save</strong>.</p>
+<p>
+</p><div><span style="text-decoration-line: underline">You just need to wait for 30 days for all the information to be removed and the new security information to be automatically confirmed.</span></div>
+<p>{ Text courtesy of Ann_N }</p>
+<p>
+</p><p class="contentHeader2">
+</p><p class="contentHeader2"><strong>(B)</strong></p>
+<p><span><strong>Please note that all </strong><strong>account related issues are now dealt with</strong></span><strong><span>&nbsp;
+</span><a href="http://windows.microsoft.com/en-US/windows-live/id-support" target="_blank" rel="noreferrer nofollow">here</a><br />
+</strong>Select the error you need help with and fill out the requested details on the next page.&nbsp;
+<br />
+<span>You can read further information about <strong>blocked accounts</strong><span>&nbsp;</span></span><strong><a href="http://windows.microsoft.com/en-us/windows/outlook/account-temporarily-blocked" target="_blank" rel="noreferrer nofollow">here</a></strong></p>
+You need to be signed in with a Microsoft account to access the form. <strong><br />
+</strong><span><strong>If you are unable to access your primary account, you can use an alternate account (if you have one) or create a new one</strong></span><strong>.</strong></p>
+<p>
+</p><p class="contentHeader2"><strong>(C)</strong></p>
+For more information about your security details,refer this <span style="color: rgba(69, 69, 69, 1)">
+<a href="http://windows.microsoft.com/en-us/windows-live/account-security-password-information#" target="_blank" rel="noreferrer nofollow"><strong>link.
+</strong></a></span></div>
+<p>
+</p><p />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Understanding One Note - Microsoft Community</title>
+<h3> joycecundiff  say:</h3>
+<h2>            Understanding One Note</h2>
+                    <p>I have a question: Is One Note - since it can sync - a storage like ICloud or OneDrive? Does it take up space on my Computer?&nbsp;</p>
+<p>I ask because I am a med student with LOTS of schooling documents that need to be stored for future references. Can I transfer these files to a storage, so that I can have more space (if the 1st above question = NO ) . Does that make sense?&nbsp;</p>
+<p>
+</p><p>Thanks!&nbsp;</p>
+<p>Joyce&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ben M. Schorr -bschorr" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "BM"); this.style="display: inline-block";'
+<h3> ben m. schorr -bschorr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>No, it's not the same as OneDrive. OneNote is for note-taking, gathering ideas, collecting research, collaborating on those notes with others. You CAN embed files but that's not really it's primary purpose.</p>
+<p>
+</p><p>And yes, it will use some space on your computer.</p>
+<p>
+</p><p>For storing schooling documents I'd use OneDrive.</p>
+<p>For taking notse on those documents I'd use OneNote.</p>
+<p>
+</p><p>This might help as well:&nbsp;<a href="https://support.office.com/en-us/article/Basic-tasks-in-OneNote-2016-for-Windows-2eee07df-9f05-4d5f-9806-afcadb2d80b9" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/Basic-tasks-in-OneNote-2016-for-Windows-2eee07df-9f05-4d5f-9806-afcadb2d80b9&nbsp;</a></p>
+<p>
+</p><p>Does that help?</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>WM6 Outook and IMAP mail servers - Microsoft Community</title>
+<h3> phil3099  say:</h3>
+<h2>            WM6 Outook and IMAP mail servers</h2>
+                    
+<p>Hello,</p>
+<p>&nbsp;</p>
+<p>Can anyone help me with 2 problems I currently have, I have looked through various posting and cannot find an answer.</p>
+<p>&nbsp;</p>
+<p>1. I set up outlook to access my IMAP mail server the first time it logged on it took ages to download all my mail as I have in excess of 300 mails on the server. This is fine and only what I would expect however the next time I log on I would
+ expect it to take seconds only looking for changes and new mails. However this is not happening and it appears to check&nbsp;everything again. Thus to check mail can take upto 5 minutes!!!!!&nbsp; Any suggestions would be great.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>2. Again using outlook mobile and IMAP when I log on only emails in the root directory are downloaded, all mail in sub directories are not downloaded? Does anyone else have this problem or know why this is happening.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Thanks</p>
+<p>&nbsp;</p>
+<p>Phil</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Regarding issue number 1, I having the same experience with Gmail Imap. So I gave up and went back to POP3. Regarding issue number 2, when you open the IMAP account on your device and click Menu - Folders and click Menu - Manage folders, you don't see
+ the subfolders?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phil3099  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>&nbsp;</p>
+<p>Yes I can see the folders, these have been mapped correctly. I just cannot see any of the mail that is in the folders. They appear empty although I know they are not.</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Linley Meslier" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "LM"); this.style="display: inline-block";'
+<h3> linley meslier  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Following the steps I've outlined above, select the subfolders and click sync. On your next sync, the contents will appear on your device.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phil3099  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            But this is IMAP, emails and directories should stay upto date on all connected devices without the need to sync. This is the good thing about IMAP,.
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=tips,_tricks,_and_customization">tips,_tricks,_and_customization, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Automatic call recording for Lumia 520 - Microsoft Community</title>
+<h3> hariom_999  say:</h3>
+<h2>            Automatic call recording for Lumia 520</h2>
+                    Hi,<br />
+<br />
+Please provide automatic call recording for Lumia 520 on next release.<br />
+<br />
+I have bought it in exchange with Nokia 5530 Xpressmusic &amp; was using call recording on that phone.<br />
+So really missing this feature in Lumia!<br />
+<br />
+Rest of the features like light sensor, nokia music, nokia smart camera, navigation etc. are very good.<br />
+<br />
+Thanks,<br />
+Hari<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> garym123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You can make feature suggestions here</p>
+<p><a href="http://windowsphone.uservoice.com/forums/101801-feature-suggestions" target="_blank" rel="noreferrer nofollow">http://windowsphone.uservoice.com/forums/101801-feature-suggestions</a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>New Macbook O365 Outlook receives winmail.dat from another Outlook - Microsoft Community</title>
+<h3> yao wah cheung  say:</h3>
+<h2>            New Macbook O365 Outlook receives winmail.dat from another Outlook client</h2>
+                    <p>Newly purchased Macbook Air installed with Office365 Outlook (version 16.9(180116) Product ID: 03109-0000-000001) occassionally receive emails with attachment winmail.dat. Source from various Windows Outlook users (Office2007, 2010, 2016).</p>
+<p>Email content: mix text with Excel cells, copied and paste from excel; attached excel, PDF files.</p>
+<p>
+</p><p>Tried this on Windows Outlook and works: </p>
+<p>Delete Macbook user ID from Outlook Addressbook, re-create by keying in.&nbsp;</p>
+<p>When send email, choose recipient from Addressbook, then Macbook receives email correctly.</p>
+<p>
+</p><p>Observations:</p>
+<p>1. Forward emails to Macbook Outlook user with attachments (.xlsx, PDF etc) will sure convert to winmail.dat</p>
+<p>2. Re-checked all senders setting are all set to compose-html; resend-convert to html.</p>
+<p>3. Forward emails, delete macbook outlook user from recipient list, and click on 'to' and choose his name from addressbook (as created above), then recipient receive mail correctly.</p>
+<p>
+</p><p>Any solution? Its all Outlook to Outlook.</p>
+<p>&nbsp;</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> roma26  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This is probably why<br /><a href="https://support.apple.com/en-us/HT201773" target="_blank" rel="noreferrer nofollow">https://support.apple.com/en-us/HT201773</a><br /><br />Try this<br /><a href="https://soundsupport.biz/2011/04/10/how-to-open-winmail-dat-attachments-on-a-mac/" target="_blank" rel="noreferrer nofollow">https://soundsupport.biz/2011/04/10/how-to-open...</a>       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP &#40;slipstick.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp &#40;slipstick.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            &gt;&gt; Source from various Windows Outlook users (Office2007, 2010, 2016).
+<br />Yeah.. if they send RTF formatted mail, you'll see the winmail.dat since mac can't decode it. 
+<br />
+<br />&gt;&gt; 3. Forward emails, delete macbook outlook user from recipient list, and click on 'to' and choose his name from addressbook (as created above), then recipient receive mail correctly.
+<br />The RTF setting is stored with the autocomplete entry and is sent any time the sender sends an rtf formatting message, including task requests. There isn't a good fix, other than deleting the name from the autocomplete list frequently. 
+<br />
+<br />There is a winmail decoder available for mac and an online decoder. Links at <a href="https://www.slipstick.com/problems/outlook-is-sending-winmail-dat-attachments/#tools" target="_blank" rel="noreferrer nofollow">https://www.slipstick.com/problems/outlook-is-s...</a>.       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>in my lumia 625 os takes excess space from the phone memory please - Microsoft Community</title>
+<h3> vikashclive  say:</h3>
+<h2>            in my lumia 625 os takes excess space from the phone memory please advice me as possible</h2>
+                    in my lumia 625 OS after update takes excess space from the phone memory please advice me as possible
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=600-series">600-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>My Lumia 640 XL won&#39;t download software updates &#33; - Microsoft Community</title>
+<h3> aladdin27  say:</h3>
+<h2>            My Lumia 640 XL won&#39;t download software updates &#33;</h2>
+                    <p>I'm using <strong>Microsoft Lumia 640 xl dual sim</strong> , i just bought it a week earlier and it notifies me every time I go online (using cellular data or wifi) that there's an update needs to be installed .. I go to
+<strong>Settings&gt;Update+Backup&gt;phone update</strong> . I find the update status bar and the button under it that read (<em>Download</em>) I tap it and nothing happens !!
+</p>
+<p>the download bar always stays at 0% (<em>Downloading status 0%</em>) then after a while a banner pops up saying: (<em>an update is available</em>) !!&nbsp;</p>
+<p>I tap it and it leads me back to the phone update page where there's that message under the status bar : "<em>there was a problem checking for phone updates. make sure your with your Wi-Fi connection is okay, and then try again</em>" !!!&nbsp;<br />
+------</p>
+<p>one other thing ... I don't find the "<em>Cortana</em>" app in my phone .. my software is
+<em>Denim</em> and all .. but the app isn't there !! I hope it'll come with the update (which I can't have :/)&nbsp;<br />
+<br />
+thanks everybody in advance .. I hope you help me :)&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I've been having difficulty with the MS Windows Update site for the last couple of days as well.</p>
+<p>My suggestion would be to soft-reset the phone (power down/power up) then give it a try again.</p>
+<p>
+</p><p>On the Cortana front -- as far as I know she's only available in a limited number of languages and markets at the moment.&nbsp; (Like I can't get her to work for English-US with Canada as the region, for example).&nbsp; I KNOW it works for US-English and region=US.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aladdin27  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks very much for taking time to reply Mr. DonTolson</p>
+<p>I tried to <span><span style="color: rgba(51, 51, 51, 1)"><span>soft-reset the phone (power down/power up) but nothing changed .. I even (earlier today) tried to reset the phone (wipe all date and make a factory
+ reset) and nothing changed .. enerything is just the same ..&nbsp;</span></span><br />
+<br />
+<br />
+-------</span></span></span></p>
+<p><span><span style="color: rgba(51, 51, 51, 1)"><span>and as for Cortana I don't mind the language (I can use it in English) But maybe it's not available yet in Egypt..&nbsp;<br />
+<br />
+Thanks again for your reply :)</span></span></span></p>
+<p><span><span style="color: rgba(51, 51, 51, 1)"><span>&nbsp;&nbsp;</span></span></span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> periwinkle_28  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi, <a href="https://answers.microsoft.com/en-us/profile/07d4f951-5e20-46f2-b416-73f1ff13ef8c" title="Aladdin27">
+Aladdin27</a>.&nbsp;You don't need to send the phone to a service center yet. Let's try fixing it first. Given the error message, have you&nbsp;checked if the Wi-Fi connection is stable? You may test its stability by browsing other websites or accessing other internet-based
+ app. In addition to that, you may check this link for workarounds in case the above steps didn't work:
+<a href="https://www.microsoft.com/en-gb/mobile/support/faq/?action=singleTopic&amp;topic=FA142844" target="_blank" rel="noreferrer nofollow">
+https://www.microsoft.com/en-gb/mobile/support/faq/?action=singleTopic&amp;topic=FA142844</a>. The content is applicable regardless of your location.&nbsp;</p>
+<p>
+</p><p>On the other hand,&nbsp;&nbsp;you and <a href="https://answers.microsoft.com/en-us/profile/cbc432de-d68b-453d-872f-17589242c481" title="DonTolson">
+DonTolson</a> are correct. Cortana is only available in certain countries excluding Egypt. See:
+<a href="https://www.windowsphone.com/en-us/how-to/wp8/basics/feature-and-service-availability" target="_blank" rel="noreferrer nofollow">
+https://www.windowsphone.com/en-us/how-to/wp8/basics/feature-and-service-availability</a>. You may send a suggestion to
+<a href="https://cortana.uservoice.com/" target="_blank" rel="noreferrer nofollow">https://cortana.uservoice.com/</a> though. We look forward to your reply.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rob.toomanysrobs  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes very irritating, it says it download with mobile data if wifi not availabl but doesn't happen, just goes round in circles. I have no problem using mobile data for this, let me decide. Beginning to regret switch from android
+<blockquote>
+<p>I'm using <strong>Microsoft Lumia 640 xl dual sim</strong> , i just bought it a week earlier and it notifies me every time I go online (using cellular data or wifi) that there's an update needs to be installed .. I go to
+<strong>Settings&gt;Update+Backup&gt;phone update</strong> . I find the update status bar and the button under it that read (<em>Download</em>) I tap it and nothing happens !!
+</p>
+<p>the download bar always stays at 0% (<em>Downloading status 0%</em>) then after a while a banner pops up saying: (<em>an update is available</em>) !!&nbsp;</p>
+<p>I tap it and it leads me back to the phone update page where there's that message under the status bar : "<em>there was a problem checking for phone updates. make sure your with your Wi-Fi connection is okay, and then try again</em>" !!!&nbsp;<br />
+------</p>
+<p>one other thing ... I don't find the "<em>Cortana</em>" app in my phone .. my software is
+<em>Denim</em> and all .. but the app isn't there !! I hope it'll come with the update (which I can't have :/)&nbsp;<br />
+<br />
+thanks everybody in advance .. I hope you help me :)&nbsp;</p>
+</blockquote>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dasboots  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            don,t know if this help my 635 and 640 will not update unless I have it connected to mains charger
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sunilchadha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Basically Windows is bad OS for mobile. Its my worst purchase, after upgrade to Windows 10 I am furious frustrated user of Lumia &nbsp;and I will never recommend anyone to buy this mobile.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> davisjones  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Yes it is time to jump ship on the windows OS for mobile
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> aladdin27  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Absolutely SunilChadha!! Same happened with me .. After i spent so much time adapting to with WP 8.1 and finally was going okay with it, here comes the "great" windows 10 with all the alleged "greatness"!! And it made me just furious!!
+</p>
+<p>
+</p><p>I hope they fix it soon and actually listen to the user feedback so they can come up with a better platform or else people will start leaving them and with bad promotions ...</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sunilchadha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I finally resolved it by installing updates available in Microsoft insider program. Then updating Microsoft Store.then updating all application .
+</p>
+<p>
+</p><p>However Win 10 is unstable. Im done with it. </p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> acf44  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I could never get my Lumina 640 to update to Win 10.&nbsp; Every try says I am up to date with Win 8.1 even though I got a message saying Win 10 available.&nbsp; I guess after reading some of the comments, I'm glad it didn't update.&nbsp; Win 10 on PCs is just as disastrous.&nbsp;
+ I guess I'll have to, get a Samsung phone and an Apple PC.&nbsp;
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=600-series">600-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

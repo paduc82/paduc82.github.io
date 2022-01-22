@@ -1,0 +1,2475 @@
+    <title>find missing gaps in primary ID field - Microsoft Community</title>
+<h3> danpickle  say:</h3>
+<h2>            find missing gaps in primary ID field</h2>
+                    We have a DB that is full of wire numbers.&nbsp; Each wire number is a specific number.&nbsp; Unfortunately there were some duplicates in our original wire list so to solve this we numbered those duplicates&nbsp; 10.1, 10.2, 10.3 etc&nbsp; We have now combined all lists into
+ 1 db so from now going forward all wire numbers will be whole integers.&nbsp; Our wire list has about 5,000 entries in it but the numbers go all the way up to around 20,000 so obviously there are number gaps.&nbsp; I need to be able to locate the gaps in our wire list
+ so we can fill the gaps when we put in new wires.&nbsp; We have a column in our database for "reserved" where 1 = reserved and 2 = done.&nbsp; we have a specific form that we can fill out (but it is not working correctly) where if we find say a gap between wire numbers
+ 200 and 300 we can pick say wire number 221 and reserve the next 21 numbers so that form will fill out the tech who reserved the numbers, add a 1 to the reserved column and of course create those 21 records.&nbsp; The best part is that my boss turned to me the
+ "IT guy" to resolve this but I don't know any thing about access.<br />
+I need help please :)
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Why? What significance does the number have other than as a unique identifier? Is the current PK used as a FK in other tables?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            It's easily done by first creating a table Counters with a single column Counter of integer data type, with value from 1 to 25000 say to allow for future numbers.&nbsp; You can fill the table with a little VBA:<br />
+<br />
+Dim n As Integer<br />
+Dim strSQL As String<br />
+<br />
+For n = 1 to 25000<br />
+&nbsp;&nbsp; strSQL = "INSERT INTO Counters(Counter) VALUES(" &amp; n &amp; ")"<br />
+&nbsp;&nbsp; CurrentDb.Execute strSQL, dbFailOnError<br />
+Next n<br />
+<br />
+Then you can find the gaps with a query like this:<br />
+<br />
+SELECT Counter<br />
+FROM Counters<br />
+WHERE NOT EXISTS<br />
+&nbsp;&nbsp;&nbsp; (SELECT *<br />
+&nbsp;&nbsp;&nbsp;&nbsp; FROM Wires<br />
+&nbsp;&nbsp;&nbsp;&nbsp; WHERE Wires.WireNumber = Counters.Counter)<br />
+AND Counter &lt;=<br />
+&nbsp;&nbsp;&nbsp;&nbsp; (SELECT MAX(WireNumber)+1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM Wires)<br />
+ORDER BY Counter;<br />
+<br />
+You could for instance use this query as the RowSource property of a combo box bound to the WireNumber column for inserting a new row into Wires.&nbsp; You'd need to requery the combo box in the form's AfterUpdate event procedure to remove the number from the list.<br />
+<br />
+However this begs the question which Scott has raised.&nbsp; Why bother as the numbers appear to have no semantic significance?<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danpickle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The wire numbers play a huge part since they signify a different wire in our building.&nbsp; our DB keeps track of where each wire is coming from and going to.&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The point is not what the wire numbers represent, but whether their <em>values
+</em>have any semantic significance.&nbsp; The fact that you wish to fill random gaps suggests they don't.&nbsp; But if you do wish to fill gaps I've given you a way of identifying those gaps.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danpickle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>ya there is no value to the wire numbers.&nbsp; The reason that finding the gaps in the numbers is important is when we go to put new wires in the building I would like to fill the gaps in the database.&nbsp; I tried to put in the code for the query and it is only
+ showing a column that is counting from 1 to 25000 </p>
+<p>my table name is wirelist and the field is wire number then I created a second table called counter which has a single column in it called counter&nbsp;
+</p>
+<p>so here is the modified code that I put in</p>
+<p>
+</p><p>SELECT Counter.Counter, Exists (SELECT *<br />
+&nbsp;&nbsp;&nbsp;&nbsp; FROM wirelist<br />
+&nbsp;&nbsp;&nbsp;&nbsp; WHERE wirelist.[Wire Number] = Counter.Counter) AS Expr1, Counter.Counter<br />
+FROM [Counter]<br />
+WHERE (((Exists (SELECT *<br />
+&nbsp;&nbsp;&nbsp;&nbsp; FROM wirelist<br />
+&nbsp;&nbsp;&nbsp;&nbsp; WHERE wirelist.[Wire Number] = Counter.Counter))=False) AND ((Counter.Counter)&lt;=(SELECT MAX([Wire Number])+1<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FROM wirelist)))<br />
+ORDER BY Counter.Counter;</p>
+<p>
+</p><p>and the results that I get from running that is like I said just a single column that goes from 1-25000.&nbsp; What I need to show up though is a report that would show for example 3-5, 20-35, 57-200 are all unused</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The reason that finding the gaps in the numbers is important is when we go to put new wires in the building I would like to fill the gaps in the database.&nbsp;</p>
+<p>
+</p><p>But why?? Why does it matter that you fill in the gaps?? You just admitted that "there is no value to the wire numbers".
+</p>
+<p>
+</p><p>Now maybe if these wires present phone/Ethernet cabling I can see filling gaps. But I find it hard to understand otherwise.</p>
+<p>
+</p><p>But to fill in the gaps you will either need a table of missing #s and then pull the lowest number and then delete it from the missing # table.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danpickle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>no each wire number DOES indicate a wire that is in our building!&nbsp; If I go to a wire in our building and look at the end&nbsp; of the wire it may say 4527 then I go to our database and look up 4527 and it will tell me where that wire is going in our building.&nbsp;
+ as for no value I thought you were talking about a numerical value such as 25+25=50
+</p>
+<p>
+</p><p>as for a list of missing wire numbers THAT is what I am trying to find without having to go individually line by line and create a list of missing wire numbers</p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Again:&nbsp;</p>
+<p>
+</p><p>Is the significance of the WireNumber that each wire has its own unique number?</p>
+<p>
+</p><p>Or is the numerical magnitute of the WireNumber - as an abstract, Platonic ideal NUMBER - important?</p>
+<p>
+</p><p>That is to say, if you have wire number 4527 that leads from here to over yonder, and wire number 4529 that leads from the doorbell button to the bell, and you know where each of them goes, does it really matter whether or not there is a wire number 4528?&nbsp;</p>
+<p>
+</p><p>You're using a database; let the computer tell you where the wire is, or which wire is which. There's no need for a human being to try to keep track of 20,000 wires; that's a job for a computer, not a person!&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>As we are trying to tell you, you DO need a field that uniquely identifies a wire record. The other fields in that record will give you to important info about that wire.
+</p>
+<p>
+</p><p>But there appears to be no need to be concerned about the gaps. As John suggests, you have a wire identified as 4527. You look that number up in your database and you get info about that wire. Does it matter in any way,&nbsp;shape or form whether there is a wire
+ identified as 4526 or 4528? And why would it matter?</p>
+<p>
+</p><p>As for finding the gaps. That's easy. Create a table (I would use Excel) that has all the numbers between 1 and the highest number you have. Then run an unmatched query to get the ones that are missing.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danpickle  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Why are you guys so hyper focused on why I need to be able to find the missing numbers from the table?&nbsp; True if wire number x goes here and wire number y goes there does it matter where wire q is NO it doesn't matter at all except.............My boss asked
+ me to do it and when the boss asks you to do something you do it period. so can we please get off the point as to "why do you need this" and back onto point of how do I do this?<br />
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to highlight text in PowerPoint 2011 for Mac&#63; - Microsoft Community</title>
+<h3> mactop  say:</h3>
+<h2>            How to highlight text in PowerPoint 2011 for Mac&#63;</h2>
+                    How to highlight text in PowerPoint 2011 for Mac? I mean, like with a fluorescent marker tool (yellow color, etc).
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rich Michaels - MVP &#40;greatcirclelearning.com&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "RM"); this.style="display: inline-block";'
+<h3> rich michaels - mvp &#40;greatcirclelearning.com&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you are looking for a Highlight function in PowerPoint as it exists in Word... there isn't one.
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="John Korchok" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "JK"); this.style="display: inline-block";'
+<h3> john korchok  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You can use Format Painter to get a similar visual effect. Start by selecting some text, then use Format&gt;Borders and Shading&gt;<strong>Shading</strong> and select the color to apply.</p>
+<p>Then, with the "highlighted" sample text still selected, click on Format Painter (looks like a paintbrush on the row below the menu and above the ribbon). Click and drag the cursor over text to apply your faux highlighting.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 2010 wants to make changes to computer every time a file is - Microsoft Community</title>
+<h3> lisa l.  say:</h3>
+<h2>            Word 2010 wants to make changes to computer every time a file is opened</h2>
+                    <p>I am using Microsoft Word 2010 (on Windows 7) and when I open Word files from Windows Explorer, Word always wants to make changes to my computer.&nbsp; I do have my settings set to ask me before any program makes changes to my hard drive but with&nbsp;most programs&nbsp;I
+ only get this warning after an initial installation of the software or an update.&nbsp; This is happening when I open EVERY Word file through Internet Explorer.&nbsp; I do not get this notification when opening any other Office 2010 file (Excel, Access, etc..).&nbsp; I must
+ be doing something wrong.&nbsp; Do you have any idea what I need to do to keep Word 2010 from making changes to my hard drive every time it opens a file from Windows Explorer?</p>
+<p>&nbsp;</p>
+<p>Thank you for any assistance you can offer.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hi Lisa,</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Let us check if ‘Run as Administrator’ option is checked in Word compatibility options.
+</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>1. Browse to the location C:\Program File\Microsoft Office\Office 14\Winword.exe</font></font></font></p>
+<p><font><font color="#000000"><font>(If you are using a 64bit machine, then you would have to go to C:\Program files(x86)\Microsoft Office\Office 14\ Winword.exe).</font></font></font></p>
+<p><font><font color="#000000"><font>2. Right click on Winword.exe and click on Properties and then click on Compatibility tab. Check if you&nbsp;have any check mark in any of the compatibility
+ mode options. Make sure you also click on the option ‘change settings for all users’ tab at the bottom of the same screen and look for similar check boxes in the window.</font></font></font></p>
+<p><font><font color="#000000"><font>3. Uncheck the option ‘Run as Administrator’ if you have it checked.</font></font></font></p>
+<p><font><font color="#000000"><font>4.&nbsp;If you see any check boxes in the compatibility mode options, uncheck all the boxes and click on Apply and OK.
+</font></font></font></p>
+<p><font><font color="#000000"><font>5. Once the above steps are done, open Word to check.
+</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>I hope this fixes the issue. If not, reply and I will be happy to assist you further.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Thank you</font></font></font></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Spreadsheet Formula Question - Microsoft Community</title>
+<h3> littlelisa00  say:</h3>
+<h2>            Excel Spreadsheet Formula Question</h2>
+                    <p>Good Morning! I am creating a spreadsheet for our shops vehicle maintenance. I have created it so it automatically adds 5000 to the first row on the sheet that had the mileage inputted. The problem is, I want to continue to add 5000 to the most recent cell
+ updated. </p>
+<p>Example:</p>
+<p>
+</p><p>Truck X: </p>
+<p>Service Completed (kms):</p>
+<p>
+</p><p>A&nbsp; 121543</p>
+<p>B&nbsp; 125657</p>
+<p>C&nbsp; 129544</p>
+<p>D&nbsp; 139552</p>
+<p>
+</p><p>Truck X needs service every 5000km. I have a cell created for "Next service required" and it currently is a formula of =5000+A which would give me 126543 in my cell. I need the formula to reflect the latest number in the "service completed" column. The column
+ will always be updated with the mileage at time of each service. I hope this makes sense!
+</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ashish Mathur" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "AM"); this.style="display: inline-block";'
+<h3> ashish mathur  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Try this formula in cell D1</p>
+<p>
+</p><p>=LOOKUP(1E100,$B$3:$B$50)+5000</p>
+<p>
+</p><p>Hope this helps.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Need more apps for Windows Phone 10 - Microsoft Community</title>
+<h3> tommypkoch  say:</h3>
+<h2>            Need more apps for Windows Phone 10</h2>
+                    I really like my Lumina Icon 929 and am enjoying the Windows Phone 10 upgrade.&nbsp;&nbsp; What I would like to have is more apps.&nbsp; Why isn't there an official Uber, Lyft, Nest, Snapchat or (on and on and on...) app available for Windows Phone 10?&nbsp; I'd hate to switch
+ operating systems,&nbsp;am getting frustrated.&nbsp; Any suggestions?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="G.Ilex" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "G"); this.style="display: inline-block";'
+<h3> g.ilex  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You are asking it at the wrong place, You should ask the developers for a Windows version (UWP would be great) of those apps.</p>
+<p>Microsoft is not responsible for those apps</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=900-series">900-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>What is the difference between OneDrive from AppStore and standalone - Microsoft Community</title>
+<h3> rusish  say:</h3>
+<h2>            What is the difference between OneDrive from AppStore and standalone installer</h2>
+                    <div>Right now there two options for installing OneDrive on Mac:</div>
+<div><br />
+</div>
+<div>&nbsp;1. Install from the AppStore</div>
+<div>&nbsp;2. Download and install a standalone installer</div>
+<div><br />
+</div>
+<div>
+<p>What is the difference between the two? </p>
+<p>I could not find anywhere on Microsoft site any explanation of which version I should use, which one is better≤ what are the differences, etc.&nbsp;</p>
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Justin Cavida MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> justin cavida msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p>Hi RusIsh,</p>
+<p>
+</p></div>
+<div>
+<p>In addition to Vijay's reply, we would like to explain that the new OneDrive standalone installer is now part of the Office Click-to-Run installer. It has more features than the App Store version as Vijay mentioned. For example, Office for Mac will now work
+ with OneDrive to intelligently open your files locally if it has already synced the file rather than download a new copy, so your files will open much more quickly.</p>
+<p>
+</p></div>
+<div>
+<p>Here's an article for your reference. Refer to the <strong>New Updates for Mac Office Users</strong> section:</p>
+<a href="https://techcommunity.microsoft.com/t5/Microsoft-OneDrive-Blog/OneDrive-Brings-New-Sharing-and-Collaboration-Features-to-Mac/ba-p/185389" target="_blank" rel="noreferrer nofollow">OneDrive Brings New Sharing and Collaboration Features to Mac, iOS and Android</a>
+<p>
+</p></div>
+<div>
+<p>If you wish to use the standalone version of OneDrive on your Mac, you can follow the steps below to install it.<br />
+<a href="https://support.office.com/en-us/article/sync-files-with-the-onedrive-sync-client-on-mac-os-x-d11b9f29-00bb-4172-be39-997da46f913f" target="_blank" rel="noreferrer nofollow">Sync files with the OneDrive sync client on Mac OS X</a></p>
+<p>
+</p></div>
+<div>Regards,<br />
+Justin</div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onedrive">onedrive, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to report a bug&#63; - Microsoft Community</title>
+<h3> dan_davies  say:</h3>
+<h2>            How to report a bug&#63;</h2>
+                    How do you report a bug in the dev preview if you are not a developer? I can't find any way to report bugs to microsoft despite searching for some time.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="7thSense" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "T"); this.style="display: inline-block";'
+<h3> 7thsense  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You can start by posting here to see if it really is a bug. There is also Microsoft support and MVPs here in the forums who can take issues back to the developers.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>One note&#58; the location may not exist or you may not have access to - Microsoft Community</title>
+<h3> samkayx3  say:</h3>
+<h2>            One note&#58; the location may not exist or you may not have access to it</h2>
+                    <p>i recently switched from my android to iphone and now i am getting this error message when trying to access the personal (web) part of my one note. Its crucial I gain access to this. How can this be fixed?</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> grimhawk  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Are you able to access your notebooks using OneNote Online via a web browser? </p>
+<p><strong>Link:</strong> <a href="https://www.onenote.com" target="_blank" rel="noreferrer nofollow">
+https://www.onenote.com</a></p>
+<p>
+</p><p>Also, you can try to fix sync issues by resetting your credentials. Follow the instructions below.</p>
+<p>
+</p><p><strong>Reset credentials <br />
+</strong></p>
+<ol>
+<li>Open OneNote, tap the &lt; icon in the upper-left corner of the screen, and tap the gear icon next to the account name and email address.</li><li>On the Settings screen, under Account, tap the account name.</li><li>Tap the account name again and then choose Remove Account.</li><li>Accept the notification that appears to confirm signing out.</li><li>Double tap the device's home button, and swipe up on the OneNote app to close it.</li><li>Start OneNote and sign in to your account.</li></ol>
+<p>I found these instructions here:&nbsp;<a href="https://support.office.com/en-us/article/Fix-sync-issues-in-OneNote-for-iOS-or-Android-3d7fd4e9-0fb9-4983-9853-b61b263b0f78" target="_blank" rel="noreferrer nofollow"><br />
+https://support.office.com/en-us/article/Fix-sync-issues-in-OneNote-for-iOS-or-Android-3d7fd4e9-0fb9-4983-9853-b61b263b0f78</a></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>cancel my Skype Subscription. - Microsoft Community</title>
+<h3> itachi_uchiha_2012  say:</h3>
+<h2>            cancel my Skype Subscription.</h2>
+                    <p>cancel my Skype Subscription.</p>
+<div><br />
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jasles  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi there,<br /><br />This page shows how to do that:<br /><a href="https://support.skype.com/en/faq/FA1881/how-do-i-cancel-or-change-my-skype-subscription" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA1881/how-do-...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi  itachi_uchiha_2012 
+<br />
+<br />If you want to cancel your Skype subscription, here are the steps to do so:
+<br />
+<br /><a href="https://support.skype.com/en/faq/FA1881/how-do-i-cancel-or-change-my-skype-subscription" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA1881/how-do-...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rhondahake  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Cancel both of my Skype subscriptions .....one for 6.50 a month and the other for 6.99 a month
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rhondahake  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Need both subscriptions cancelled!!!!
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=account_and_profile">account_and_profile, </a> <br>
+<a href="/search?q=update_skype_profile">update_skype_profile, </a> <br>
+<a href="/search?q=skype_for_windows">skype_for_windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>SharePoint Online - Workflow won&#39;t start automatically - Microsoft Community</title>
+<h3> jamiehutchinson_4047  say:</h3>
+<h2>            SharePoint Online - Workflow won&#39;t start automatically</h2>
+                    <p>Hi guys, I'm building a work flow to approve purchase orders for a customer. The workflow I've built works fine but for some reason it doesn't start automatically, despite the workflow settings displaying that it should start whenever a new item is created
+ or an existing item is change - I'm forced to start it manually, which defeats the object of what I'm trying to do!</p>
+<p>
+</p><p><strong>Please see below a screenshot from SharePoint Designer, you can see here my workflow is set to automatically start:</strong></p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/679b6d79-dfec-4a47-9cec-c069b9891431" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/679b6d79-dfec-4a47-9cec-c069b9891431" /></a></p>
+<p>
+</p><p>
+</p><p><strong>For whatever reason, when I add a new item into the library it just doesn't trigger! Then I noticed this under the list options, related workflows:</strong></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/22b15f68-15e4-462f-adc9-70b25d11f460" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/22b15f68-15e4-462f-adc9-70b25d11f460" /></a></p>
+<p>
+</p><p>Is this the reason why it won't start automatically, despite the workflow settings? Does anyone know what could be going wrong?</p>
+<p>
+</p><p>Thanks in advanced - Jamie</p>
+<p>
+</p><p>:)</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jamiehutchinson_4047  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ok I unticked the options in SP designer, published, then reticked and published and it's started working again - sorted for now! Thanks for help all! :)
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=sharepoint">sharepoint, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I want to create a single Skype Number that will either call-forward - Microsoft Community</title>
+<h3> lleyam  say:</h3>
+<h2>            I want to create a single Skype Number that will either call-forward to multiple landline&#47;mobile numbers at once or group hunt if not answered in sequence</h2>
+                    <p>I want to create a single Skype Number that will either call-forward to multiple landline/mobile numbers at once (first one who picks up receives the call) or group hunts if not answered in sequence (calls tried on landline/mobile #1, then #2, then #3 until
+ the call is picked-up).</p>
+<p>
+</p><p>Is there a way to do this?</p>
+<p>
+</p><p>I've just bought a second Skype Number (beyond my personal one) thinking that I could achieve this -- but I can't see how to make it work.</p>
+<p>
+</p><p>Any advice / guidance, please?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Lleyam
+<br />
+<br />My name is Andre Da Costa; an Independent Consultant, Windows Insider MVP and Windows &amp; Devices for IT MVP.  I'm here to help you with your problem.
+<br />
+<br />Unfortunately, sequencing is not an available option when you add numbers to the call forwarding page.
+<br />
+<br /><a href="https://support.skype.com/en/faq/FA12258/how-do-i-use-skype-call-forwarding" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA12258/how-do...</a>
+<br />
+<br />All phone numbers listed in the Call Forwarding page will ring simultaneously. Currently, there is  no option to select which phone numbers will receive forwarded calls first before others.
+<br />
+<br />Please keep in mind, we are fellow users volunteering here and we try to help with the product within in its current state. There is not much else we can do in regards to functionality and design or support for upcoming features. 
+<br />
+<br />If there is a feature change you do not like or area of the product you would like to see improved, its best you as a user submit feedback to the engineers so they can consider it for improvement of the product. 
+<br />
+<br /><a href="https://skype.uservoice.com/forums/914527-welcome-to-skype-ideas" target="_blank" rel="noreferrer nofollow">https://skype.uservoice.com/forums/914527-welco...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lleyam  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you. That partially helps. However, I have a sub-question. Can call forwarding be set differently for different Skype Numbers on the same Skype account? At the moment I have 2 x Skype Numbers and want one to forward only to one number, while the
+ other forwards to a group of numbers. Is that possible?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Unfortunately, it is not possible to do so on the same account at this time.       
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=skype_number">skype_number, </a> <br>
+<a href="/search?q=skype_for_mac">skype_for_mac, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Wireless and wired synching - Microsoft Community</title>
+<h3> franklynch  say:</h3>
+<h2>            Wireless and wired synching</h2>
+                    
+<p>I have been synching my T-Mobile Wing wiht my desktop PC at work (server) through the USB cable.
+</p>
+<p>I can now do it wirelessly but before setting everyhting I want&nbsp;to make sure there will be no conflcit beetween both. In other words I'd like to be able to continue to do it thorugh the USB cable once&nbsp;I add the wireles synching, is this possible?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Joel Ivory Johnson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JI"); this.style="display: inline-block";'
+<h3> joel ivory johnson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>If you sync over bluetooth you will still be able to sync over USB.&nbsp; The device I use is currently configured to sync over bluetooth, USB, and over-the-air with MS Exchange.
+</p>
+<hr />
+Joel Ivory Johnson
+<div><a href="http://www.j2i.net" target="_blank" rel="noreferrer nofollow">http://www.j2i.net</a></div>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia 6120 - Microsoft Community</title>
+<h3> brattynt  say:</h3>
+<h2>            Nokia 6120</h2>
+                    There seems to be a known fault with this phone that it excessivly heats up.<br />
+<br />
+Long story short:<br />
+<br />
+My phone has heated up to the point it has cracked the metal outta edge on the top of the phone and also cracked the metal on the earpiece and the crack also extends down onto the face and across the camera.<br />
+<br />
+dropped phone off at nokia care centre only to be told it will cost blah blah to fix as its physical damage - so they are saying I damaged the phone.<br />
+<br />
+I did not damage the phone it cracked after getting extremely hot after a phone call.<br />
+<br />
+I am waiting now for a second opinion from another tech person. I will take this much further as far as it can go.<br />
+<br />
+These phones are dangerous. Be aware.!<br />
+<br />
+Nokia know there is a problem with the phones yet claim there is nothing wrong they meet the standard.<br />
+<br />
+what a load of **bleep**.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> concordia---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,<br />
+<br />
+I understand your concerns. However, please note that Nokia Support Discussions are for user-to-user support only. You will not receive an official response from authorised Nokia technicians here.
+<br />
+<br />
+The moderators are only here to moderate and may get information to pass on occasionally. We will not be able to provide any assistance.<br />
+<br />
+I strongly recommend that you contact Nokia directly with your concerns. You can use the "Contact Us" link at the top of the page and then, select your country in the section "Call or Email Nokia Care".<br />
+<br />
+Sincerely,<br />
+Concordia<br />
+<br />
+Message Edited by concordia on <span>19-Aug-2008</span> <span>
+01:02 PM</span>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Eyestrain or Headaches - Take Your Choice - The Lack of Usable Themes - Microsoft Community</title>
+<h3> charmoffensive  say:</h3>
+<h2>            Eyestrain or Headaches - Take Your Choice - The Lack of Usable Themes in Office 2016</h2>
+                    <p>There are three color themes for Office 2016, some of which deviate from Office 2013. None offer an optimal pleasing view of the display. Below are my comments. &nbsp;What is needed is a light gray which approximates what was called dark gray in Office 2013.</p>
+<p>
+<table>
+<tbody>
+<tr>
+<td>Colorful</td>
+<td>
+<p>This is new. &nbsp;This approximates what was called "dark gray" &nbsp;in Office 2013 except the contrast is much less in the gray areas, making the overall display hard on the eyes. While tolerable in Word 2016, this theme is problemmatic in Outlook. The background
+ color, bright blue is the worst in the Office Suite. The &nbsp;Colorful theme used in Office 2013 &nbsp;is easier on the eyes. The Colorful theme in Office 2016 for the Mac is much better than on its Windows counterpart for reasons that are unclear.</p>
+</td>
+</tr>
+<tr>
+<td>Dark Gray</td>
+<td>This is a true dark gray in Office 2016 and did not exist as shown in Office 2013. Instead dark gray in Office 2013 was a great alternative to the white even though it was not "dark" or even grey. &nbsp;In Office 2016, especially Outlook there is clearly not
+ enough contrast w/this color. it's great for working on an airplane. That's about it. &nbsp;it's too dark overall</td>
+</tr>
+<tr>
+<td>White</td>
+<td>
+<p>This is a terrrible theme w/no contrast at all. &nbsp;It's extremely hard on the eyes. &nbsp;I cannot image who uses it.</p>
+</td>
+</tr>
+<tr>
+<td>Light Gray</td>
+<td>Not availble, was available in earlier builds, but removed by Microsoft (inexplicably). It should be brought back.</td>
+</tr>
+</tbody>
+</table>
+</p><p>
+</p><p>
+</p><p>
+</p><p>
+</p><p>Why not give users a choice of gray themes?</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/6f57f671-3e23-446d-9d5d-a593680b12af" /></p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    55 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> charmoffensive  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>This is quote from someone at Microsoft from another thread:</p>
+<p>
+</p><p><em>In Office 2013, we had a Light Gray Theme.&nbsp; This theme was mostly light gray, but also had some "app coloring" (Word: Blue; Excel: Green; PowerPoint: Orange) in elements such as the statusbar and File menu.&nbsp; In Office 2016, we amped up that color - the
+ entire titlebar got the app color, as well as big swaths of the "Backstage" (the experience you get when you click on the File menu).&nbsp; As a result, we renamed that theme to "Colorful."</em></p>
+<p><em>Really, therefore, the "Light Gray" theme didn't get removed, it simply evolved in Office 2016 and as part of that, it got a new name.&nbsp; People running Office 2013 with Light Gray will get Office 2016 Colorful as a result.</em></p>
+<p>
+</p><p>See&nbsp;http://answers.microsoft.com/en-us/office/forum/office_2016_preview-office_install/black-theme-in-office-2016-preview/55f32027-c469-456c-aec1-dcecc66e1fff?page=4</p>
+<p>
+</p><p>I am reprinting my response at it makes more explicity some of the points I have made above:</p>
+<p>
+</p><p>While the above statement is technically true, it omits any discussion of what happened to the "Dark Gray" theme in Office 2013. &nbsp;My view is that both the White and Light Gray themes in Office 2013 have terrible contrast and make it very difficult
+ to work. They cause eyestrain and for older people with eyesight issues they are terrible. &nbsp;The presence of an overwhelming white background is then made all the worse by the "amped up" colors.</p>
+<p>
+</p><p>There was one really usable theme in Office 2013, "Dark Gray". &nbsp; Bear in the mind, that label is a misnomer. The only thing Dark Gray about it was the background on the file menu. The main area where work gets done struck the right balance between
+ light gray, dark gray, and white, just like the dialog box I am typing in right now.</p>
+<p>
+</p><p>Now in Office 2016 Dark Gray is truly Dark gray, a theme not present in Office 2013 (expect in name only) and white it may be good for not disturbing other travellers on an airplane, it has too much contast and some of the controls, lke the new
+ message control, sport zebra strips that again are hard on eyes and make the screen more difficult to navigate.&nbsp;</p>
+<p>
+</p><p>Essentially Microsoft eliminated the one really usable them in Office 2013, and confusingly christened a new them that is vastly different, using the same name, frustrating users reasonable expectations of backward compatibility, requiring them
+ to vote to have it returned. BTW why is there no spellchecker is this RTE (rich text editor).</p>
+<p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Content Controls and Quick Parts&#47;Document Properties - Microsoft Community</title>
+<h3> goltermann  say:</h3>
+<h2>            Content Controls and Quick Parts&#47;Document Properties</h2>
+                    I've inserted a content control by choosing Quick Parts &gt; Document&nbsp;Property.&nbsp;I used 5 of the Document Properties (i.e., Company Email, Company Fax) to create the fields and then renamed them.&nbsp; Will the fact that I renamed the properties be a problem?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Greg Maxey" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> greg maxey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I don't know the answer to your question (or the more detailed question), but may I ask why you have done what you did?</p>
+<p>&nbsp;</p>
+<p>I assume you&nbsp;did it to take advantage of the XML&nbsp;mapping associated with the special DocumentProperty content controls.&nbsp; Did you know&nbsp;that you can easily create your&nbsp;own&nbsp;custom mapped CCs?</p>
+<p>&nbsp;</p>
+<p>See:&nbsp;<a href="http://gregmaxey.mvps.org/ContentControl_Variable_Bookmark_and_Document_Property_Tools_Add_In.htm" target="_blank" rel="noreferrer nofollow">http://gregmaxey.mvps.org/ContentControl_Variable_Bookmark_and_Document_Property_Tools_Add_In.htm</a></p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> john e fredricks  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>
+<p><span>For queries related to metadata property and XML documents you may post your queries in the forum mentioned below</span></p>
+<p><a href="http://answers.microsoft.com/en-us/office/forum/customize"><span>http://answers.microsoft.com/en-us/office/forum/customize</span></a></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Word 2016 doesn&#8217;t display a font properly - Microsoft Community</title>
+<h3> dominikhoffmann  say:</h3>
+<h2>            Word 2016 doesn&#8217;t display a font properly</h2>
+                    <p>I have a document, which uses a Type 1 Postscript font in the header. It is Adobe’s Berthold Akzidenz Grotesk.</p>
+<p>
+</p><p>This is what it looks like in Word 2011 (address information blurred to protect privacy):</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/edfe615d-9c1b-4f6d-ab89-7df8e6198335" /></p>
+<p>
+</p><p>This is what it looks like in Word 2016:</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/7ad58a58-d3b7-4adf-93ac-6b4230a4eca1" /></p>
+<p>
+</p><p>Word 2016 obviously doesn’t render the font correctly. The Version of Word I am running is 15.13.1.</p>
+<p>
+</p><p>Where do I report this bug?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="John Korchok" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "JK"); this.style="display: inline-block";'
+<h3> john korchok  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There have been a fair number of complaints about incorrect rendering of third-party family fonts. These are non-Microsoft fonts that are grouped to work with the Bold and Italic buttons. Often users see bold when they want roman, or vice-versa. Even well-crafted
+ fonts from large foundries get this treatment, so it's not a font quality issue, just a bug.</p>
+<p>
+</p><p>If your copy of Word has a smiley-face icon in the upper-right corner, click on it, choose
+<strong>Tell Us What Can Be Better</strong> and file a report. MS does not acknowledge the reports, but they do receive them.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to use multiple OR criterias in VBA SUMIFS - Microsoft Community</title>
+<h3> mateuscouto  say:</h3>
+<h2>            How to use multiple OR criterias in VBA SUMIFS</h2>
+                    <p>The calculation I need to do is the following:</p>
+<p>
+</p><p>=SUM(SUMIFS([sum range], [criteria range], {crit1,crit2,crit3,...}))<br />
+</p>
+<p>It works fine if I type this in a Cell, but I need to make this calculation in VBA.</p>
+<p>
+</p><p>Application.Worksheetfunction.Sum(Application.Worksheetfunction.Sumifs([sum range], [crit range], {crit1, crit2,...})) &nbsp;does not work</p>
+<p>Application.Worksheetfunction.Sum(Application.Worksheetfunction.Sumifs([sum range], [crit range], array(crit1, crit2))) &nbsp;does not work</p>
+<p>Application.Worksheetfunction.Sum(Application.Worksheetfunction.Sumifs([sum range], [crit range], split(crit1,crit2))) &nbsp; does not work</p>
+<p>
+</p><p>
+</p><p>Also, the option to write it like &nbsp; &nbsp; sum = [Sum(Sumifs([sum range], [crit range], {crit1, crit2,...}))] &nbsp; &nbsp;is not viable</p>
+<p>
+</p><p>
+</p><p>How can I sum multiple OR criterias in one SUMIFS?</p>
+<p>
+</p><p>
+</p><p>
+</p><p><em><strong>*** Moved from Office / Excel / Windows 10 / Office 2013 ***</strong></em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> khd2016  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>How many criteria are you using?</p>
+<p>
+</p><p>Are you open to options that use VBA to perform the comparison, rather than calling the worksheet function?</p>
+<p>
+</p><p>If you are committed to using a worksheet function, can your formula be replaced with SUMPRODUCT instead?</p>
+<p>
+</p><p>I'm not sure I totally understand wrapping the SUMIFS with an outer SUM statement (unless this is an array formula?) Can you explain the actual calculation you are performing, or provide a simplified analogy if it is something super complex?</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Incorrect display of Unicode Hindi Text in Powerpoint - Microsoft Community</title>
+<h3> amitkhare1  say:</h3>
+<h2>            Incorrect display of Unicode Hindi Text in Powerpoint</h2>
+                    <p>Unicode text display correctly in Word. But when I copy paste from Word to Powerpoint it displays incorrectly.</p>
+<p>
+</p><p>OS version:&nbsp; MAC OS 10.12.6</p>
+<p>Office version: Office 365&nbsp;<br />
+Microsoft Powerpoint for Mac Version&nbsp; 15.41 (172305)<br />
+</p>
+<p>
+</p><p>Screenshot-1:&nbsp; Correct in Word:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/adb478ee-a72b-48c4-ab4a-f51697379a50" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/adb478ee-a72b-48c4-ab4a-f51697379a50" /></a></p>
+<p>Screenshot-2: Incorrect in Powerpoint:</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/9f007e89-b1cb-464c-9e27-748d6b236820" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/9f007e89-b1cb-464c-9e27-748d6b236820" /></a><br />
+</p>
+<p style="color: rgba(127, 127, 127, 1)"><span style="font-weight: bold; font-style: italic">[private message is removed by forum moderator]</span></p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Tina Chen MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "TC"); this.style="display: inline-block";'
+<h3> tina chen msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi AmitKhare1,</p>
+<p>&nbsp;</p>
+<p>Thanks for your update and detailed information.</p>
+<p>&nbsp;</p>
+<p>I tested on my end. In the insider slow(16.8) and fast(16.9) version of PowerPoint for Mac, when typing in Hindi, the words come as expected.
+</p>
+<p>This means the issue will be fixed in the next released version.</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/34d09a7f-ec00-4d13-bfe5-a6269079a3b8" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/34d09a7f-ec00-4d13-bfe5-a6269079a3b8" height="380" width="812" /></a></p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/263436ea-9734-455c-bb2e-e1f439ea99ca" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/263436ea-9734-455c-bb2e-e1f439ea99ca" /></a></p>
+<p>
+</p><p>You may either wait for the next version to release or
+<a href="https://support.office.com/en-us/article/What-is-Office-Insider-f4208185-b63a-4b68-9c7a-9a32d2411c16#ID0EAACAAA=Mac" target="_blank" rel="noreferrer nofollow">
+join the Office Insider program</a>.</p>
+<p>
+</p><p>To join the Office Insider program, open any Office applications&gt;click
+<p>&nbsp;</p>
+<p><span style="font-weight: bold">Note for Office Insider Fast:</span></p>
+<p>Best for Insiders who want to use the earliest preview builds, released more frequently, to identify issues, provide feedback to help make Office great, and don’t mind a bit of risk using unsupported
+ builds. By choosing the Fast level, you agree to the program’s terms, which supersede your agreement with Microsoft to use Office.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Regards,</p>
+<p>Tina</p>
+<p>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=powerpoint">powerpoint, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>aqovd.com hijacking MS Edge - Microsoft Community</title>
+<h3> diddon  say:</h3>
+<h2>            aqovd.com hijacking MS Edge</h2>
+                    <p>Apologies if in wrong section - Win 10/MS Edge don't seem to be in the drop downs for category.</p>
+<p>
+</p><p>When I open MS Edge, a tab always opens on aqovd.com.&nbsp; I've being through all the settings and changed the Open With settings, as well as changing/turning off the home page button, but no matter how many/few other tabs I set, the aqovd.com will not go away.&nbsp;
+ (Firefox was also affected, but removing the url from the settings fixed that problem.)</p>
+<p>
+</p><p>Other searches suggest there's a program to remove, but I can't find it, and Malwarebytes, Super AntiSpyware are coming up clean, and PSI shows everything up to date.</p>
+<p>
+</p><p>Windows Defender did detect "Trojan:Win32/Startpage.XW" - this was quarantined, and now removed.</p>
+<p>
+</p><p>Only advice online relates to IE/Firefox/Chrome - nothing on Edge, and suggest a reset of the browser, which doesn't seem to be an option.</p>
+<p>
+</p><p>Any help welcome.</p>
+<p>
+</p><p>Thanks</p>
+<p>
+</p><p><em>[Moved from Internet Explorer]</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jsssssssss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> jsssssssss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I'd run&nbsp; some scans with AdwCleaner and Junkware Removal Tool, see steps 1 + 2 here:&nbsp;<a href="https://malwaretips.com/blogs/remove-aqovd-com/" target="_blank" rel="noreferrer nofollow">Remove Aqovd.com hijack (Virus Removal Guide)</a>
+</p>
+<p>
+</p><p><span>Normally you can use the Task Manager to close Edge: <a href="http://www.howtogeek.com/108742/how-to-use-the-new-task-manager-in-windows-8/" target="_blank" rel="noreferrer nofollow">
+How to Use the New Task Manager in Windows 8 or 10</a></span></p>
+<p><span>and see</span> this method of <a href="http://answers.microsoft.com/en-us/profile/d0e54691-7ea1-4306-ad81-111745984243" title="Scott_ki">
+Scott_ki</a>&nbsp; which was posted&nbsp; <a href="http://answers.microsoft.com/en-us/protect/forum/protect_other-protect_scanning/edge-frozen-with-virus-warning-popup/7212a393-90ad-48d0-ab55-4ffe1f21a554?page=2&amp;msgId=7618ae67-bf16-4155-bf90-d8a7405ee199">
+here</a>:</p>
+<p>
+</p><div>
+<p><em>When this happened to me, I closed Microsoft Edge using the Task Manager.</em></p>
+<p><em>Then in the search bar next to the Windows 10 logo on the bottom off the screen (I call it the "Cortana Search"), I typed in google.com and hit enter.</em></p>
+<p><em>Microsoft Edge opened up with a new tab for Google.&nbsp; You can see the offending site still opens in a tab that doesn't have focus.&nbsp; Click the "X" to close Edge.&nbsp;Do not click on the offending site tab or it will get focus again.</em></p>
+<p><em>When Edge closes nicely, I won't "Restore" the sessions and the offending site tab will be gone.</em></p>
+<p>
+</p><p>Cheers,</p>
+<p>J</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> diddon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the quick response (and for moving the post to the correct area).</p>
+<p>
+</p><p>I've just tried those tools, and Scott_ki's trick,&nbsp;but it still keeps appearing whenever I reopen Edge.&nbsp; Is there no way to reset Edge like we could with IE?&nbsp; My digging around hasn't found anything.</p>
+<p>
+</p><p><span style="text-decoration-line: underline"><strong>Update </strong></span>- forgot to mention, opening a url from the search (typing www.google.com into Cortana as suggested opened Edge without the offending tab, however closing and reopening edge, either from
+ Start shortcut, programmes list, or typing Edge into Cortana still opened the aqovd.com tab.</p>
+<p>
+</p><p>Cheers</p>
+<p>
+</p><p>Diddon</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jsssssssss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> jsssssssss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>AFAIK there still is no easy way to reset Edge.</p>
+<p>You might want to have a look at</p>
+</p><p class="contentStandard">If I were you, I'd run various scans with the tools mentioned in step 1,2 + 4 in the earlier mentioned removal guide and also reboot inbetween scans.</p>
+</p><p class="contentStandard">Cheers,</p>
+J
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> diddon  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks for the help and links.&nbsp; I've tried all the tools and tricks mentioned (except the "Reset Microsoft Edge ...", which scared me a little!), but to no avail.</p>
+<p>
+</p><p>It seems that it only happens when I open Edge using its shortcut, not when I click a link in a email etc, or a shortcut to a specific website from the Start screen.&nbsp; It's as if the shortcut&nbsp;(either from Start screen, All Apps list or Cortana)&nbsp;has been hijacked,
+ rather than the application.</p>
+<p>
+</p><p>Can't find a way to edit that either - I've created a shortcut to my normal homepage, and will use that instead until I can figure out whether it's possible to get into the properties of the Edge shortcut.</p>
+<p>
+</p><p>Thanks</p>
+<p>
+</p><p>Diddon</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> asaadbijali  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+</p><p class="contentStandard">Open Windows Registry Editor by pressing win+R.....&nbsp;Type "regedit" and press "enter"...</p>
+</p><p class="contentStandard">Once Registry Editor is opened... Press "ctrl+f".....&nbsp;&nbsp;&nbsp; A&nbsp;"find"&nbsp;dialog box will open...</p>
+</p><p class="contentStandard">Search for "aqovd" and delete whatever you find...</p>
+</p><p class="contentStandard">Thank You...&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jsssssssss" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JS"); this.style="display: inline-block";'
+<h3> jsssssssss  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            For anyone reading this and still having problems with Edge, please do read&nbsp;
+<a href="http://answers.microsoft.com/en-us/profile/c6635233-d755-4d1c-8b49-d3d03c9f82cf" title="GreginMich">
+GreginMich</a>'s replies here: <a href="http://answers.microsoft.com/en-us/protect/forum/protect_other-protect_scanning/system-error/dcccc74e-fb98-43a8-8579-956692a40982">
+http://answers.microsoft.com/en-us/protect/forum/protect_other-protect_scanning/system-error/dcccc74e-fb98-43a8-8579-956692a40982</a>
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Sync Distribution Groups - Microsoft Community</title>
+<h3> whbyrd  say:</h3>
+<h2>            Sync Distribution Groups</h2>
+                    How do I sync a distribution group made in outlook13 on my laptop with my live account in outlook.com?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raju S Das" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> raju s das  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(0, 0, 0, 1)"><font>Hi,</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>Synchronizing contact groups are not supported in Outlook 2013.</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font>You may refer to ‘Gabriel’ suggestion from the following link&nbsp;which discusses about the same issue and check if it helps:</font></span></p>
+<p><span style="color: rgba(0, 0, 0, 1)"><a href="http://social.technet.microsoft.com/Forums/office/en-US/4a59c00b-df82-4813-9066-c0775df83997/sync-contact-groups-between-outlook-2013-and-outlookcom" target="_blank" rel="noreferrer nofollow"><font color="#0000ff">http://social.technet.microsoft.com/Forums/office/en-US/4a59c00b-df82-4813-9066-c0775df83997/sync-contact-groups-between-outlook-2013-and-outlookcom</font></a></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">I hope it helps. Let us know if you need further assistance.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thank you.</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>MSN Home page not opening up when I start computer - Microsoft Community</title>
+<h3> janicekalter  say:</h3>
+<h2>            MSN Home page not opening up when I start computer</h2>
+                    Somehow my msn account comes up&nbsp;when I sign in.&nbsp; I always had MSN home page open.&nbsp; How can I get rid of the msn account page opening up first?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Janice, </p>
+<p>&nbsp;</p>
+<p>Thank you for posting your concern here at the Microsoft Community forum. </p>
+<p>&nbsp;</p>
+<p>Based from what I've read, you'd like to know on how to get remove your Microsoft account when you first open your browser. Let me assist you on this matter and rest assured that I will endeavor to assist you as best as I can and hopefully we can get this
+ issue fixed for you.</p>
+<p>&nbsp;</p>
+<p>As our initial troubleshooting process, I highly suggest that you clear your browser's cache and temporary internet files to make sure that they are not causing your issue. This is often caused by a corrupted file in the browser. For assistance in clearing
+ cache and cookies on various browsers refer to the links provided below:</p>
+<p>&nbsp;</p>
+<p><strong><a href="http://www.wikihow.com/Clear-Your-Browser's-Cache" target="_blank" rel="noreferrer nofollow">Clear browser's cache</a></strong></p>
+<p><strong><a href="http://windows.microsoft.com/en-us/windows/help/internet-explorer/slow-five-tips-to-boost-performance" target="_blank" rel="noreferrer nofollow">Is Internet Explorer slow? 5 things to try</a></strong></p>
+<p>&nbsp;</p>
+<p>With regards to your MSN home page concern, please be informed that you can set up a home page so every time you open
+<span>Internet Explorer</span> you go straight to the site you use most like for example MSN. To change your home page, please follow the proper steps provided below:
+</p>
+<ol>
+<li>
+<p>Open <span>Internet Explorer</span>.</p>
+</li><li>
+<p>Go to the webpage you want to set as your home page.</p>
+</li><li>
+<p>Click the <span><strong>Tools</strong></span> button, and then click
+<span><strong>Internet options</strong></span>.</p>
+</li><li>
+<p>Under the <span><strong>General</strong></span> tab, do one of the following:<br />
+<strong>- </strong>To set the page you're on as your home page, click <span>
+<strong>Use current</strong></span>.<br />
+<strong>- </strong>To set a blank home page, click <span><strong>Use blank</strong></span>.<br />
+<strong>- </strong>To reset the home page to its default, click <span>
+<strong>Use default</strong></span>.</p>
+</li><li>
+<p>Click <span><strong>OK</strong></span>.</p>
+</li></ol>
+<p>Janice, if there's anything else that I can help you with, please do not hesitate to reply here and we will further assist you. We'd love to hear from you again.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Email Address Suddenly in All Caps - Microsoft Community</title>
+<h3> dauber  say:</h3>
+<h2>            Email Address Suddenly in All Caps</h2>
+                    <p>Hello, I've noticed that after this last email update my email address is suddenly in all caps.
+</p>
+<p>
+</p><p>Example: *** Email address is removed for privacy ***. Yes the @msn.com part is lowercase.</p>
+<p>
+</p><p>The first part, my alias, I guess it's called, is in all caps. This is a huge problem as it looks like I'm shouting my email address.</p>
+<p>
+</p><p>I've spent a considerable amount of time in my account looking for a way to edit it back to lower case to no avail.
+</p>
+<p>
+</p><p>Will someone at Microsoft either provide me with instructions on how to do this myself or go into my account and change it for me?</p>
+<p>
+</p><p>Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)">Hi,</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Thank you for posting your query on Microsoft Community.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">We sincerely regret for the inconvenience caused.</span></p>
+<p>
+</p><p><span>Provide us the following details in order to assist you better.</span></p>
+<p>
+</p><ul>
+<li><span style="color: rgba(51, 51, 51, 1)">Do you remember making any recent changes to your account after which this issue has started to occur?</span><span>&nbsp;
+</span></li><li><span>Do you see any error message?</span></li></ul>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Get back to us with the required information to assist you further.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Thank you.</span></p>
+<p />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dauber  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi, thank you for your reply. No, I haven't made any changes to my account and I do not see any error messages.</p>
+<p>
+</p><p>I have also noticed that when I create an email or reply to an email the alias portion (the part in front of @msn) in the From line is in all caps.&nbsp; When I right click on the email address then chose Edit, the email address in the popup is all in lower case.</p>
+<p>
+</p><p>This issue started fairly recently and I believe it has something to do with Microsoft changes in the email program.
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The address part before the @ sign is the username.</p>
+<p>
+</p><p>Are you accessing your account using a browser?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dauber  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Ah, Username, thanks. Yes, Palemoon browser and since you asked I have accessed my account using Internet Explorer 11 with the same results.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Email servers ignore whether letters are upper or lower case.</p>
+<p>This will not affect the sending and receiving of emails.</p>
+<p>
+</p><p>I don't have an answer to why it happened or if there is a fix.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dauber  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>This is what I suspect happened: I purchased my first computer and got online in June 2000. At that time Radio Shack and Microsoft were running a promotion where if I signed up for MSN Dial-up Internet Service, I received a substantial discount on the computer
+ &amp; printer.</p>
+<p>
+</p><p>I'm pretty sure that when the Radio Shack clerk/salesman entered my Username into the system to set up my account, he entered it in all caps.</p>
+<p>
+</p><p>Until recently I've been able to keep it edited to all lowercase but an Outlook email update has somehow reverted it the original all caps entry.</p>
+<p>
+</p><p>It will probably take someone at Microsoft to go into the account and change that Username to lowercase.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dauber  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            More help please.<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote crashes on startup - Microsoft Community</title>
+<h3> rjdizinez  say:</h3>
+<h2>            OneNote crashes on startup</h2>
+                    <p>I am having a problem opening OneNote. The application started to crash a few days ago after computer died and I had to charge to turn it back on. I have read similar threads but and seen suggestions to delete certain files, but I can't seem to find my library
+ file within the users folder. Any help would be appreciated, thanks. &nbsp;&nbsp;</p>
+<p>
+</p><p>Process: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Microsoft OneNote [2777]<br />
+Path: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;/Applications/Microsoft OneNote.app/Contents/MacOS/Microsoft OneNote<br />
+Identifier: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;com.microsoft.onenote.mac<br />
+Version: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 15.4 (15.4)<br />
+App Item ID: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 784801555<br />
+App External ID: &nbsp; &nbsp; &nbsp; 805932672<br />
+Code Type: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; X86 (Native)<br />
+Parent Process: &nbsp; &nbsp; &nbsp; &nbsp;??? [1]<br />
+Responsible: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Microsoft OneNote [2777]<br />
+User ID: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 501<br />
+<br />
+Date/Time: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2015-02-03 06:42:11.678 -0500<br />
+OS Version: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Mac OS X 10.10.2 (14C109)<br />
+Report Version: &nbsp; &nbsp; &nbsp; &nbsp;11<br />
+Anonymous UUID: &nbsp; &nbsp; &nbsp; &nbsp;D960C8B4-FEEA-498A-2687-8E20629AAD10<br />
+<br />
+Sleep/Wake UUID: &nbsp; &nbsp; &nbsp; 613530E9-4968-4B68-A720-43ED7AA555F7<br />
+<br />
+Time Awake Since Boot: 47000 seconds<br />
+Time Since Wake: &nbsp; &nbsp; &nbsp; 4900 seconds<br />
+<br />
+Crashed Thread: &nbsp; &nbsp; &nbsp; &nbsp;0 &nbsp;Dispatch queue: com.apple.main-thread<br />
+<br />
+Exception Type: &nbsp; &nbsp; &nbsp; &nbsp;EXC_BAD_ACCESS (SIGBUS)<br />
+Exception Codes: &nbsp; &nbsp; &nbsp; 0x000000000000000a, 0x0000000013a5d158<br />
+<br />
+VM Regions Near 0x13a5d158:<br />
+&nbsp; &nbsp; __LINKEDIT &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 00000000139bb000-00000000139c7000 [ &nbsp; 48K] r--/rwx SM=COW &nbsp;/System/Library/Frameworks/CoreGraphics.framework/Versions/A/Resources/libRIP.A.dylib<br />
+--&gt; mapped file &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;00000000139c7000-0000000013ad2000 [ 1068K] rw-/rwx SM=PRV &nbsp;/Users/USER/Library/Group Containers/*<br />
+&nbsp; &nbsp; mapped file &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;0000000013ad2000-0000000013b04000 [ &nbsp;200K] r--/rwx SM=COW &nbsp;/Users/USER/Library/Fonts/A Love of Thunder.ttf<br />
+<br />
+Thread 0 Crashed:: Dispatch queue: com.apple.main-thread<br />
+0 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b0bc5b WlmBuildPosixObjectNameW + 3334<br />
+1 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b0ba20 WlmBuildPosixObjectNameW + 2763<br />
+2 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b098bd SetLastErrorEx + 345<br />
+3 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b0a0dd ReleaseMbuFileSharedLock + 1892<br />
+4 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b12ed5 ReleaseSemaphore + 804<br />
+5 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b13a65 WlmCustomObjectPointer + 1601<br />
+6 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b12240 CreateEventExW + 114<br />
+7 &nbsp; com.microsoft.wlmkernel &nbsp; &nbsp; &nbsp; <span>
+</span>0x03b12428 CreateEventW + 42<br />
+8 &nbsp; com.microsoft.csi &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01c74dd3 0x175e000 + 5336531<br />
+9 &nbsp; com.microsoft.csi &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01c74ac4 0x175e000 + 5335748<br />
+10 &nbsp;com.microsoft.msocore &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x034df79a InitLiblets + 548<br />
+11 &nbsp;com.microsoft.office &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x01ebc4be MsoFInitOfficeEx2 + 440<br />
+12 &nbsp;com.microsoft.office &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x01ebc2ff MsoFInitOffice + 47<br />
+13 &nbsp;com.microsoft.onenote.mac &nbsp; &nbsp; <span>
+</span>0x0001ed0d 0x17000 + 32013<br />
+14 &nbsp;com.microsoft.onenote.mac &nbsp; &nbsp; <span>
+</span>0x0001ed95 0x17000 + 32149<br />
+15 &nbsp;com.microsoft.onenote.mac &nbsp; &nbsp; <span>
+</span>0x0001dc06 0x17000 + 27654<br />
+16 &nbsp;com.apple.Foundation &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9294f213 __57-[NSNotificationCenter addObserver:selector:name:object:]_block_invoke + 50<br />
+17 &nbsp;com.apple.CoreFoundation &nbsp; &nbsp; &nbsp;<span>
+</span>0x91bd1714 __CFNOTIFICATIONCENTER_IS_CALLING_OUT_TO_AN_OBSERVER__ + 20<br />
+18 &nbsp;com.apple.CoreFoundation &nbsp; &nbsp; &nbsp;<span>
+</span>0x91ab2451 _CFXNotificationPost + 3713<br />
+19 &nbsp;com.apple.Foundation &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9293d134 -[NSNotificationCenter postNotificationName:object:userInfo:] + 92<br />
+20 &nbsp;com.apple.Foundation &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9295b9a2 -[NSNotificationCenter postNotificationName:object:] + 56<br />
+21 &nbsp;com.apple.AppKit &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x908363cf -[NSApplication finishLaunching] + 696<br />
+22 &nbsp;com.apple.AppKit &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x90835d30 -[NSApplication run] + 143<br />
+23 &nbsp;com.apple.AppKit &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9081f3f0 NSApplicationMain + 2082<br />
+24 &nbsp;libdyld.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x979dc6d9 start + 1<br />
+<br />
+Thread 1:: Dispatch queue: com.apple.libdispatch-manager<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb248ce kevent64 + 10<br />
+1 &nbsp; libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9055573f _dispatch_mgr_invoke + 245<br />
+2 &nbsp; libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x905553a2 _dispatch_mgr_thread + 52<br />
+<br />
+Thread 2:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 3:: Dispatch queue: com.microsoft.mbufont.fontsAndFamilies<br />
+0 &nbsp; libFontParser.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9471b29a TSFNTFont::GetFormat() const + 90<br />
+1 &nbsp; libFontParser.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9471b14b TTrueTypeFont::IsTrueTypeFont(TSFNTFont const&amp;) + 19<br />
+2 &nbsp; libFontParser.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9471943d TFont::CreateFontEntitiesForFile(char const*, bool, TSimpleArray&lt;TFont*&gt;&amp;, bool, short, char const*) + 3521<br />
+3 &nbsp; libFontParser.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x947180d9 FPFontCreateFontsWithPath + 230<br />
+4 &nbsp; libCGXType.A.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x0915aa62 create_private_data_with_path + 26<br />
+5 &nbsp; com.apple.CoreGraphics &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9b0e8292 CGFontCreateFontsWithPath + 44<br />
+6 &nbsp; com.apple.CoreGraphics &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9b0e7e1d CGFontCreateFontsWithURL + 454<br />
+7 &nbsp; com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9003d528 CreateFontWithFontURL(__CFURL const*, bool) + 60<br />
+8 &nbsp; com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9003d40f TCGFontCache::CopyFont(__CFURL const*, bool) const + 97<br />
+9 &nbsp; com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9003d213 TBaseFont::CopyNativeFont() const + 87<br />
+10 &nbsp;com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9003d183 TBaseFont::CopyGraphicsFont() const + 29<br />
+11 &nbsp;com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x900f6680 TBaseFont::CopyTable(unsigned long) const + 880<br />
+12 &nbsp;com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x900f66e7 TBaseFont::CopyTable(unsigned long, unsigned int) const + 35<br />
+13 &nbsp;com.apple.CoreText &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9009bdbb CTFontCopyTable + 134<br />
+14 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01738bde 0x1726000 + 76766<br />
+15 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01729303 0x1726000 + 13059<br />
+16 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01729ca9 0x1726000 + 15529<br />
+17 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01734b81 0x1726000 + 60289<br />
+18 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90552130 _dispatch_client_callout + 50<br />
+19 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90553570 _dispatch_barrier_sync_f_invoke + 55<br />
+20 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90553537 dispatch_barrier_sync_f + 105<br />
+21 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9055c3d1 dispatch_barrier_sync + 54<br />
+22 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01734a00 0x1726000 + 59904<br />
+23 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x017349a6 0x1726000 + 59814<br />
+24 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x01735f62 0x1726000 + 65378<br />
+25 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x017362f2 0x1726000 + 66290<br />
+26 &nbsp;com.microsoft.mbufont &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x017365e7 0x1726000 + 67047<br />
+27 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90556e12 _dispatch_call_block_and_release + 15<br />
+28 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90555d05 _dispatch_queue_drain + 1017<br />
+29 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9055799d _dispatch_queue_invoke + 186<br />
+30 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x90554f89 _dispatch_root_queue_drain + 395<br />
+31 &nbsp;libdispatch.dylib &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <span>
+</span>0x9056463d _dispatch_worker_thread3 + 97<br />
+32 &nbsp;libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932351da _pthread_wqthread + 724<br />
+33 &nbsp;libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 4:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 5:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 6:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 7:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 8:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 9:<br />
+0 &nbsp; libsystem_kernel.dylib &nbsp; &nbsp; &nbsp; &nbsp;<span>
+</span>0x9bb23e6a __workq_kernreturn + 10<br />
+1 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x932352b1 _pthread_wqthread + 939<br />
+2 &nbsp; libsystem_pthread.dylib &nbsp; &nbsp; &nbsp; <span>
+</span>0x93232e2e start_wqthread + 30<br />
+<br />
+Thread 0 crashed with X86 Thread State (32-bit):<br />
+&nbsp; eax: 0x00000232 &nbsp;ebx: 0x0000025e &nbsp;ecx: 0x00000000 &nbsp;edx: 0x13a5cd54<br />
+&nbsp; edi: 0x00000000 &nbsp;esi: 0x00000000 &nbsp;ebp: 0xbffe8e78 &nbsp;esp: 0xbffe8e30<br />
+&nbsp; &nbsp;ss: 0x00000023 &nbsp;efl: 0x00010212 &nbsp;eip: 0x03b0bc5b &nbsp; cs: 0x0000001b<br />
+&nbsp; &nbsp;ds: 0x00000023 &nbsp; es: 0x00000023 &nbsp; fs: 0x00000000 &nbsp; gs: 0x0000000f<br />
+&nbsp; cr2: 0x13a5d158<br />
+<br />
+Logical CPU: &nbsp; &nbsp; 2<br />
+Error Code: &nbsp; &nbsp; &nbsp;0x00000004<br />
+Trap Number: &nbsp; &nbsp; 14<br />
+<br />
+<br />
+Binary Images:<br />
+&nbsp; &nbsp;0x17000 - &nbsp; 0xd58fff +com.microsoft.onenote.mac (15.4 - 15.4) &lt;2F5306D9-D419-3B41-934D-19ABB12FE2C0&gt; /Applications/Microsoft OneNote.app/Contents/MacOS/Microsoft OneNote<br />
+&nbsp; 0xfb6000 - &nbsp;0x101fff7 +com.microsoft.oleautomation (15.4 - 15.4) &lt;EDE466D0-6263-3EE7-A4C1-4041FDD312B5&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/OLEAutomation.framework/Versions/A/OLEAutomation<br />
+&nbsp;0x1031000 - &nbsp;0x10e6ffb +com.microsoft.COMBase (15.4 - 15.4) &lt;81E5DB46-E068-3FB4-879E-B6D4E6D83398&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/COMBase.framework/Versions/A/COMBase<br />
+&nbsp;0x1103000 - &nbsp;0x1196ffb +com.microsoft.ole (15.4 - 15.4) &lt;90F99714-6B9A-3403-BBDC-4B170BEF5117&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/OLE.framework/Versions/A/OLE<br />
+&nbsp;0x11a9000 - &nbsp;0x1271fff +com.microsoft.CocoaUI (1.0) &lt;F980D04F-6103-3B59-9368-B04E7812E78D&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/CocoaUI.framework/Versions/A/CocoaUI<br />
+&nbsp;0x1346000 - &nbsp;0x1346fff &nbsp;com.apple.quartzframework (1.5 - 1.5) &lt;6D85B29E-D684-3DDE-8F02-D292D86A014F&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Quartz<br />
+&nbsp;0x1349000 - &nbsp;0x13b0ffb +com.microsoft.docex (15.4 - 15.4) &lt;994226B0-8058-3B96-9CBD-2C4F9A3FF2DF&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/DocEx.framework/Versions/A/DocEx<br />
+&nbsp;0x13be000 - &nbsp;0x15e2fff +com.microsoft.gfx (15.4 - 15.4) &lt;0FCA3D19-B687-33DE-B99C-7A4F5892C402&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/Gfx.framework/Versions/A/Gfx<br />
+&nbsp;0x162e000 - &nbsp;0x1653ffb +com.microsoft.setupui.office (15.4 - 15.4) &lt;4E6DC008-BB7F-3D1E-ABAD-07B509EF3CD4&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftSetupUIGemini.framework/Versions/A/MicrosoftSetupUIGemini<br />
+&nbsp;0x167d000 - &nbsp;0x1699ff7 +com.microsoft.mbuinstrument (15.4 - 15.4) &lt;21CE901F-9653-3CFA-A65E-35B614FC13C1&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/mbuinstrument.framework/Versions/A/mbuinstrument<br />
+&nbsp;0x16b0000 - &nbsp;0x16d3fff +com.microsoft.mbukernel (15.4 - 15.4) &lt;E947F023-C907-3A6D-9FFA-938D27DA89C2&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/mbukernel.framework/Versions/A/mbukernel<br />
+&nbsp;0x170c000 - &nbsp;0x1718ff3 +com.microsoft.merp (15.4 - 15.4) &lt;AEAE2092-831F-3804-98DF-521E1A24C276&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/merp.framework/Versions/A/merp<br />
+&nbsp;0x1726000 - &nbsp;0x1751ffb +com.microsoft.mbufont (15.4 - 15.4) &lt;80FD405A-A0F6-31EE-B8A5-226FB6D65CD5&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftFontLibrary.framework/Versions/A/MicrosoftFontLibrary<br />
+&nbsp;0x175e000 - &nbsp;0x1da5ffb +com.microsoft.csi (15.4 - 15.4) &lt;0279D3C7-D689-3B15-B69A-42B6B9743B58&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftCSI.framework/Versions/A/MicrosoftCSI<br />
+&nbsp;0x1eb8000 - &nbsp;0x2827ffb +com.microsoft.office (15.4 - 15.4) &lt;44A0FE4F-92F3-37A6-B27A-C457A9131BBA&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftOffice.framework/Versions/A/MicrosoftOffice<br />
+&nbsp;0x3470000 - &nbsp;0x3497ff7 +com.microsoft.msocf (15.4 - 15.4) &lt;A074C8CD-648A-324D-9CAC-320D64873C96&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MsoCF.framework/Versions/A/MsoCF<br />
+&nbsp;0x34ae000 - &nbsp;0x35a5ffb +com.microsoft.msocore (15.4 - 15.4) &lt;08AA3B7C-EDDB-3F9C-83D2-1D7A46826E54&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MsoCore.framework/Versions/A/MsoCore<br />
+&nbsp;0x35c9000 - &nbsp;0x35eaffb +com.microsoft.threadpool (15.4 - 15.4) &lt;C37E6D96-B549-3CDC-B9C1-DA800D0C2635&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MsoThreadPool.framework/Versions/A/MsoThreadPool<br />
+&nbsp;0x35f9000 - &nbsp;0x3796ff3 +com.microsoft.msxml (15.4 - 15.4) &lt;C53DD1F2-C1F0-31CF-AA27-5191DA8DD052&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MSXML.framework/Versions/A/MSXML<br />
+&nbsp;0x3a34000 - &nbsp;0x3a83ffb +com.microsoft.uniscribe (15.4 - 15.4) &lt;C9B67E45-73C8-3B5F-9BA8-58ECF6229FF0&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/Uniscribe.framework/Versions/A/Uniscribe<br />
+&nbsp;0x3a9d000 - &nbsp;0x3aacfff +com.microsoft.frameworks.wincrypto (15.4 - 15.4) &lt;B7E3F57F-CD2D-37A8-A2F0-24D4177D1BB0&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/WinCrypto.framework/Versions/A/WinCrypto<br />
+&nbsp;0x3ab6000 - &nbsp;0x3ad8ffb +com.microsoft.wlmgdi (15.4 - 15.4) &lt;284B22C3-0CC3-31E5-844A-BF7874FC8EFA&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/WLMGraphicsDevice.framework/Versions/A/WLMGraphicsDevice<br />
+&nbsp;0x3ae9000 - &nbsp;0x3afcfff +com.microsoft.frameworks.winhttp (15.4 - 15.4) &lt;34D1FD21-A4CF-3BBF-841F-4E23A3CBB709&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/WinHttp.framework/Versions/A/WinHttp<br />
+&nbsp;0x3b06000 - &nbsp;0x3b57ff7 +com.microsoft.wlmkernel (15.4 - 15.4) &lt;9107842C-0E9D-3E10-8BF7-78A86E831CFC&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/WLMKernel.framework/Versions/A/WLMKernel<br />
+&nbsp;0x3b8a000 - &nbsp;0x3d0cff7 +com.microsoft.richedit (15.4 - 15.4) &lt;E6B3C701-E248-32AE-9062-C89BB3775B48&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftRichEdit.framework/Versions/A/MicrosoftRichEdit<br />
+&nbsp;0x3d30000 - &nbsp;0x3d3cfff +com.microsoft.oleo (15.4 - 15.4) &lt;0410F7CA-9216-3A7A-B45B-F44A456E244C&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftOleo.framework/Versions/A/MicrosoftOleo<br />
+&nbsp;0x3d46000 - &nbsp;0x3d53ff7 +com.microsoft.credui (15.4 - 15.4) &lt;ADA1E3F0-ACA2-3E10-90B0-960DC7C9163A&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftCredui.framework/Versions/A/MicrosoftCredui<br />
+&nbsp;0x3d68000 - &nbsp;0x3d71ff7 +com.microsoft.ProofingUI (15.4 - 15.4) &lt;A189ADF2-DD93-3F7B-831B-0DFC303D8E62&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/ProofingUI.framework/Versions/A/ProofingUI<br />
+&nbsp;0x3d80000 - &nbsp;0x3e14ff3 +com.microsoft.rpcrt4 (15.4 - 15.4) &lt;E533FDBA-B7B6-36D5-A7AB-AAA31E9DDD59&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/rpcrt4.framework/Versions/A/rpcrt4<br />
+&nbsp;0x3e28000 - &nbsp;0x439bff7 &nbsp;com.apple.QuartzComposer (5.1 - 325.1) &lt;82DA95F6-1324-33A0-B253-3EBE1A3F5780&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuartzComposer.framework/Versions/A/QuartzComposer<br />
+&nbsp;0x4602000 - &nbsp;0x46acff7 &nbsp;com.apple.PDFKit (3.1 - 3.1) &lt;A580FC1A-7796-3D6C-8D50-DE1993AD7175&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/PDFKit.framework/Versions/A/PDFKit<br />
+&nbsp;0x46fd000 - &nbsp;0x4723ff7 &nbsp;com.apple.quartzfilters (1.10.0 - 1.10.0) &lt;5712F712-4A1C-35BF-AE1D-F55DA1D9877D&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuartzFilters.framework/Versions/A/QuartzFilters<br />
+&nbsp;0x4741000 - &nbsp;0x49ccfff &nbsp;com.apple.imageKit (2.6.1 - 840) &lt;41498F5D-1BEB-3426-9DE1-C2B78D6C423D&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/ImageKit.framework/Versions/A/ImageKit<br />
+&nbsp;0x4b74000 - &nbsp;0x4c5eff7 &nbsp;com.apple.QuickLookUIFramework (5.0 - 675.13) &lt;CB237A15-5CB5-38A8-91C1-DE32257B2D26&gt; /System/Library/Frameworks/Quartz.framework/Versions/A/Frameworks/QuickLookUI.framework/Versions/A/QuickLookUI<br />
+&nbsp;0x4ce2000 - &nbsp;0x4ce5fff &nbsp;com.apple.AppleSystemInfo (3.1 - 3.1) &lt;F3BD3065-65F8-31BC-A01E-A922E51FAACD&gt; /System/Library/PrivateFrameworks/AppleSystemInfo.framework/Versions/A/AppleSystemInfo<br />
+&nbsp;0x4ceb000 - &nbsp;0x4d75ff3 &nbsp;com.apple.CorePDF (4.0 - 4) &lt;DA26FFBC-901A-3EF5-AF2F-9699683CB185&gt; /System/Library/PrivateFrameworks/CorePDF.framework/Versions/A/CorePDF<br />
+&nbsp;0x4db6000 - &nbsp;0x4e16ff3 &nbsp;com.apple.QuickLookFramework (5.0 - 675.13) &lt;B731ABD0-8B4A-350E-8EFF-5FD855622599&gt; /System/Library/Frameworks/QuickLook.framework/Versions/A/QuickLook<br />
+&nbsp;0x4e4e000 - &nbsp;0x4e58fff &nbsp;com.apple.DisplayServicesFW (2.9 - 372.1) &lt;01C3D99D-7F75-3401-95E8-5175E028EE21&gt; /System/Library/PrivateFrameworks/DisplayServices.framework/Versions/A/DisplayServices<br />
+&nbsp;0x4e62000 - &nbsp;0x4ebaff3 &nbsp;com.apple.ImageCaptureCore (6.0 - 6.0) &lt;FC5102A0-87F5-39F7-9725-0C74749BF918&gt; /System/Library/Frameworks/ImageCaptureCore.framework/Versions/A/ImageCaptureCore<br />
+&nbsp;0x4ee7000 - &nbsp;0x4ee9ff7 &nbsp;com.apple.SafariServices.framework (10600 - 10600.3.18) &lt;6375C6B2-6F73-3B05-ABB6-F2B7E76E0279&gt; /System/Library/PrivateFrameworks/SafariServices.framework/Versions/A/SafariServices<br />
+&nbsp;0x4ef1000 - &nbsp;0x5120ffb +com.microsoft.XPG (15.4 - 15.4) &lt;B511A1E8-4E95-3144-BA25-E696FAD090EC&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/XPG.framework/Versions/A/XPG<br />
+&nbsp;0x5149000 - &nbsp;0x514bff3 +com.microsoft.mbulocale (15.4 - 15.4) &lt;5C8732E0-0C26-32FF-AB8B-3159BACCEF80&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/mbulocale.framework/Versions/A/mbulocale<br />
+&nbsp;0x5152000 - &nbsp;0x5266ff7 +com.microsoft.metex (15.4 - 15.4) &lt;895F970B-18EC-30BF-8AB7-5F6A8D2806F2&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MetEx.framework/Versions/A/MetEx<br />
+&nbsp;0x5299000 - &nbsp;0x52b2ff7 &nbsp;com.apple.ScriptingBridge (1.3.2 - 66) &lt;479A4C55-AA2E-38CD-BAB5-346AB3915797&gt; /System/Library/Frameworks/ScriptingBridge.framework/Versions/A/ScriptingBridge<br />
+&nbsp;0x52c1000 - &nbsp;0x52e2ff7 +Microsoft-Open-Technologies.ADAL-OSX (0.5 - 1) &lt;F077343F-D6BA-3A4A-BD10-0F4E530AB9B9&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/ADAL-OSX.framework/Versions/A/ADAL-OSX<br />
+&nbsp;0x52f1000 - &nbsp;0x536effb +com.microsoft.mbuCloudServices (15.4 - 15.4) &lt;04301396-DC22-3CA2-AA3D-FDE87B220E5D&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftCloudServices.framework/Versions/A/MicrosoftCloudServices<br />
+&nbsp;0x5390000 - &nbsp;0x5399fff +com.microsoft.frameworks.winapiui (15.4 - 15.4) &lt;1E616AB8-C124-3103-B11C-810A57646806&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/WinAPIUI.framework/Versions/A/WinAPIUI<br />
+&nbsp;0x53a8000 - &nbsp;0x53d9ffb &nbsp;com.apple.securityinterface (10.0 - 55058) &lt;95726911-E181-3115-8451-EE1FA35A2937&gt; /System/Library/Frameworks/SecurityInterface.framework/Versions/A/SecurityInterface<br />
+&nbsp;0x53f8000 - &nbsp;0x5402fff +com.microsoft.fba (15.4 - 15.4) &lt;DC6F3989-7EB0-3F64-8C83-D57132A03F7F&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftFBA.framework/Versions/A/MicrosoftFBA<br />
+&nbsp;0x5412000 - &nbsp;0x54b5ff3 +com.microsoft.webservices (15.4 - 15.4) &lt;E79E8890-2EEB-3E1A-82FD-3BEAB7891D7C&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftWebServices.framework/Versions/A/MicrosoftWebServices<br />
+&nbsp;0x54cc000 - &nbsp;0x5511ff3 +com.microsoft.Hlink (15.4 - 15.4) &lt;59865C10-EADF-3532-AA61-2135C507BE54&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/Hlink.framework/Versions/A/Hlink<br />
+&nbsp;0x5520000 - &nbsp;0x557cfff +com.microsoft.netlib (15.4 - 15.4) &lt;A52C39EC-854C-3C03-8A98-67677DFFAFBB&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/Netlib.framework/Versions/A/Netlib<br />
+&nbsp;0x558f000 - &nbsp;0x559bfff &nbsp;com.apple.StoreKit (1.0 - 376.6.2) &lt;74E31986-D80C-3EF8-8A04-B276FE6E64F9&gt; /System/Library/Frameworks/StoreKit.framework/Versions/A/StoreKit<br />
+&nbsp;0x55a8000 - &nbsp;0x55b4ff3 +com.microsoft.molc.framework (15.4 - 15.4) &lt;E6699218-FE36-3EA8-9C1E-1D16B32ACDCC&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/molc.framework/Versions/A/molc<br />
+&nbsp;0x55bc000 - &nbsp;0x55c8ff7 &nbsp;com.apple.CommerceCore (1.0 - 376.6.2) &lt;B445645E-BD50-304E-B25C-223E01CAE269&gt; /System/Library/PrivateFrameworks/CommerceKit.framework/Versions/A/Frameworks/CommerceCore.framework/Versions/A/CommerceCore<br />
+&nbsp;0x55d2000 - &nbsp;0x5758fff +com.microsoft.msls3 (15.4 - 15.4) &lt;A8F2BDD5-2321-3427-934C-D8DAD0806E37&gt; /Applications/Microsoft OneNote.app/Contents/Frameworks/MicrosoftPTLS.framework/Versions/A/MicrosoftPTLS<br />
+&nbsp;0x6f90000 - &nbsp;0x6f98ff7 &nbsp;libCGCMS.A.dylib (775.16) &lt;8464ED9C-1365-3E92-BCD4-FEAD13EA9836&gt; /System/Library/Frameworks/CoreGraphics.framework/Versions/A/Resources/libCGCMS.A.dylib<br />
+&nbsp;0x80fa000 - &nbsp;0x813cffb &nbsp;com.apple.CloudDocs (1.0 - 280.6) &lt;5C3C95B5-C470-3C3C-969D-008A045F5284&gt; /System/Library/PrivateFrameworks/CloudDocs.framework/CloudDocs<br />
+&nbsp;0x915a000 - &nbsp;0x915cffb &nbsp;libCGXType.A.dylib (775.16) &lt;B3ED365B-0CE2-3847-A503-A35892E7790A&gt; /System/Library/Frameworks/CoreGraphics.framework/Versions/A/Resources/libCGXType.A.dylib<br />
+0x1395a000 - 0x13969fff &nbsp;libSimplifiedChineseConverter.dylib (64) &lt;68D79299-8F39-3AD1-8BCA-0A614F679DDA&gt; /System/Library/CoreServices/Encodings/libSimplifiedChineseConverter.dylib<br />
+0x13990000 - 0x139b9fff &nbsp;libRIP.A.dylib (775.16) &lt;5587B04F-D31C-3F70-961F-0F6282E8FB29&gt; /System/Library/Frameworks/CoreGraphics.framework/Versions/A/Resources/libRIP.A.dylib<br />
+0x8fea2000 - 0x8fed5e03 &nbsp;dyld (353.2.1) &lt;06B1254D-9BB9-327C-BA15-8F18FFF97586&gt; /usr/lib/dyld<br />
+0x90008000 - 0x90034ffb &nbsp;libsandbox.1.dylib (358.1.1) &lt;776BDC0D-F352-3F49-9B0A-8B6B0D164C6A&gt; /usr/lib/libsandbox.1.dylib<br />
+0x90038000 - 0x9014eff7 &nbsp;com.apple.CoreText (352.0 - 454.3) &lt;6448E389-AB2E-34EF-AE07-FE364ECC98E5&gt; /System/Library/Frameworks/CoreText.framework/Versions/A/CoreText<br />
+0x9014f000 - 0x901b8ff7 &nbsp;libcorecrypto.dylib (233.1.2) &lt;F188C1A7-E88F-3EC5-A6AA-22C02E3F0C93&gt; /usr/lib/system/libcorecrypto.dylib<br />
+0x901e7000 - 0x90202ff3 &nbsp;com.apple.openscripting (1.4 - 162) &lt;EB1D1BA6-C0B0-3D3B-AE54-676324FFF3E6&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/OpenScripting.framework/Versions/A/OpenScripting<br />
+0x90203000 - 0x90204fff &nbsp;libremovefile.dylib (35) &lt;49DCAF7B-4466-3775-9E58-EA5D7CBA8AE0&gt; /usr/lib/system/libremovefile.dylib<br />
+0x9032e000 - 0x90347fff &nbsp;com.apple.Kerberos (3.0 - 1) &lt;92735F11-CF1C-3FA6-8682-9A30AC9E2651&gt; /System/Library/Frameworks/Kerberos.framework/Versions/A/Kerberos<br />
+0x90348000 - 0x9034cfff &nbsp;libCoreVMClient.dylib (79) &lt;85CBF1F3-3CE1-304F-88DF-15608C9A2367&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCoreVMClient.dylib<br />
+0x9034d000 - 0x90351fff &nbsp;libheimdal-asn1.dylib (398.10.1) &lt;6F113AF8-F5AD-330B-B029-F7AF28A93F28&gt; /usr/lib/libheimdal-asn1.dylib<br />
+0x90352000 - 0x903f2fff &nbsp;com.apple.QD (301 - 301) &lt;4DFE3689-59DE-3FBC-806B-6A4056573E52&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/QD.framework/Versions/A/QD<br />
+0x903f3000 - 0x903f4fff &nbsp;libSystem.B.dylib (1213) &lt;BFFB2AB8-29F6-3779-B358-EE1F46520FC8&gt; /usr/lib/libSystem.B.dylib<br />
+0x903f5000 - 0x90412ffb &nbsp;com.apple.Ubiquity (1.3 - 313) &lt;9ED23769-0725-3D4B-B7F4-AF08020D73C3&gt; /System/Library/PrivateFrameworks/Ubiquity.framework/Versions/A/Ubiquity<br />
+0x90413000 - 0x90504ffb &nbsp;libiconv.2.dylib (42) &lt;4AF77F10-0BEC-3BE0-99DF-C5170EDB316B&gt; /usr/lib/libiconv.2.dylib<br />
+0x90505000 - 0x90509ffb &nbsp;libGIF.dylib (1232) &lt;037E01F1-885C-3F4A-A353-87DB1F9CB504&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libGIF.dylib<br />
+0x9050a000 - 0x90517ff7 &nbsp;libbz2.1.0.dylib (36) &lt;6BC7B049-8F03-3217-9840-B1804CCBF742&gt; /usr/lib/libbz2.1.0.dylib<br />
+0x90518000 - 0x9052fffb &nbsp;com.apple.AppContainer (4.0 - 238.10.1) &lt;76D88956-AF52-35AA-8213-9B6285B623CD&gt; /System/Library/PrivateFrameworks/AppContainer.framework/Versions/A/AppContainer<br />
+0x90547000 - 0x90550fff &nbsp;com.apple.DiskArbitration (2.6 - 2.6) &lt;D906604A-1D8C-31BF-8F22-EA219FFC858F&gt; /System/Library/Frameworks/DiskArbitration.framework/Versions/A/DiskArbitration<br />
+0x90551000 - 0x90578fff &nbsp;libdispatch.dylib (442.1.4) &lt;B26A176C-39F7-3362-B128-27B1211068B9&gt; /usr/lib/system/libdispatch.dylib<br />
+0x90581000 - 0x90583ff7 &nbsp;libsystem_sandbox.dylib (358.1.1) &lt;6031346B-57B0-36FB-911B-D355E1F98A9A&gt; /usr/lib/system/libsystem_sandbox.dylib<br />
+0x90584000 - 0x90619fff &nbsp;libsystem_c.dylib (1044.10.1) &lt;584F66B1-ABBA-354C-8118-1DA5386A065E&gt; /usr/lib/system/libsystem_c.dylib<br />
+0x9061a000 - 0x90626ff7 &nbsp;libkxld.dylib (2782.10.72) &lt;FF699F52-D950-3DAD-A37B-834EBF0D0FFD&gt; /usr/lib/system/libkxld.dylib<br />
+0x90627000 - 0x9062dff3 &nbsp;libsystem_platform.dylib (63) &lt;509993B7-3F26-3360-B899-0BBB15152516&gt; /usr/lib/system/libsystem_platform.dylib<br />
+0x9062e000 - 0x9064bfff &nbsp;libCRFSuite.dylib (34) &lt;781A92EF-410E-39B2-953D-FEE12748D834&gt; /usr/lib/libCRFSuite.dylib<br />
+0x9064c000 - 0x90695ffb &nbsp;libFontRegistry.dylib (134) &lt;023BB8A2-8BBA-30DC-B0C2-A5F0AE3667D8&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libFontRegistry.dylib<br />
+0x90696000 - 0x90699ff7 &nbsp;com.apple.help (1.3.3 - 46) &lt;FDF183E4-3B95-3CBD-A390-2536C8E7E258&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Help.framework/Versions/A/Help<br />
+0x9069a000 - 0x90740fff &nbsp;com.apple.Metadata (10.7.0 - 917.1) &lt;0B19C2DD-A71C-3D2B-AB00-68FFC6CC606A&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/Metadata.framework/Versions/A/Metadata<br />
+0x90741000 - 0x90746fff &nbsp;com.apple.print.framework.Print (10.0 - 265) &lt;7C3984BB-8337-3B90-A414-17C181A45744&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Print.framework/Versions/A/Print<br />
+0x90747000 - 0x90776fff &nbsp;com.apple.CoreVideo (1.8 - 145.1) &lt;A59466FC-6B5A-3B36-BDD4-AC9CD581B7A1&gt; /System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo<br />
+0x90777000 - 0x907beff3 &nbsp;com.apple.AppleJPEG (1.0 - 1) &lt;C14A2B49-A664-3EDE-9B9B-6A678ED7F8DE&gt; /System/Library/PrivateFrameworks/AppleJPEG.framework/Versions/A/AppleJPEG<br />
+0x907c2000 - 0x907c2fff &nbsp;com.apple.ApplicationServices (48 - 48) &lt;76C301A4-705B-33DE-BA11-C89DCF1EDCDD&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices<br />
+0x907c3000 - 0x907c5ffb &nbsp;libsystem_secinit.dylib (18) &lt;3CBA3BD3-8BA2-358D-BD1A-A1C3DF5D84E6&gt; /usr/lib/system/libsystem_secinit.dylib<br />
+0x907c6000 - 0x9081bff3 &nbsp;com.apple.audio.CoreAudio (4.3.0 - 4.3.0) &lt;F5A586C3-A440-3E0E-966A-7841A182E5B2&gt; /System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio<br />
+0x9081c000 - 0x91411fff &nbsp;com.apple.AppKit (6.9 - 1344.72) &lt;B84FF828-3016-353A-BF86-C1547F448FB1&gt; /System/Library/Frameworks/AppKit.framework/Versions/C/AppKit<br />
+0x91412000 - 0x91431ff7 &nbsp;com.apple.GenerationalStorage (2.0 - 209.11) &lt;34CF76B2-8052-359D-816D-092608FB6919&gt; /System/Library/PrivateFrameworks/GenerationalStorage.framework/Versions/A/GenerationalStorage<br />
+0x91432000 - 0x9146eff3 &nbsp;com.apple.RemoteViewServices (2.0 - 99) &lt;2839C2F1-88DA-3843-87BF-441A374A8967&gt; /System/Library/PrivateFrameworks/RemoteViewServices.framework/Versions/A/RemoteViewServices<br />
+0x9146f000 - 0x91857ff7 &nbsp;libLAPACK.dylib (1128) &lt;4E3D1289-2C98-3E53-BB8D-AD911357FF66&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLAPACK.dylib<br />
+0x91858000 - 0x91858fff &nbsp;liblaunch.dylib (559.10.3) &lt;DF6BB29C-8F20-3E04-81FF-19FFBC82BD46&gt; /usr/lib/system/liblaunch.dylib<br />
+0x91859000 - 0x918b2ffb &nbsp;libAVFAudio.dylib (118.3) &lt;65762748-F772-3959-8D14-197AFB778132&gt; /System/Library/Frameworks/AVFoundation.framework/Versions/A/Resources/libAVFAudio.dylib<br />
+0x918b3000 - 0x918beff7 &nbsp;com.apple.AppSandbox (4.0 - 238.10.1) &lt;89DA7A61-B7F6-3365-8D49-65FA766EF720&gt; /System/Library/PrivateFrameworks/AppSandbox.framework/Versions/A/AppSandbox<br />
+0x918bf000 - 0x918c9ffb &nbsp;com.apple.audio.SoundManager (4.2 - 4.2) &lt;4312D0A7-4B6F-3A1E-9A47-24C6E8C65E51&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/CarbonSound.framework/Versions/A/CarbonSound<br />
+0x918ca000 - 0x918fcffb &nbsp;com.apple.GSS (4.0 - 2.0) &lt;680D3014-D2C6-30D4-9892-93B9E4172100&gt; /System/Library/Frameworks/GSS.framework/Versions/A/GSS<br />
+0x9199f000 - 0x919d2fe3 &nbsp;libsystem_m.dylib (3086.1) &lt;951F633F-57B7-398B-912F-F6ED4DB1C597&gt; /usr/lib/system/libsystem_m.dylib<br />
+0x919d3000 - 0x91a24fff &nbsp;libcups.2.dylib (408) &lt;08C5D411-533C-345A-B820-092C96215F2E&gt; /usr/lib/libcups.2.dylib<br />
+0x91a25000 - 0x91a4bffb &nbsp;libPng.dylib (1232) &lt;576BCAB6-DBE2-36DB-A390-E945FC844118&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libPng.dylib<br />
+0x91a4c000 - 0x91aa2fff &nbsp;libc++.1.dylib (120) &lt;D8DE4962-66CD-3491-904E-9291EEE5E570&gt; /usr/lib/libc++.1.dylib<br />
+0x91aa3000 - 0x91e55ff7 &nbsp;com.apple.CoreFoundation (6.9 - 1152) &lt;93C32AF9-FD62-3DBD-85F7-35727E6CAA55&gt; /System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation<br />
+0x91e56000 - 0x91e63fff &nbsp;com.apple.OpenDirectory (10.10 - 187) &lt;14AA5E0C-238A-32C4-BAF3-81893750B5A9&gt; /System/Library/Frameworks/OpenDirectory.framework/Versions/A/OpenDirectory<br />
+0x91e64000 - 0x91fd5ffb &nbsp;libBLAS.dylib (1128) &lt;ACEF468C-5DB1-38F3-BCB2-6F3D7F2B2040&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib<br />
+0x91fd6000 - 0x91fe8fff &nbsp;com.apple.Sharing (328.3.2 - 328.3.2) &lt;4F0D4D68-B6A6-3E66-8A89-CDD9AFEA82EA&gt; /System/Library/PrivateFrameworks/Sharing.framework/Versions/A/Sharing<br />
+0x91fe9000 - 0x922dbffb &nbsp;com.apple.CoreImage (10.0.33) &lt;75B23F45-8D99-3521-89AE-AF2AF4487096&gt; /System/Library/Frameworks/QuartzCore.framework/Versions/A/Frameworks/CoreImage.framework/Versions/A/CoreImage<br />
+0x922dc000 - 0x922eaff3 &nbsp;libxar.1.dylib (254) &lt;D7C4FDEB-61AA-3FC1-8B7B-0AE3A3A64492&gt; /usr/lib/libxar.1.dylib<br />
+0x922eb000 - 0x9232bfff &nbsp;com.apple.Symbolication (1.4 - 56045) &lt;BE1C4846-DA11-365D-9B46-3FF130401839&gt; /System/Library/PrivateFrameworks/Symbolication.framework/Versions/A/Symbolication<br />
+0x9232c000 - 0x92347ff7 &nbsp;com.apple.CFOpenDirectory (10.10 - 187) &lt;5302DBFA-92CE-349C-981C-2BF6E9BEEBB0&gt; /System/Library/Frameworks/OpenDirectory.framework/Versions/A/Frameworks/CFOpenDirectory.framework/Versions/A/CFOpenDirectory<br />
+0x92348000 - 0x92356ff7 &nbsp;libz.1.dylib (55) &lt;DF3B8F77-8931-3A6B-8BDF-DB67315050E6&gt; /usr/lib/libz.1.dylib<br />
+0x92360000 - 0x923b3fff &nbsp;com.apple.CoreMediaIO (601.0 - 4749) &lt;0A48F432-BEB4-3420-B156-12F576A6C0FD&gt; /System/Library/Frameworks/CoreMediaIO.framework/Versions/A/CoreMediaIO<br />
+0x923b4000 - 0x923f1ff7 &nbsp;libsystem_network.dylib (411.1) &lt;EB71DD61-9515-3F6C-817E-25AF7F108CB8&gt; /usr/lib/system/libsystem_network.dylib<br />
+0x923f2000 - 0x92418ff3 &nbsp;libc++abi.dylib (125) &lt;E9AF8CA1-D54D-37E3-8363-A3E8C0840F71&gt; /usr/lib/libc++abi.dylib<br />
+0x92457000 - 0x9245bff3 &nbsp;com.apple.TCC (1.0 - 1) &lt;3E7036F2-9706-3116-8126-16F26AA2FC11&gt; /System/Library/PrivateFrameworks/TCC.framework/Versions/A/TCC<br />
+0x92469000 - 0x92472fff &nbsp;libGFXShared.dylib (11.1.1) &lt;9A7C1796-07E7-3856-8703-75559016EF98&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGFXShared.dylib<br />
+0x92473000 - 0x92475fff &nbsp;libsystem_configuration.dylib (699.1.5) &lt;76B9BA28-179E-34FA-B10B-E625022A29CB&gt; /usr/lib/system/libsystem_configuration.dylib<br />
+0x92476000 - 0x9257aff7 &nbsp;libJP2.dylib (1232) &lt;CD0012B6-D649-327B-B7FA-E52B0FC0067C&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJP2.dylib<br />
+0x9257b000 - 0x92667fe7 &nbsp;libvMisc.dylib (516) &lt;8575A3B5-F6FB-35BF-9E50-E81BD0813100&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvMisc.dylib<br />
+0x92668000 - 0x926a8fff &nbsp;libauto.dylib (186) &lt;1609D0F9-6E3A-3C67-87EF-BB0BD93EDAC9&gt; /usr/lib/libauto.dylib<br />
+0x926a9000 - 0x926c0ff7 &nbsp;com.apple.CoreMediaAuthoring (2.2 - 951) &lt;02B870F3-BA89-3CFD-95E2-39359DF39D68&gt; /System/Library/PrivateFrameworks/CoreMediaAuthoring.framework/Versions/A/CoreMediaAuthoring<br />
+0x926c1000 - 0x928b7fff &nbsp;libicucore.A.dylib (531.31) &lt;430BD572-4521-3C85-B815-56514F9E2BBF&gt; /usr/lib/libicucore.A.dylib<br />
+0x928b8000 - 0x9292ffff &nbsp;com.apple.CoreUtils (1.0 - 101.1) &lt;7169E4D1-0771-36AD-85C8-60CF37FFF16E&gt; /System/Library/PrivateFrameworks/CoreUtils.framework/Versions/A/CoreUtils<br />
+0x92930000 - 0x92939fff &nbsp;com.apple.AppleSRP (5.0 - 1) &lt;41C48FA8-C249-3800-A551-7F4AFA3E723F&gt; /System/Library/PrivateFrameworks/AppleSRP.framework/Versions/A/AppleSRP<br />
+0x9293a000 - 0x92c99ffb &nbsp;com.apple.Foundation (6.9 - 1152.14) &lt;F74F139D-8789-3B60-ADF6-AB6F39444AC4&gt; /System/Library/Frameworks/Foundation.framework/Versions/C/Foundation<br />
+0x92c9a000 - 0x92d2cfff &nbsp;com.apple.CoreSymbolication (3.1 - 57020) &lt;EAC6745A-AB1D-38CC-A12C-99ECD8F071ED&gt; /System/Library/PrivateFrameworks/CoreSymbolication.framework/Versions/A/CoreSymbolication<br />
+0x92d2d000 - 0x93041fef &nbsp;com.apple.CoreAUC (211.0.0 - 211.0.0) &lt;78C567D8-532D-3A08-BF7D-0C25A859F64A&gt; /System/Library/PrivateFrameworks/CoreAUC.framework/Versions/A/CoreAUC<br />
+0x93042000 - 0x932312ef &nbsp;libobjc.A.dylib (647) &lt;7648C174-3098-3B26-AD20-490DBFFD5D4C&gt; /usr/lib/libobjc.A.dylib<br />
+0x93232000 - 0x9323afff &nbsp;libsystem_pthread.dylib (105.10.1) &lt;4A229519-29A1-3ABF-8CEF-43BCE4ACDA06&gt; /usr/lib/system/libsystem_pthread.dylib<br />
+0x9323b000 - 0x932a7ff3 &nbsp;com.apple.datadetectorscore (6.0 - 396.1.1) &lt;93F59488-6CA9-3C90-8E96-B0DE5942252F&gt; /System/Library/PrivateFrameworks/DataDetectorsCore.framework/Versions/A/DataDetectorsCore<br />
+0x932a8000 - 0x932bdffb &nbsp;com.apple.MultitouchSupport.framework (262.33.1 - 262.33.1) &lt;E8AF5A36-89A1-38CC-9905-D74A692D0898&gt; /System/Library/PrivateFrameworks/MultitouchSupport.framework/Versions/A/MultitouchSupport<br />
+0x932be000 - 0x932c4ff7 &nbsp;libsystem_trace.dylib (72.1.3) &lt;E1985F9C-78FC-3098-8683-81F0DCEE54BB&gt; /usr/lib/system/libsystem_trace.dylib<br />
+0x932c5000 - 0x933d8fff &nbsp;com.apple.MediaControlSender (2.0 - 215.15) &lt;83A34306-9F4B-31B3-A395-3F3DF3F6BBED&gt; /System/Library/PrivateFrameworks/MediaControlSender.framework/Versions/A/MediaControlSender<br />
+0x933d9000 - 0x93935ff3 &nbsp;com.apple.MediaToolbox (1.0 - 1562.107) &lt;AA1B8DFA-C1C3-3610-BBFD-3C26E063168F&gt; /System/Library/Frameworks/MediaToolbox.framework/Versions/A/MediaToolbox<br />
+0x93936000 - 0x93b3aff3 &nbsp;com.apple.CFNetwork (720.2.4 - 720.2.4) &lt;2BDDB692-8973-3B53-A53C-71D42BDBABBF&gt; /System/Library/Frameworks/CFNetwork.framework/Versions/A/CFNetwork<br />
+0x93b3b000 - 0x93c6dffb &nbsp;com.apple.UIFoundation (1.0 - 1) &lt;00A59CFF-A217-3998-B22E-6E452278A302&gt; /System/Library/PrivateFrameworks/UIFoundation.framework/Versions/A/UIFoundation<br />
+0x93c6e000 - 0x93c6efff &nbsp;com.apple.Accelerate.vecLib (3.10 - vecLib 3.10) &lt;F968D12F-F59D-3148-951D-76735C3C1B57&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/vecLib<br />
+0x93c6f000 - 0x93ef4fff &nbsp;com.apple.QuickTime (7.7.3 - 2890) &lt;34289D2B-07CC-3D12-8F32-6F97D96DEE81&gt; /System/Library/Frameworks/QuickTime.framework/Versions/A/QuickTime<br />
+0x93ef5000 - 0x9400affb &nbsp;com.apple.desktopservices (1.9.2 - 1.9.2) &lt;DCA5B074-BD3C-35E9-BF11-628019FE3CC0&gt; /System/Library/PrivateFrameworks/DesktopServicesPriv.framework/Versions/A/DesktopServicesPriv<br />
+0x9400b000 - 0x94012ff3 &nbsp;libunwind.dylib (35.3) &lt;29D9343F-9A0A-3535-B0AE-E7CC761D95EE&gt; /usr/lib/system/libunwind.dylib<br />
+0x94013000 - 0x94109ff7 &nbsp;libxml2.2.dylib (26) &lt;2F37833C-4D55-3A09-9A0C-5904E8B6892A&gt; /usr/lib/libxml2.2.dylib<br />
+0x9410a000 - 0x94129ffb &nbsp;libresolv.9.dylib (57) &lt;C2C3810A-A45E-3375-B41D-6E1BECE1BA3C&gt; /usr/lib/libresolv.9.dylib<br />
+0x9412a000 - 0x941c7fff &nbsp;com.apple.ink.framework (10.9 - 213) &lt;F47949BC-ABEE-329B-B568-71C6FEF761F6&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/Ink.framework/Versions/A/Ink<br />
+0x941c8000 - 0x941fbfff &nbsp;com.apple.CoreServicesInternal (221.2.2 - 221.2.2) &lt;06F52EEC-72B7-380D-B66D-7A487EA24741&gt; /System/Library/PrivateFrameworks/CoreServicesInternal.framework/Versions/A/CoreServicesInternal<br />
+0x941fc000 - 0x9420bff3 &nbsp;com.apple.opengl (11.1.1 - 11.1.1) &lt;212B409C-AF1E-3C69-B4AA-57A39C35BB62&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL<br />
+0x9420c000 - 0x94212ff7 &nbsp;com.apple.MediaAccessibility (1.0 - 61) &lt;81E9530E-882C-313C-A4D5-2F43EB569E4F&gt; /System/Library/Frameworks/MediaAccessibility.framework/Versions/A/MediaAccessibility<br />
+0x94213000 - 0x94268ff7 &nbsp;com.apple.htmlrendering (77 - 1.1.4) &lt;B85A63B9-C9DD-3ECC-B5DC-E12533C7FDF9&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HTMLRendering.framework/Versions/A/HTMLRendering<br />
+0x94269000 - 0x945c1ff7 &nbsp;libmecabra.dylib (666.2) &lt;DB0D4D7E-AA7B-3D2D-8936-07F03038F4DF&gt; /usr/lib/libmecabra.dylib<br />
+0x945c2000 - 0x945c4fff &nbsp;com.apple.SecCodeWrapper (4.0 - 238.10.1) &lt;0622F76C-3C56-3ABD-924E-FBC75E7E6445&gt; /System/Library/PrivateFrameworks/SecCodeWrapper.framework/Versions/A/SecCodeWrapper<br />
+0x945c5000 - 0x94709fff &nbsp;com.apple.ImageIO.framework (3.3.0 - 1232) &lt;3C219D4C-9B88-3A4A-A266-AEA6C6495676&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/ImageIO<br />
+0x9470a000 - 0x94716ff3 &nbsp;libcommonCrypto.dylib (60061) &lt;024B3913-15C6-3005-9E5A-EB24918F6977&gt; /usr/lib/system/libcommonCrypto.dylib<br />
+0x94717000 - 0x9480eff7 &nbsp;libFontParser.dylib (134.1) &lt;AF60B79A-410B-389E-9B24-09B5BC61E19F&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/Resources/libFontParser.dylib<br />
+0x951e7000 - 0x951eefff &nbsp;libMatch.1.dylib (24) &lt;428CD037-5261-39A6-83EE-A7D9ABF446EB&gt; /usr/lib/libMatch.1.dylib<br />
+0x951ef000 - 0x9524afff &nbsp;com.apple.LanguageModeling (1.0 - 1) &lt;9B39E059-F48E-31AF-B1B3-B0872F362627&gt; /System/Library/PrivateFrameworks/LanguageModeling.framework/Versions/A/LanguageModeling<br />
+0x9525e000 - 0x9528dff7 &nbsp;com.apple.DictionaryServices (1.2 - 229) &lt;1F5C35C7-67AA-30A0-A366-EB4B361152A3&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/DictionaryServices.framework/Versions/A/DictionaryServices<br />
+0x9528e000 - 0x9539bfe3 &nbsp;libvDSP.dylib (516) &lt;53F7A960-01E1-3B79-A7FD-67BD19471420&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libvDSP.dylib<br />
+0x9539c000 - 0x953d6ff7 &nbsp;com.apple.DebugSymbols (115 - 115) &lt;D01FFA10-1734-31C5-B5A1-9CB61463FC15&gt; /System/Library/PrivateFrameworks/DebugSymbols.framework/Versions/A/DebugSymbols<br />
+0x953d7000 - 0x953dcff7 &nbsp;libcompiler_rt.dylib (35) &lt;6630682F-AB76-3E55-BE51-0A3E61B6CFC2&gt; /usr/lib/system/libcompiler_rt.dylib<br />
+0x954ce000 - 0x95598ff7 &nbsp;com.apple.backup.framework (1.6.2 - 1.6.2) &lt;AE8234C3-6BB3-317B-A4E7-EF3478445DFF&gt; /System/Library/PrivateFrameworks/Backup.framework/Versions/A/Backup<br />
+0x95599000 - 0x9591cff7 &nbsp;com.apple.VideoToolbox (1.0 - 1562.107) &lt;D9840509-340B-3503-BD58-4907AC4AAA51&gt; /System/Library/Frameworks/VideoToolbox.framework/Versions/A/VideoToolbox<br />
+0x9591d000 - 0x95920fff &nbsp;libextension.dylib (55.1) &lt;E0A4ADBE-596E-3363-8780-51D8AE39B755&gt; /usr/lib/libextension.dylib<br />
+0x95921000 - 0x959bbfff &nbsp;com.apple.ColorSync (4.9.0 - 4.9.0) &lt;091CDCEC-1B25-3FE7-94C2-8AEFA6564E95&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ColorSync.framework/Versions/A/ColorSync<br />
+0x959bc000 - 0x95df7feb &nbsp;com.apple.vImage (8.0 - 8.0) &lt;56F6B317-9D70-3DC5-9868-BB6D7CB6E55D&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vImage.framework/Versions/A/vImage<br />
+0x95df8000 - 0x95dfcffb &nbsp;libcache.dylib (69) &lt;55501A00-AF64-3554-8F46-8D5AFEDEC332&gt; /usr/lib/system/libcache.dylib<br />
+0x95dfd000 - 0x95e30fff &nbsp;com.apple.CoreAVCHD (5.7.5 - 5750.4.1) &lt;103A5EA0-9B75-3B23-BE72-C4DD52744A6A&gt; /System/Library/PrivateFrameworks/CoreAVCHD.framework/Versions/A/CoreAVCHD<br />
+0x95e31000 - 0x95eb8fff &nbsp;com.apple.CoreServices.OSServices (640.3 - 640.3) &lt;C53DBDE3-F9E0-3B90-963E-0FAEEF3DA225&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/OSServices.framework/Versions/A/OSServices<br />
+0x95eb9000 - 0x95ee2ff7 &nbsp;libsystem_info.dylib (459) &lt;4F7A7111-7F0D-3891-9DC9-41F5D79949FE&gt; /usr/lib/system/libsystem_info.dylib<br />
+0x95eec000 - 0x95ef2ff7 &nbsp;libsystem_networkextension.dylib (167.1.10) &lt;FC20E3AD-A53D-3346-AC71-829E82832AE8&gt; /usr/lib/system/libsystem_networkextension.dylib<br />
+0x95ef3000 - 0x95f00ff7 &nbsp;com.apple.ProtocolBuffer (1 - 225.1) &lt;E5744DE6-B3FC-3289-9E71-98E88DECE545&gt; /System/Library/PrivateFrameworks/ProtocolBuffer.framework/Versions/A/ProtocolBuffer<br />
+0x95f01000 - 0x95f01fff &nbsp;com.apple.Accelerate (1.10 - Accelerate 1.10) &lt;C2367B5B-AE20-3084-A864-104743BE478E&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Accelerate<br />
+0x95f02000 - 0x95f7fff3 &nbsp;com.apple.framework.IOKit (2.0.2 - 1050.10.8) &lt;60574F96-1CD6-34B8-A862-EA977FD058BF&gt; /System/Library/Frameworks/IOKit.framework/Versions/A/IOKit<br />
+0x95f84000 - 0x95f88fff &nbsp;com.apple.CommonPanels (1.2.6 - 96) &lt;955375E6-2416-38E1-AFC6-477827119329&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/CommonPanels.framework/Versions/A/CommonPanels<br />
+0x95f89000 - 0x95fccfff &nbsp;libGLU.dylib (11.1.1) &lt;2DC476EE-5C4F-3353-A916-39F2FDB5D6B1&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLU.dylib<br />
+0x95ff7000 - 0x96000ffb &nbsp;com.apple.CommonAuth (4.0 - 2.0) &lt;FFE760A3-FEF7-3009-92E8-893ABB3BC91A&gt; /System/Library/PrivateFrameworks/CommonAuth.framework/Versions/A/CommonAuth<br />
+0x96001000 - 0x96fb1fff &nbsp;com.apple.WebCore (10600 - 10600.3.15) &lt;FF6008C2-ADF4-35F1-A227-0F6DA88B9597&gt; /System/Library/Frameworks/WebKit.framework/Versions/A/Frameworks/WebCore.framework/Versions/A/WebCore<br />
+0x96fb2000 - 0x96fbbff7 &nbsp;libsystem_notify.dylib (133.1.1) &lt;B8503E99-214B-3AC3-A7CA-CC837ABD7B25&gt; /usr/lib/system/libsystem_notify.dylib<br />
+0x9706f000 - 0x970caffb &nbsp;libTIFF.dylib (1232) &lt;E5A82202-E766-32DE-9706-86B3B2B73731&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libTIFF.dylib<br />
+0x970fd000 - 0x97137fff &nbsp;com.apple.AirPlaySupport (2.0 - 215.15) &lt;A7147999-EE77-3BC9-BC26-506D026B5587&gt; /System/Library/PrivateFrameworks/AirPlaySupport.framework/Versions/A/AirPlaySupport<br />
+0x97138000 - 0x97138fff &nbsp;com.apple.CoreServices (62 - 62) &lt;FF296ED2-0F90-3055-BBE4-7BF9E42322EF&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices<br />
+0x97139000 - 0x971a4ff7 &nbsp;com.apple.framework.CoreWiFi (3.0 - 300.4) &lt;632A811D-4706-3ED7-85E3-DD2CDB47CF8F&gt; /System/Library/PrivateFrameworks/CoreWiFi.framework/Versions/A/CoreWiFi<br />
+0x971ae000 - 0x971b6ffb &nbsp;com.apple.NetFS (6.0 - 4.0) &lt;141BFE7E-634E-32A0-8EC9-0A1A4DFEA7D9&gt; /System/Library/Frameworks/NetFS.framework/Versions/A/NetFS<br />
+0x971b7000 - 0x97208fff &nbsp;com.apple.opencl (2.4.2 - 2.4.2) &lt;327699CD-6BF9-3B63-999E-A5A56014E540&gt; /System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL<br />
+0x97209000 - 0x97210fff &nbsp;com.apple.speech.recognition.framework (5.0.9 - 5.0.9) &lt;5D268178-3812-3777-92A6-D7D3395405B8&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/SpeechRecognition.framework/Versions/A/SpeechRecognition<br />
+0x97211000 - 0x972b9ff7 &nbsp;com.apple.CoreMedia (1.0 - 1562.107) &lt;A175F33D-8502-3D36-8C9C-0D74BA904CF2&gt; /System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia<br />
+0x972ba000 - 0x972d1fff &nbsp;libsystem_asl.dylib (267) &lt;85BD88AD-618E-3325-AC31-10DBAB8E9AF3&gt; /usr/lib/system/libsystem_asl.dylib<br />
+0x972d2000 - 0x97346fff &nbsp;com.apple.Heimdal (4.0 - 2.0) &lt;5BB21A72-99E6-3079-824E-935AA93D3981&gt; /System/Library/PrivateFrameworks/Heimdal.framework/Versions/A/Heimdal<br />
+0x97347000 - 0x973d3ff3 &nbsp;com.apple.PerformanceAnalysis (1.0 - 1) &lt;7A9DD1C9-465D-37FA-957E-2B0F190CFC7C&gt; /System/Library/PrivateFrameworks/PerformanceAnalysis.framework/Versions/A/PerformanceAnalysis<br />
+0x973d4000 - 0x973d6fff &nbsp;libquarantine.dylib (76) &lt;9ADD861F-A66E-3AD1-A77E-C622E91BD203&gt; /usr/lib/system/libquarantine.dylib<br />
+0x973d7000 - 0x973d9fff &nbsp;com.apple.securityhi (9.0 - 55006) &lt;5AF7E054-F6A1-38B4-B403-BAF8BE4DBA35&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/SecurityHI.framework/Versions/A/SecurityHI<br />
+0x973da000 - 0x97500ffb &nbsp;com.apple.WebKitLegacy (10600 - 10600.3.18) &lt;D9337FD7-C42B-38AC-8080-09CEB6348BF5&gt; /System/Library/Frameworks/WebKit.framework/Versions/A/Frameworks/WebKitLegacy.framework/Versions/A/WebKitLegacy<br />
+0x97501000 - 0x97509fff &nbsp;com.apple.CoreServices.FSEvents (1210 - 1210) &lt;FC372799-6E8E-3290-9816-6981D39BC9D6&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/FSEvents.framework/Versions/A/FSEvents<br />
+0x9750a000 - 0x9750bfff &nbsp;com.apple.TrustEvaluationAgent (2.0 - 25) &lt;28BBD931-EF7C-3753-B50E-6568F4075086&gt; /System/Library/PrivateFrameworks/TrustEvaluationAgent.framework/Versions/A/TrustEvaluationAgent<br />
+0x9750c000 - 0x97510ffb &nbsp;com.apple.IOSurface (97 - 97) &lt;ADB57CD2-455A-317C-818E-6379BF427D10&gt; /System/Library/Frameworks/IOSurface.framework/Versions/A/IOSurface<br />
+0x97511000 - 0x97944ff3 &nbsp;com.apple.vision.FaceCore (3.1.6 - 3.1.6) &lt;EF92C25B-3E33-379F-A862-75C2FCA8B386&gt; /System/Library/PrivateFrameworks/FaceCore.framework/Versions/A/FaceCore<br />
+0x97945000 - 0x97953ff7 &nbsp;com.apple.SpeechRecognitionCore (2.0.32 - 2.0.32) &lt;637E7AB2-1077-319C-A6A2-D0D0F01951BA&gt; /System/Library/PrivateFrameworks/SpeechRecognitionCore.framework/Versions/A/SpeechRecognitionCore<br />
+0x97954000 - 0x97967fff &nbsp;libcmph.dylib (1) &lt;2449B048-208E-36FB-9DFA-47E0F3BCF132&gt; /usr/lib/libcmph.dylib<br />
+0x97968000 - 0x9797fff3 &nbsp;libLinearAlgebra.dylib (1128) &lt;B20FAAAA-1C76-3B20-B100-5FC90F7FE023&gt; /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libLinearAlgebra.dylib<br />
+0x97980000 - 0x97980fff &nbsp;libOpenScriptingUtil.dylib (162) &lt;9872C464-DF90-37C2-9871-8A3F53C615EC&gt; /usr/lib/libOpenScriptingUtil.dylib<br />
+0x97990000 - 0x97990fff &nbsp;com.apple.audio.units.AudioUnit (1.12 - 1.12) &lt;64ED443E-25D5-3A2C-A028-0D0C7FAF57C6&gt; /System/Library/Frameworks/AudioUnit.framework/Versions/A/AudioUnit<br />
+0x97991000 - 0x97991fff &nbsp;libkeymgr.dylib (28) &lt;06DDCEF8-EB84-3F68-9E19-FD1A12B764FD&gt; /usr/lib/system/libkeymgr.dylib<br />
+0x97992000 - 0x9799afff &nbsp;libsystem_dnssd.dylib (561.1.1) &lt;45CDAF46-03DE-33DB-A627-14F245993EF2&gt; /usr/lib/system/libsystem_dnssd.dylib<br />
+0x9799b000 - 0x9799dfff &nbsp;com.apple.loginsupport (1.0 - 1) &lt;8B651D8C-53D0-314D-BDD6-74147C4B2E73&gt; /System/Library/PrivateFrameworks/login.framework/Versions/A/Frameworks/loginsupport.framework/Versions/A/loginsupport<br />
+0x979d9000 - 0x979dcfff &nbsp;libdyld.dylib (353.2.1) &lt;3E28E996-50B8-388B-8885-7299FBC978B1&gt; /usr/lib/system/libdyld.dylib<br />
+0x979eb000 - 0x979ebfff &nbsp;libunc.dylib (29) &lt;CE960997-9D4A-3848-BAC7-B2255E6765FD&gt; /usr/lib/system/libunc.dylib<br />
+0x979ec000 - 0x979ecfff &nbsp;com.apple.Carbon (154 - 157) &lt;514DC1B6-3D3B-3A96-814D-71D6E022CB3D&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Carbon<br />
+0x97a9b000 - 0x97aaefff &nbsp;com.apple.CoreBluetooth (1.0 - 1) &lt;DF406F6F-C173-3598-8785-8A2014F770EF&gt; /System/Library/Frameworks/CoreBluetooth.framework/Versions/A/CoreBluetooth<br />
+0x97aaf000 - 0x97abfff7 &nbsp;com.apple.LangAnalysis (1.7.0 - 1.7.0) &lt;DBECFAD5-DB53-390C-AE92-09549733C861&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/LangAnalysis.framework/Versions/A/LangAnalysis<br />
+0x97ac0000 - 0x97ad4fff &nbsp;com.apple.ImageCapture (9.0 - 9.0) &lt;4B84B5D5-A5F3-3B35-93CE-568A73486B92&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/ImageCapture.framework/Versions/A/ImageCapture<br />
+0x97b24000 - 0x97b47fff &nbsp;libJPEG.dylib (1232) &lt;C7B71F9A-E740-307B-A9FA-A83760EE747B&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libJPEG.dylib<br />
+0x986f4000 - 0x98822fff &nbsp;com.apple.coreui (2.1 - 305.6.1) &lt;6535A234-0DFF-3467-837B-118E2C9D2875&gt; /System/Library/PrivateFrameworks/CoreUI.framework/Versions/A/CoreUI<br />
+0x98823000 - 0x9890dfff &nbsp;libcrypto.0.9.8.dylib (52.10.1) &lt;DD3EA46B-C906-39AA-848E-7C7240EB31F9&gt; /usr/lib/libcrypto.0.9.8.dylib<br />
+0x9890e000 - 0x9894effb &nbsp;libGLImage.dylib (11.1.1) &lt;B49A6796-40A3-33D0-8199-6AED149ADFDF&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLImage.dylib<br />
+0x9894f000 - 0x98951fff &nbsp;libsystem_coreservices.dylib (9) &lt;20E66A47-8D67-344A-A393-73926F0E5FB2&gt; /usr/lib/system/libsystem_coreservices.dylib<br />
+0x98952000 - 0x98954ffb &nbsp;libRadiance.dylib (1232) &lt;F16794FD-4326-32CD-A578-3B2ADB27587D&gt; /System/Library/Frameworks/ImageIO.framework/Versions/A/Resources/libRadiance.dylib<br />
+0x98955000 - 0x98966ff3 &nbsp;libsystem_coretls.dylib (35.1.2) &lt;139ECDA3-8A63-3D18-96FC-6A10242B8F6B&gt; /usr/lib/system/libsystem_coretls.dylib<br />
+0x98967000 - 0x98be3ff7 &nbsp;com.apple.security (7.0 - 57031.10.10) &lt;3EF32688-A176-33DD-BA59-25F37D6C08DA&gt; /System/Library/Frameworks/Security.framework/Versions/A/Security<br />
+0x98be4000 - 0x98be5fff &nbsp;libDiagnosticMessagesClient.dylib (100) &lt;3EE83437-AA9C-356B-810B-589346B73797&gt; /usr/lib/libDiagnosticMessagesClient.dylib<br />
+0x99748000 - 0x99748fff &nbsp;libffi.dylib (18.1) &lt;C15EF590-C1CD-3F0A-8988-25491841F043&gt; /usr/lib/libffi.dylib<br />
+0x99749000 - 0x997a6ff3 &nbsp;com.apple.print.framework.PrintCore (10.0 - 451) &lt;2563665B-7B7F-3B8A-83B1-E5AC8D389909&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/PrintCore.framework/Versions/A/PrintCore<br />
+0x997a7000 - 0x997cbffb &nbsp;com.apple.framework.Apple80211 (10.1 - 1010.64) &lt;377A2686-2C1F-3257-8420-37DB5C8F33AD&gt; /System/Library/PrivateFrameworks/Apple80211.framework/Versions/A/Apple80211<br />
+0x997cc000 - 0x99a6affb &nbsp;com.apple.WebKit (10600 - 10600.3.18) &lt;EB9B4EAA-C074-3B29-88C1-35E23889C636&gt; /System/Library/Frameworks/WebKit.framework/Versions/A/WebKit<br />
+0x99a6b000 - 0x99a6dfff &nbsp;libCVMSPluginSupport.dylib (11.1.1) &lt;2AEAFC0D-982C-3E26-B50B-B6EB12FE71F4&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libCVMSPluginSupport.dylib<br />
+0x99a6e000 - 0x99a98fff &nbsp;libxslt.1.dylib (13) &lt;0F55B64A-6C55-304E-ACE0-B531027AA066&gt; /usr/lib/libxslt.1.dylib<br />
+0x99a99000 - 0x99ac5fff &nbsp;com.apple.ChunkingLibrary (2.1 - 163.1) &lt;2B0CBB85-EF91-351A-8750-A185996E4CDB&gt; /System/Library/PrivateFrameworks/ChunkingLibrary.framework/Versions/A/ChunkingLibrary<br />
+0x99ae9000 - 0x99aeafff &nbsp;liblangid.dylib (117) &lt;34A0F807-755F-300B-B01F-AABAE3838451&gt; /usr/lib/liblangid.dylib<br />
+0x99aeb000 - 0x99aeefff &nbsp;com.apple.xpc.ServiceManagement (1.0 - 1) &lt;D0A00D0C-D37D-3CF1-9EE0-41A88BC112BB&gt; /System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement<br />
+0x99ba9000 - 0x99bacfff &nbsp;libpam.2.dylib (20) &lt;E2F34522-448A-3392-BC1D-6625BEB612B9&gt; /usr/lib/libpam.2.dylib<br />
+0x99bad000 - 0x99c2cfff &nbsp;com.apple.SystemConfiguration (1.14 - 1.14) &lt;21296E7B-11A3-35C0-BDC7-838392DE8298&gt; /System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration<br />
+0x99c2d000 - 0x99ca3fff &nbsp;com.apple.securityfoundation (6.0 - 55126) &lt;E7CBF2F4-2A0E-3C82-BE84-E09D21772AFB&gt; /System/Library/Frameworks/SecurityFoundation.framework/Versions/A/SecurityFoundation<br />
+0x99ca4000 - 0x99cb5fff &nbsp;libbsm.0.dylib (34) &lt;C9F0C608-2794-3F6B-8078-583FC0046039&gt; /usr/lib/libbsm.0.dylib<br />
+0x99cb6000 - 0x99cdcff7 &nbsp;com.apple.IconServices (47.1 - 47.1) &lt;9C537499-B375-3F84-BF4A-EEF757FC26A9&gt; /System/Library/PrivateFrameworks/IconServices.framework/Versions/A/IconServices<br />
+0x99cf3000 - 0x99e5cfff &nbsp;com.apple.avfoundation (2.0 - 889.102) &lt;864AFE74-25CA-3704-9246-5BD9CB5AB360&gt; /System/Library/Frameworks/AVFoundation.framework/Versions/A/AVFoundation<br />
+0x99f03000 - 0x99f7dfff &nbsp;com.apple.ApplicationServices.ATS (360 - 375) &lt;4052B5D1-5F16-315A-A03B-14F0A112FC18&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/ATS.framework/Versions/A/ATS<br />
+0x99f7e000 - 0x99f83ff7 &nbsp;libmacho.dylib (862) &lt;48DE74F8-09E3-344F-A82F-665083A3BF8F&gt; /usr/lib/system/libmacho.dylib<br />
+0x99f84000 - 0x99f84fff &nbsp;com.apple.Cocoa (6.8 - 21) &lt;6AF80DDB-C28E-36FF-BC11-D7D561AC52A9&gt; /System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa<br />
+0x99f85000 - 0x9a42cff7 &nbsp;com.apple.JavaScriptCore (10600 - 10600.3.13) &lt;21BA75F3-8A70-3159-8696-7392EDEBEF70&gt; /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/JavaScriptCore<br />
+0x9a42d000 - 0x9a481fff &nbsp;com.apple.HIServices (1.22 - 520.12) &lt;8950B516-7DFD-3154-B34F-067809086832&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/HIServices.framework/Versions/A/HIServices<br />
+0x9a482000 - 0x9a4b0ff7 &nbsp;libarchive.2.dylib (30) &lt;8758D35F-ADF8-30F6-8EB2-9B852876EAC8&gt; /usr/lib/libarchive.2.dylib<br />
+0x9a76a000 - 0x9a790ffb &nbsp;libxpc.dylib (559.10.3) &lt;6C4CEB0F-0044-3B62-A286-5693C3FD239E&gt; /usr/lib/system/libxpc.dylib<br />
+0x9a791000 - 0x9ab69ff7 &nbsp;com.apple.HIToolbox (2.1.1 - 757.3) &lt;642A3B29-036D-3A87-AC81-935843AB6A32&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/HIToolbox.framework/Versions/A/HIToolbox<br />
+0x9abba000 - 0x9abbbfff &nbsp;libsystem_blocks.dylib (65) &lt;5D98F022-E863-31D4-8ADE-D53B2AE0D331&gt; /usr/lib/system/libsystem_blocks.dylib<br />
+0x9abbc000 - 0x9ad31ff7 &nbsp;com.apple.QTKit (7.7.3 - 2890) &lt;16C43187-DFFE-3BB3-AA2C-741FBEBB5585&gt; /System/Library/Frameworks/QTKit.framework/Versions/A/QTKit<br />
+0x9ad32000 - 0x9ad39fff &nbsp;com.apple.XPCService (2.0 - 1) &lt;9A59D63D-446A-33A4-BB21-56E42417DA93&gt; /System/Library/PrivateFrameworks/XPCService.framework/Versions/A/XPCService<br />
+0x9ad3a000 - 0x9adeaff3 &nbsp;com.apple.Bluetooth (4.3.2 - 4.3.2f6) &lt;FC787129-45BB-3B94-ACAD-A0CECEB77AEC&gt; /System/Library/Frameworks/IOBluetooth.framework/Versions/A/IOBluetooth<br />
+0x9adeb000 - 0x9af7aff3 &nbsp;libsqlite3.dylib (168) &lt;C3F78985-C19B-3320-9F71-543969632128&gt; /usr/lib/libsqlite3.dylib<br />
+0x9af7b000 - 0x9af84fff &nbsp;libcopyfile.dylib (118.1.2) &lt;FAF3268F-C580-33D3-A5B4-74B8A8713216&gt; /usr/lib/system/libcopyfile.dylib<br />
+0x9afba000 - 0x9afcafff &nbsp;libGL.dylib (11.1.1) &lt;244536CD-5B87-3A3E-AD68-03BF04BD2D33&gt; /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib<br />
+0x9afcb000 - 0x9afd6ff7 &nbsp;com.apple.CrashReporterSupport (10.10 - 629) &lt;BA5611B6-EF99-3A44-90DD-3305FDA4975E&gt; /System/Library/PrivateFrameworks/CrashReporterSupport.framework/Versions/A/CrashReporterSupport<br />
+0x9afd7000 - 0x9aff1ff7 &nbsp;liblzma.5.dylib (7) &lt;D0BC984D-5B33-328C-8F1E-7E9C41813433&gt; /usr/lib/liblzma.5.dylib<br />
+0x9aff2000 - 0x9b065ffb &nbsp;com.apple.framework.CoreWLAN (5.0 - 500.35.2) &lt;22CC0615-70EF-3155-8410-A1427793DBBC&gt; /System/Library/Frameworks/CoreWLAN.framework/Versions/A/CoreWLAN<br />
+0x9b066000 - 0x9b0caff7 &nbsp;com.apple.AE (681 - 681) &lt;EEE62980-421B-33BD-BB88-6BDE269A3060&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/AE.framework/Versions/A/AE<br />
+0x9b0cb000 - 0x9b4c1ff3 &nbsp;com.apple.CoreGraphics (1.600.0 - 775.16) &lt;5F7BDB0B-5324-3B7A-BC6B-E7A01A880D94&gt; /System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics<br />
+0x9b4c2000 - 0x9b7c0ff7 &nbsp;com.apple.CoreServices.CarbonCore (1108.2 - 1108.2) &lt;D3DD9764-A787-3B6B-9DAD-55CEED944DCF&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/CarbonCore<br />
+0x9b7eb000 - 0x9b8ebff7 &nbsp;com.apple.LaunchServices (644.12.4 - 644.12.4) &lt;D41066A1-FC8B-34A2-A980-4B011AA77F38&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/LaunchServices<br />
+0x9b8ec000 - 0x9b8f9ff7 &nbsp;com.apple.speech.synthesis.framework (5.3.3 - 5.3.3) &lt;EB79D0BE-75B8-3570-9D91-AE07E42611BD&gt; /System/Library/Frameworks/ApplicationServices.framework/Versions/A/Frameworks/SpeechSynthesis.framework/Versions/A/SpeechSynthesis<br />
+0x9bab0000 - 0x9bac9fff &nbsp;libsystem_malloc.dylib (53.1.1) &lt;58CD8BC7-55D1-3862-8E5D-728EE2EBE447&gt; /usr/lib/system/libsystem_malloc.dylib<br />
+0x9baca000 - 0x9bb09fff &nbsp;com.apple.NavigationServices (3.8 - 215.1) &lt;46D8B66D-CB59-36F5-BD26-FD8309337BB3&gt; /System/Library/Frameworks/Carbon.framework/Versions/A/Frameworks/NavigationServices.framework/Versions/A/NavigationServices<br />
+0x9bb0a000 - 0x9bb29fff &nbsp;libsystem_kernel.dylib (2782.10.72) &lt;C88D4054-EF6D-31F9-A9DC-B74160B91C26&gt; /usr/lib/system/libsystem_kernel.dylib<br />
+0x9bc39000 - 0x9bc99fff &nbsp;com.apple.AppleVAFramework (5.0.31 - 5.0.31) &lt;45401678-26FE-3EFD-B1A1-88864B470871&gt; /System/Library/PrivateFrameworks/AppleVA.framework/Versions/A/AppleVA<br />
+0x9bc9a000 - 0x9be25ffb &nbsp;com.apple.audio.toolbox.AudioToolbox (1.12 - 1.12) &lt;44BCEAB8-306D-307F-92C8-6656F3578220&gt; /System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox<br />
+0x9be26000 - 0x9be9cff7 &nbsp;com.apple.SearchKit (1.4.0 - 1.4.0) &lt;B6F346D2-BF88-3925-B962-E59267FA2268&gt; /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/SearchKit.framework/Versions/A/SearchKit<br />
+0x9bf2c000 - 0x9bf37ff7 &nbsp;com.apple.NetAuth (5.0 - 5.0) &lt;D6C31218-47E4-3553-9208-D1091A81044E&gt; /System/Library/PrivateFrameworks/NetAuth.framework/Versions/A/NetAuth<br />
+0x9bf38000 - 0x9c0fcff3 &nbsp;com.apple.QuartzCore (1.10 - 361.15) &lt;4DD4BF91-26D4-3325-BB42-9642318307FA&gt; /System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore<br />
+0x9c0fd000 - 0x9c390fff &nbsp;com.apple.CoreData (111 - 526.1) &lt;74375077-8AE6-3D1B-B6A4-CF3B0724EB60&gt; /System/Library/Frameworks/CoreData.framework/Versions/A/CoreData<br />
+0xbab00000 - 0xbab22fff &nbsp;libKoreanConverter.dylib (64) &lt;4638960C-099E-3E8B-8BB3-1209364A6E07&gt; /System/Library/CoreServices/Encodings/libKoreanConverter.dylib<br />
+<br />
+External Modification Summary:<br />
+&nbsp; Calls made by other processes targeting this process:<br />
+&nbsp; &nbsp; task_for_pid: 1<br />
+&nbsp; &nbsp; thread_create: 0<br />
+&nbsp; &nbsp; thread_set_state: 0<br />
+&nbsp; Calls made by this process:<br />
+&nbsp; &nbsp; task_for_pid: 0<br />
+&nbsp; &nbsp; thread_create: 0<br />
+&nbsp; &nbsp; thread_set_state: 0<br />
+&nbsp; Calls made by all processes on this machine:<br />
+&nbsp; &nbsp; task_for_pid: 21721<br />
+&nbsp; &nbsp; thread_create: 0<br />
+&nbsp; &nbsp; thread_set_state: 0<br />
+<br />
+VM Region Summary:<br />
+ReadOnly portion of Libraries: Total=271.2M resident=102.9M(38%) swapped_out_or_unallocated=168.4M(62%)<br />
+Writable regions: Total=64.6M written=10.3M(16%) resident=17.9M(28%) swapped_out=0K(0%) unallocated=46.6M(72%)<br />
+<br />
+REGION TYPE &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;VIRTUAL<br />
+=========== &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;=======<br />
+CG image &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;4K<br />
+CG shared images &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;144K<br />
+CoreServices &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2072K<br />
+Kernel Alloc Once &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 4K<br />
+MALLOC &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 42.7M<br />
+MALLOC (admin) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 48K<br />
+SQLite page cache &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;1280K<br />
+Stack &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;68.1M<br />
+VM_ALLOCATE &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;1240K<br />
+__DATA &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 13.2M<br />
+__IMAGE &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 528K<br />
+__LINKEDIT &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 63.2M<br />
+__OBJC &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 4236K<br />
+__TEXT &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;208.2M<br />
+__UNICODE &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 544K<br />
+mapped file &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 273.7M<br />
+shared memory &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 4K<br />
+=========== &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;=======<br />
+TOTAL &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 679.1M<br />
+</p>
+&nbsp;&nbsp;&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="AlancitoXV" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "AL"); this.style="display: inline-block";'
+<h3> alancitoxv  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>...I can't seem to find my library file within the users folder.</span><br />
+<p>rjdizinez ~ Welcome to the Community. See if this Apple support article helps:</p>
+<p>
+</p><p><a href="http://support.apple.com/kb/PH18928" target="_blank" rel="noreferrer nofollow">OS X Yosemite: Library folder</a></p>
+<p>
+</p><p>...Found by searching Apple's Knowledge Base <a href="http://support.apple.com/kb/index?page=search" target="_blank" rel="noreferrer nofollow">
+HERE</a>.</p>
+<p>
+</p><p><img src="https://filestore.community.support.microsoft.com/api/images/62b0c5ea-d73a-4a8c-ad69-d35246c67d1e" /></p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Background color of top menu banners. - Microsoft Community</title>
+<h3> fred6153  say:</h3>
+<h2>            Background color of top menu banners.</h2>
+                    Is there any way to change the color of the menu banners at the top of the WORD 2016 screen (WIN 10) so it doesn't blend in with my desktop screen saver, also dark blue photo (sky area)..
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="HansV MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "HM"); this.style="display: inline-block";'
+<h3> hansv mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Select File &gt; Options.</p>
+<p>Under 'Personalize your copy of Microsoft Office', select a different Office Theme, then click OK.</p>
+<p>This will affect ALL Office applications, though, not just Word.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can I do delegation on MS Outlook for iOS - Microsoft Community</title>
+<h3> bigtimetopbanana  say:</h3>
+<h2>            Can I do delegation on MS Outlook for iOS</h2>
+                    Easy on all the other platforms. &nbsp;Can I do it on MS Outlook for iOS? &nbsp;If not, is it on the roadmap and when is it coming?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> anna bon  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>
+</p><p>Regarding your concern about Outlook delegation, we have a separate thread that has the same concern as what you have. You can check this
+<strong><a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook-mso_imobile/delegation-in-the-outlook-for-ios-and-android/e9568b72-8a09-49d0-9340-9aab4b3152c2">link</a></strong> and look for
+<strong>YangZheng_MSFT6300</strong> response. </p>
+<p>
+</p><p>Should you have other issues, feel free to message us again.</p>
+<p>
+</p><p>
+</p><p>Thank you.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bigtimetopbanana  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>So that response, over a year ago, remains the current reply?</p>
+<p>
+</p><p>I'm afraid that answer is exactly why my customer base is moving over to Google. &nbsp;&nbsp;</p>
+<p>
+</p><p>We want (actually, expect) a service that has the same features on all platforms. &nbsp; How is it not obvious that email delegation is a desired feature on a mobile device. &nbsp;It exists on the OWA and Outlook front ends. &nbsp;Make it the same on all front ends.</p>
+<p>
+</p><p>It is pretty embarrassing that Windows Outlook, Mac Outlook, the OWA iOS app, the Outlook iOS app and O365 have different features.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mobile">outlook_for_mobile, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=iphone_or_ipad">iphone_or_ipad, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

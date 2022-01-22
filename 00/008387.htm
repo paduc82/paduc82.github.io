@@ -1,0 +1,2703 @@
+    <title>Date Last Modified - Access 2010 - Microsoft Community</title>
+<h3> tidy_2010  say:</h3>
+<h2>            Date Last Modified - Access 2010</h2>
+                    <p>I have a field in my database called 'Last Modified'.</p>
+<p>&nbsp;</p>
+<p>When a record is modified I would like to update this field with the current date.</p>
+<p>&nbsp;</p>
+<p>Does anyone have some suggestions?</p>
+<p><br />
+Thanks!</p>
+<p>&nbsp;</p>
+<p>Ty</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The value of the Date Modified column will only be updated when you save the updated record, not when you change the value in the address control (or any other control for that matter).&nbsp; The same goes for my code.&nbsp; If you want the it to update immediately
+ then you should do it in the AfterUpdate event procedure of each bound control with:<br />
+<br />
+Me.[Date Modified] = Now()<br />
+<br />
+This is far simpler than my code of course, but that's because you are time-stamping updates, not necessarily changes to the data.&nbsp; You could for instance change the address, but then change it back to its original value, and the date/time value would update.&nbsp;
+ The value would not have changed from the original, however, so the date/time value is logging the act of
+changing</span> it.&nbsp; It's this behaviour which my code overcomes, as it detects changes to the data, not just updates.<br />
+<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            As you want to time-stamp a changed record you'll need the basChangedRecord module form my demo file, and the model for your form will be the frmChangedRecord form.&nbsp; When you say 'doesn't work' that doesn't give us much to go on.&nbsp; Does it raise an error?&nbsp;
+ Does it fail to time-stamp the record? Or what?<br />
+<br />
+Let's go through the form's module step by step.&nbsp; I've changed it slightly from the one I posted on SkyDrive by introducing a variable to flag when a new record is entered.&nbsp; Relying on the NewRecord property didn't fully work as once the AfterUpdate event procedure
+ had executed the value of the property became False.<br />
+<br />
+1.&nbsp; Firstly, the module's declarations area is as follows:<br />
+<br />
+Option Compare Database<br />
+Option Explicit<br />
+<br />
+Dim blnNewRecord As Boolean<br />
+<br />
+This is where the blnNewRecord varaiable is declared to make it available throughout the module.<br />
+<br />
+2.&nbsp; The form's Current event procedure is:<br />
+<br />
+Private Sub Form_Current()<br />
+<br />
+&nbsp;&nbsp; On Error GoTo Err_Handler<br />
+<br />
+&nbsp;&nbsp; Dim dbs As DAO.Database, rst As DAO.Recordset<br />
+&nbsp;&nbsp; Dim strSQL As String<br />
+&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; If Not Me.NewRecord Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strSQL = "SELECT * FROM Contacts " &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "WHERE ContactID = " &amp; Me.ContactID<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set dbs = CurrentDb<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set rst = dbs.OpenRecordset(strSQL)<br />
+&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; StoreOldVals rst<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; blnNewRecord = True<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;<br />
+Exit_Here:<br />
+&nbsp;&nbsp; Exit Sub<br />
+&nbsp; &nbsp;<br />
+Err_Handler:<br />
+&nbsp;&nbsp; MsgBox Err.Description, vbExclamation, "Error"<br />
+&nbsp;&nbsp; Resume Exit_Here<br />
+&nbsp; &nbsp;<br />
+End Sub<br />
+<br />
+If the record is an existing one (Not Me.NewRecord) this firstly establishes a recordset based on an SQL statement which returns one row from the Contacts table, for the current Contact, identified by the value of the ContactID primary key column.&nbsp; It then
+ calls the StoreOldVals procedure in the basChanged record module, which stores the values of the columns in the current row in an array.&nbsp; If a new record is being inserted the value of the blnNewRecord variable is set to True.&nbsp; This is used later in the module
+ to determine if a new record is being inserted or an existing record is being edited.<br />
+<br />
+3.&nbsp; The form's BeforeInsert event procedure is:<br />
+<br />
+Private Sub Form_BeforeInsert(Cancel As Integer)<br />
+<br />
+&nbsp;&nbsp;&nbsp; Me.DateTimeStamp = Now()<br />
+&nbsp;&nbsp; &nbsp;<br />
+End Sub<br />
+<br />
+<br />
+This simply sets the value of the DateTimeStamp control to the current date/time as soon as a user begins to enter a new record.&nbsp; This will overwrite the default value, which is set when the user moves to the empty new record, not when they actually begin to
+ enter data.&nbsp; A user could move to a new record, but go to lunch before they begin to enter data, so this avoids the time being too early.&nbsp; The default value is really there in case a record is inserted in some other way, e.g. via code in a function or procedure.<br />
+<br />
+4.&nbsp; Finally the form's AfterUpdate event procedure is:<br />
+<br />
+Private Sub Form_AfterUpdate()<br />
+<br />
+&nbsp;On Error GoTo Err_Handler<br />
+<br />
+&nbsp;&nbsp;&nbsp; Dim dbs As DAO.Database, rst As DAO.Recordset<br />
+&nbsp;&nbsp;&nbsp; Dim strSQL As String<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; strSQL = "SELECT * FROM Contacts WHERE ContactID = " &amp; Me.ContactID<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; Set dbs = CurrentDb<br />
+&nbsp;&nbsp;&nbsp; Set rst = dbs.OpenRecordset(strSQL)<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; StoreNewVals rst<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; If Not blnNewRecord Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If RecordHasChanged() Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' MsgBox "Record has changed"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; strSQL = "UPDATE Contacts SET DateTimeStamp = #" &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Format(Now(), "yyyy-mm-dd hh:nn:ss") &amp; _<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "# WHERE ContactID = " &amp; Me.ContactID<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; dbs.Execute strSQL, dbFailOnError<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp; &nbsp;<br />
+&nbsp;&nbsp;&nbsp; blnNewRecord = False<br />
+&nbsp;&nbsp; &nbsp;<br />
+Exit_Here:<br />
+&nbsp;&nbsp; Exit Sub<br />
+&nbsp; &nbsp;<br />
+Err_Handler:<br />
+&nbsp;&nbsp; MsgBox Err.Description, vbExclamation, "Error"<br />
+&nbsp;&nbsp; Resume Exit_Here<br />
+&nbsp; &nbsp;<br />
+End Sub<br />
+<br />
+This is where the real work is done.&nbsp; Firstly it again establishes a recordset based on an SQL statement which returns the current record.&nbsp; It then calls the StoreNewVals procedure, which stores the values of the columns in the updated record in an array.&nbsp;
+ So we now have two arrays, one containing the values before the record was updated, the other containing the values after the record was updated.<br />
+<br />
+Next the code examines the blnNewRecord variable to see if a new record has just been inserted.&nbsp; If not it calls the RecordHasChanged function in the basChangedRecord module.&nbsp; This function loops through the contents of the two arrays and compares them.&nbsp; If
+ it finds that a new value differs from an old value the function returns True.&nbsp; My demo next pops up a message box to say the record has changed, but I've commented this out in the code above as you don't need that; it's really only there for demonstration
+ purposes.&nbsp; It then builds and executes an SQL statement which updates the current row in the table, setting the value of the DateTimeStamp column to the current date/time, using the ISO format for date/time notation of YYYY-MM-DD hh mm ss ( the standard uses
+ case to distinguish between months and minutes, whereas the Format function, not being case sensitive, uses m and n respectively).&nbsp; This ensures that the literal date/time value is interpreted correctly regardless of the regional date format in use.&nbsp; The reason
+ for updating the value in this way rather than simply assigning the current date/time to the form's DateTimeStamp control is that if this were done it would trigger the AfterUpdate event again and the code would execute once more.<br />
+<br />
+Finally the blnNewRecord variable is set to False as, even if a new record has been inserted, it is now an existing record, so if the user were to save it without navigating off the record, but then make further changes, these changes would be detected by the
+ code and the time-stamp updated.<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>A very Important Assignment - later this week. - Microsoft Community</title>
+<h3> davy-delliott  say:</h3>
+<h2>            A very Important Assignment - later this week.</h2>
+                    <p>After saying no new builds this week. Dona Sarkar now says, Don't get too comfortable. I will have a very important assignment for all of you later this week? Stay tuned.</p>
+<p>
+</p><p>Davy.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    0 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="JoeNamco" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> joenamco  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Making Turkey soup my guess
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=windows_update">windows_update, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>will the new open source apps be available for 5th edition used on n97 - Microsoft Community</title>
+<h3> heyheyho  say:</h3>
+<h2>            will the new open source apps be available for 5th edition used on n97 mini&#63;</h2>
+                    will the new open source apps be available for 5th edition used on n97 mini?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carman58---01  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No one will know untill some are released, but logically people will be developing software for all symbian phones, so I would be over 99% sure the answer is yes. But wait and see, keep an eye on sites like Nokiausers and Daily Mobile.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> heyheyho  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            will do thanks
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to disable the service reply message notification or atleast - Microsoft Community</title>
+<h3> rulemaker004  say:</h3>
+<h2>            How to disable the  service reply message notification or atleast diable the sound.</h2>
+                    
+<p>Any of you guys know how to disable the&nbsp; service reply message&nbsp; or atleast diable the sound notification its annoying:smileymad:.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>you can call your operator and ask them to stop this are you on ?</p>
+<p>also try turning of warning tones&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>If you have the options available as this...</p>
+<p>Messaging--&gt;Settings--&gt;Service message--&gt;set to 'OFF' and try..</p>
+<p>&nbsp;</p>
+<p>--------------------------------------------------​--------------------------------------------------​--------------------------------------------------​--If you find this helpful, pl. hit the White Star in Green Box...<br />
+.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            also what phone have you by the way??
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Don&#39;t know what an icon actually means... - Microsoft Community</title>
+<h3> lumiafrenchuser  say:</h3>
+<h2>            Don&#39;t know what an icon actually means...</h2>
+                    
+<p>Hi all,</p>
+<p>&nbsp;</p>
+<p>I bought a Lumia 920 yesterday, great phone! However some information is missing about what icons mean.</p>
+<p>There is especially one I'm wondering about: it roughly looks like 3 waves (like "~") side by side, appearing on the top side of the screen.</p>
+<p>&nbsp;</p>
+<p>If any of you is able to tell me what it means, that would be great :)</p>
+<p>&nbsp;</p>
+<p>Thanks</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> cjlim  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>That means your phone is on vibrate only because you have turned the volume right down. You can get rid of the symbol by increasing the ring volume using the volume toggle on side.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lumia 620 hard reset, gears keep spinning - Microsoft Community</title>
+<h3> paddyboyd  say:</h3>
+<h2>            Lumia 620 hard reset, gears keep spinning</h2>
+                    Bought a Lumia 620, did a hard reset in the settings.<br />
+<br />
+Two gears have been spinning on screen for hours, left overnight. Tried pulling battery but just returns to gears. Tried hard reset using keys on side, same issue.<br />
+<br />
+Can anybody help?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="farby" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "FA"); this.style="display: inline-block";'
+<h3> farby  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You may wait till the Battery is fully drained. Then connect the charger and leave it on charge for upto 40-45 minutes. See if the phone switches ON on its own or atleast shows the Battery charging icon in the display.. If it is showing it, try a Soft Reset
+ :&nbsp;Press <strong>Power + Volume(down)</strong>&nbsp;keys until the phone vibrates&nbsp;(about 8-10 seconds).&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> johnandlaura  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            hi i just got a nokia lumia 620 im having the same problem as u and it making the battrey die all the time just woundering if u have found a way of stopping this
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> adrianhughesnsd  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            hi fellas,<br />
+<br />
+in this case, may have to perform a hard reset. if that does not work, then you will need to take your phone to your nearest Nokia Care point for inspection.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> maky28  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Why this Problem arises. I'm stuck with this for a second time!!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> milan adhikari  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>This will help you.</p>
+<p>Use Lumia software recovery tool to reinstall the software version. </p>
+<p>Download it from here. <a href="http://www.microsoft.com/en-us/mobile/support/faq/?action=singleTopic&amp;topic=FA142987" target="_blank" rel="noreferrer nofollow">
+http://www.microsoft.com/en-us/mobile/support/faq/?action=singleTopic&amp;topic=FA142987
+</a></p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>spam from mail.onedrive.com - Microsoft Community</title>
+<h3> measure_twice  say:</h3>
+<h2>            spam from mail.onedrive.com</h2>
+                    <p>I get daily spam from mail.onedrive.com to a "live" email.&nbsp;&nbsp;&nbsp; cut and paste below</p>
+<p>
+</p><p>It looks like its from Microsoft, not an (at least an&nbsp;illegal one lol) scammer.&nbsp; If I hit reply the url is mail.onedrive.com&nbsp; Is this coming from Microsoft?</p>
+<p>
+</p><p>There is no opt out "stop sending me this crap" link in the email as I thought was required by law.</p>
+<p>
+How do I stop this, and why is there an opt out link in the body?&nbsp; This has been extremely frustrating and wasted a lot of my time - what gives Microsoft?
+</p><p>
+</p><p>
+</p><p><strong><span>From:</span></strong><span><span>Microsoft OneDrive [mailto:*** Email address is removed for privacy ***]
+<br />
+<strong>Sent:</strong> Thursday, November 30, 2017 12:45 PM<br />
+<strong>To:</strong> xxxxxxxxxxxxxxxxxxxxxxx<br />
+<strong>Subject:</strong> Set up OneDrive on your desktop</span></span></p>
+<p><span>&nbsp;</span></p>
+<table>
+<tbody>
+<tr>
+<td><span><span>Set up OneDrive on your desktop Get OneDrive for your PC or Mac so you can access and edit your files from a folder on your computer. You can sync your files and access them offline. Set up OneDrive
+<img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fclick.mail.onedrive.com%2fopen.aspx%3fffcb10-fef315747c610d-fe3812717767047f701070-fe9713727665037f77-ff981675-fe2e12717766037d711679-fef8157971650c%26amp%3bd%3d70036" height="1" width="1" /></span></span>
+</td>
+</tr>
+<tr>
+<td>
+<div>
+<table>
+<tbody>
+<tr>
+<td>
+<div>
+<table>
+<tbody>
+<tr>
+<td>
+<div>
+<table>
+<tbody>
+<tr>
+<td>
+<div>
+<table>
+<tbody>
+<tr>
+<td><span><span style="color: rgba(118, 118, 118, 1)">OneDrive on your computer for instant access, any&nbsp;time.
+</span></span></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(118, 118, 118, 1)">Having trouble viewing this message?
+</span></span><a href="https://view.mail.onedrive.com/?qs=de19234fb40a693af954e5e84c38f6a564e13564e4b0b953d325c31cb9eb5a5d6c9710015764530ae31716a3c190e155d2ee7364d186307b3814a86471a89a74f819dbb72ff64051" target="_blank" rel="noreferrer nofollow"><span><span>Click&nbsp;here</span></span></a><span><span style="color: rgba(118, 118, 118, 1)">.
+</span></span></td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=2e10bd0255787a1416ee680bf1a698203abd9e50076ccde1dae9e38f78e43ab0d4da6f8c51729ca39e9e1f9720de567234394e0d65532cbe" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2fsfdc%2fLogos%2fFY18_OneDrive_Logo.png" height="22" width="131" /></span></span></a></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(33, 33, 33, 1)">Complete your OneDrive&nbsp;Mission:
+</span></span></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(33, 33, 33, 1)">Set up OneDrive on your&nbsp;desktop
+</span></span></td>
+</tr>
+<tr>
+<td><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2ffy18-1702-welcome-onboarding-next-steps%2f0217_Welcome_NextSteps_Hero2.png" width="600" /></span></span>
+</td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(60, 60, 60, 1)">Get OneDrive for your PC or Mac so you can access and edit your files from a folder on your computer. You can sync your files and access them&nbsp;offline.
+</span></span></td>
+</tr>
+<tr>
+<td>
+<div>
+<table>
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=d004933bbcc5bce928cd449e1ac615cf95b6e3833fd946bb3747d60fceeef5ccd8bd5fcca177b05e2735cc90c31e9bac3f13631610de2c5d" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(255, 255, 255, 1)">Set
+ up&nbsp;OneDrive</span></span></a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+<tr>
+<td>
+<table>
+<tbody>
+<tr>
+<td><span><span style="color: rgba(0, 0, 1, 1)">Complete the rest of your OneDrive&nbsp;mission</span></span>
+</td>
+</tr>
+<tr>
+<td>
+<div>
+<table>
+
+<tbody>
+<tr>
+<td>
+<table>
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=09e42887005be2e388001ef9c5d62637bb41645e417086ac6c213f3829a1f2d4266ba119bbbfa570cc9ef69631c9dc6372f977aca646fccf" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2ffy18-1702-welcome-onboarding-next-steps%2f0217_Welcome_NextSteps_Icon_Upload.png" height="20" width="20" /></span></span></a></td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=09e42887005be2e388001ef9c5d62637bb41645e417086ac6c213f3829a1f2d4266ba119bbbfa570cc9ef69631c9dc6372f977aca646fccf" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(18, 70, 120, 1)">Upload</span></span></a>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>
+<table>
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=501f826255c3bfda15b5462b5d7f080917bf67ced7e56d2e645d1239cd860c6c154723abfe1e40d30773cb23c24e2c0a9a2ef4d9c2cc301f" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2ffy18-1702-welcome-onboarding-next-steps%2f0217_Welcome_NextSteps_Icon_Mobile.png" height="20" width="20" /></span></span></a></td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=501f826255c3bfda15b5462b5d7f080917bf67ced7e56d2e645d1239cd860c6c154723abfe1e40d30773cb23c24e2c0a9a2ef4d9c2cc301f" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(18, 70, 120, 1)">Mobile</span></span></a>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>
+<table>
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=bfb5e469487b12ff2e9e4f0b0fed82e7de643feef28938811f45f14bf777c86ad6f37c0550bbafcc952818a3d613ed8b85184be661c5cfda" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2ffy18-1702-welcome-onboarding-next-steps%2f0217_Welcome_NextSteps_Icon_Share.png" height="20" width="20" /></span></span></a></td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=bfb5e469487b12ff2e9e4f0b0fed82e7de643feef28938811f45f14bf777c86ad6f37c0550bbafcc952818a3d613ed8b85184be661c5cfda" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(18, 70, 120, 1)">Share</span></span></a>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+<td>
+<table>
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=1ab8f46c2f3c9b9af103e5e4b3a896d7d69135b114bf6ffd0d1cd1ba0c349c0efb69d7bdbdc7f8f0c25d15758299825a19cc4537d01b6454" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2ffy18-1702-welcome-onboarding-next-steps%2f0217_Welcome_NextSteps_Icon_Premium.png" height="20" width="20" /></span></span></a></td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=1ab8f46c2f3c9b9af103e5e4b3a896d7d69135b114bf6ffd0d1cd1ba0c349c0efb69d7bdbdc7f8f0c25d15758299825a19cc4537d01b6454" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(18, 70, 120, 1)">Premium</span></span></a>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<table>
+
+<tbody>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=f76cfeb0b1150e5b90f5abc2ee68d65e296abcd250c7eb7d10c72fd46319a10a5a0f7202ed3149a62c1384044bb7913e4e8225e18390ed75" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2fsfdc%2fLogos%2flogo_twt_double.gif" height="20" width="21" /></span></span></a></td>
+<td><a href="https://click.mail.onedrive.com/?qs=b28070f8ed7e5dd03590cfaac40ec4e4c6373bb063ad92d3b555a5b7953951615fb2ef20cb28b185802b5ec46ce94bf69bbda54855c93c41" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2fsfdc%2fLogos%2flogo_fb_double.gif" height="20" width="10" /></span></span></a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr>
+<td><a href="https://click.mail.onedrive.com/?qs=bfde4068c90ce76e0ab63f3d3298adfd2e0ee86e8cea56e29b50dfd0f5c59646b02814d8d88805a22cbc60669f4a05e779d75acbc98131a3" target="_blank" rel="noreferrer nofollow"><span><span><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=https%3a%2f%2fasgcdn.azureedge.net%2fsfdc%2fLogos%2flogo_ms_double.png" height="24" width="113" /></span></span></a></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(118, 118, 118, 1)">Microsoft respects your privacy. To learn more, please read our
+</span></span><a href="https://click.mail.onedrive.com/?qs=4fc139346d52179aecade9df1d16fa9fb050e54aa6f82f4e1fbfbc6ffa77222168e9a379d93540f4db12e77606db80eef6333d4e9420c42c" target="_blank" rel="noreferrer nofollow"><span><span>Privacy Statement</span></span></a><span><span style="color: rgba(118, 118, 118, 1)">.
+</span></span></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(118, 118, 118, 1)">To set your contact preferences for Microsoft communications, click
+</span></span><a href="https://click.mail.onedrive.com/m_hcp.aspx?qs=f34d7439987ee5593382a6608ff37c8a91cc8ccf03638ff9c2f1d9fee2af733c34672f412c004da81a5fff59169fe037aeec2c4e14777d90b352e9a9d5fd24da8e269a16ab767070693e7d87272d9e6d4683615e05ba153867d5d6fbd2669cfc" target="_blank" rel="noreferrer nofollow"><span><span>here</span></span></a><span><span style="color: rgba(118, 118, 118, 1)">.
+ These settings will not affect any mandatory service communications that are considered part of certain Microsoft&nbsp;services.
+</span></span></td>
+</tr>
+<tr>
+<td><span><span style="color: rgba(114, 114, 114, 1)">Microsoft&nbsp;Office<br />
+One Microsoft&nbsp;Way<br />
+Redmond,&nbsp;WA<br />
+98052&nbsp;USA</span></span> </td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p>
+</p><p>
+
+<br /></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>
+</p><p>There are a few ways for you to manage your subscriptions to Microsoft emails. To better assist you, we suggest that you check and try the steps stated on this
+<a href="https://www.microsoft.com/mscorp/execmail/unsubscribe.mspx" target="_blank" rel="noreferrer nofollow">
+link</a>. This article contains steps that you can perform to help you address your query. 
+</p>
+<p>
+</p><p>In addition, you may visit this support website for additional reference: <a href="https://support.office.com/en-us/article/Help-keep-spam-out-of-your-Inbox-in-Outlook-com-a3ece97b-82f8-4a5e-9ac3-e92fa6427ae4" target="_blank" rel="noreferrer nofollow">
+Help keep spam out of your Inbox in Outlook.com</a>.</p>
+<p>
+</p><p>If you need further help, feel free to reach out.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> measure_twice  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for your reply.</p>
+<p>
+</p><p>The instructions in your link, reply to the email with "stopmail" in the subject line did not work.&nbsp;&nbsp; I have followed every link and sub link and option page on the account trying to root out the source of this.&nbsp; I can find nothing.&nbsp;
+ More spam arrived today from Microsoft. I shouldn't have to take steps to stop spam, I shouldn't be receiving it from a credible company in the first place.&nbsp; If you really think that spamming your user base is a good idea, should there not be an opt out link
+ in the email? &nbsp; Isn't that the law?&nbsp; </p>
+<p>
+</p><p>Your early reply seems a tacit admission the spam email WAS from Microsoft.&nbsp;&nbsp;&nbsp; With this message I am formally requesting that in accordance with anti spam laws you remove my email from all your spam lists at once.</p>
+<p>
+</p><p>Thank you.</p>
+<p><br />
+</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>It's not spam as you have a "relationship" with Microsoft, especially since you use Outlook.com.</p>
+<p>This forum isn't the place to request to be removed from the email list.</p>
+<p>Unfortunately I don't know where else for you to go.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> measure_twice  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>It is most certainly is spam.&nbsp; Spam is slang for unwelcome and unsolicited commercial emails.&nbsp;&nbsp; Firms I actually have a relationship with, like say my law firm, ask permission and/or provide an opt out of unsolicited commercial emails.&nbsp; Its the law.&nbsp;
+<span>Read CAN-SPAM, it requires unsolicited commercial emails to offer an opt out.</span></p>
+<p>
+</p><p><span>You are a microsoft representative.&nbsp; Therefor it is entirely proper and legal for me to give you notice I do not want to receive these emails.&nbsp;&nbsp; The law doesn't say I have to speak with say Bob Smith at Microsoft, it says I have to let
+ Microsoft know I want the emails to stop.&nbsp; I have done that.</span></p>
+<p><span>If Microsoft is not willing to help stop this just because its the right thing to do, kindly do one of the following.&nbsp;
+</span></p>
+<p>
+</p><p><span>1) show exactly how I can stop these emails</span></p>
+<p><span>2) have your legal department address this issue here</span></p>
+<p><span>3) provide an email address for your legal department</span></p>
+<p><span>or</span></p>
+<p><span>4) have who ever is sending these emails adhere to the law and provide an opt out<br />
+</span></p>
+<p>Thank you</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>None of us are employees of Microsoft so telling the forums all you want isn't going to change the fact that you have a commercial relationship with Microsoft and they can send you unsolicited email all they want. CAN-SPAM applies to corporations you don't
+ already have a relationship with.</p>
+<p>Anyway, good luck with your "lawsuit". You will hopefully get legal council to ask them about the validity of your claim.
+</p>
+<p>
+</p><p>Come back when you've "won."</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> measure_twice  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I did think you were employees based on the responses as posters seemed defensive of MS and weren't able to offer a solution, my mistake.&nbsp;&nbsp;&nbsp; Thinking you were employees, perhaps explains my frustration, sorry if it came through too loudly</p>
+<p>
+</p><p>I didn't say anything about a lawsuit, that is absurd.&nbsp;&nbsp; However it does seems to clearly fall under the definition of spam; unsolicited commercial emails.&nbsp; Perhaps we can agree that it is common and courteous practice from credible firms to offer an opt
+ out when sending unsolicited commercial emails? </p>
+<p>
+</p><p>That being said, I just want the spam to stop.&nbsp;&nbsp; So you guys and gals are all just fellow users and don't know how to stop it?&nbsp; ....and it doesn't bother you - its ok with you that they do this - send spam out without an opt out or way to turn it off?</p>
+<p>
+</p><p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook error code 0x800CCC0E &#40;Imap&#41; - Microsoft Community</title>
+<h3> darkhollowfarm  say:</h3>
+<h2>            Outlook error code 0x800CCC0E &#40;Imap&#41;</h2>
+                    <p>I've been using Outlook 2013 for months with a Windows 8 operating system and have just gotten this error message 0x800CCC0E.&nbsp; I have edited to add that I cannot send or receive emails.</p>
+<p>&nbsp;</p>
+<p>I can find no way of correcting the problem.&nbsp; The incoming server is IMAP and the outgoing is SMTP.&nbsp; The customer service people at my ISP will not touch anything to do with IMAP and say it's up to me to figure out what is going on....that or for $16.95
+ a month they might give it a whirl.&nbsp; Sigh.</p>
+<p>&nbsp;</p>
+<p>I have looked online for assistance and there are some ideas but nothing has worked.&nbsp; My primary email account is with frontier.net, and then I have three gmail accounts that also come through Outlook.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> phil-r-brown  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            When I first had this problem, a System Restore cured it for a time, then it came up again, affecting both receive and send.&nbsp; Outlook continually asked for my password for my mail server.&nbsp; Then the behaviour changed - sending mail worked again, and the
+ continual demands for a password stopped, but receiving still produced the error code and error message, but no incoming email.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Uttam Yadav" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "UY"); this.style="display: inline-block";'
+<h3> uttam yadav  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Phil,</p>
+<p>
+</p><p>Thank you for your reply.</p>
+<p>
+</p><p><span>For issue related to Microsoft Outlook 2013,&nbsp;we have a dedicated team who will be glad to assists you. Please post your question on the below link:</span></p>
+<p>
+</p><p><a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook-os_device_otherunknown?sort=lastreplydate&amp;dir=desc&amp;tab=Threads&amp;status=&amp;mod=&amp;modAge=&amp;advFil=&amp;postedAfter=&amp;postedBefore=&amp;threadType=All&amp;tm=1421888544816">http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook-os_device_otherunknown?sort=lastreplydate&amp;dir=desc&amp;tab=Threads&amp;status=&amp;mod=&amp;modAge=&amp;advFil=&amp;postedAfter=&amp;postedBefore=&amp;threadType=All&amp;tm=1421888544816</a>
+</p>
+<p>
+</p><p><span>Hope this information is helpful.</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Uttam Yadav" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "UY"); this.style="display: inline-block";'
+<h3> uttam yadav  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>Thank you for your reply.</p>
+<p>
+</p><p><span>For issue related to Microsoft Outlook 2013,&nbsp;we have a dedicated team who will be glad to assists you. Please post your question on the below link:</span></p>
+<p>
+</p><p><a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook-os_device_otherunknown?sort=lastreplydate&amp;dir=desc&amp;tab=Threads&amp;status=&amp;mod=&amp;modAge=&amp;advFil=&amp;postedAfter=&amp;postedBefore=&amp;threadType=All&amp;tm=1421888544816">http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook-os_device_otherunknown?sort=lastreplydate&amp;dir=desc&amp;tab=Threads&amp;status=&amp;mod=&amp;modAge=&amp;advFil=&amp;postedAfter=&amp;postedBefore=&amp;threadType=All&amp;tm=1421888544816</a>
+</p>
+<p>
+</p><p><span>Hope this information is helpful.</span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Pivot table avg. price&#42; quantity - not giving right answer - Microsoft Community</title>
+<h3> bkel  say:</h3>
+<h2>            Pivot table avg. price&#42; quantity - not giving right answer</h2>
+                    
+<p>I posted this before and did not get an answer - never notice this problem til I taught a class and a pretty advanced student brought up this issue - please help.</p>
+<p>
+<table>
+<tbody>
+<tr>
+<td>Row Labels</td>
+<td>Average of Unit Price</td>
+<td>Sum of Quantity</td>
+<td>Average of sales</td>
+<td>Sum of Field1</td>
+</tr>
+<tr>
+<td>
+<span><span>Andrew Fuller</span></span></td>
+<span><span>Andrew Fuller</span></span></td>
+<td><span><span>28.68634855</span></span></td>
+<td><span><span>6055</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>41,860,697.55</span></span></span></td>
+<td><span><span>41860697.55</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Anne Dodsworth</span></span></td>
+<span><span>Anne Dodsworth</span></span></td>
+<td><span><span>31.59065421</span></span></td>
+<td><span><span>2670</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>9,025,134.00</span></span></span></td>
+<td><span><span>9025134</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Janet Leverling</span></span></td>
+<span><span>Janet Leverling</span></span></td>
+<td><span><span>27.25364486</span></span></td>
+<td><span><span>7852</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>68,692,593.84</span></span></span></td>
+<td><span><span>68692593.84</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Laura Callahan</span></span></td>
+<span><span>Laura Callahan</span></span></td>
+<td><span><span>23.99711538</span></span></td>
+<td><span><span>5913</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>36,892,685.25</span></span></span></td>
+<td><span><span>36892685.25</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Margaret Peacock</span></span></td>
+<span><span>Margaret Peacock</span></span></td>
+<td><span><span>26.63640476</span></span></td>
+<td><span><span>9798</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$ 109,613,067.42</span></span></span></td>
+<td><span><span>109613067.4</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Michael Suyama</span></span></td>
+<span><span>Michael Suyama</span></span></td>
+<td><span><span>22.82714286</span></span></td>
+<td><span><span>3527</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>13,525,903.92</span></span></span></td>
+<td><span><span>13525903.92</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Nancy Davolio</span></span></td>
+<span><span>Nancy Davolio</span></span></td>
+<td><span><span>25.31142029</span></span></td>
+<td><span><span>7812</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>68,217,821.28</span></span></span></td>
+<td><span><span>68217821.28</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Robert King</span></span></td>
+<span><span>Robert King</span></span></td>
+<td><span><span>26.80403409</span></span></td>
+<td><span><span>4654</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>21,955,291.54</span></span></span></td>
+<td><span><span>21955291.54</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Steven Buchanan</span></span></td>
+<span><span>Steven Buchanan</span></span></td>
+<td><span><span>23.48230769</span></span></td>
+<td><span><span>3036</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>8,341,197.48</span></span></span></td>
+<td><span><span>8341197.48</span></span></td>
+</tr>
+<tr>
+<td>Grand Total</td>
+<td>26.21851972</td>
+<td>51317</td>
+<td>2899457198</td>
+<td>2899457198</td>
+</tr>
+</tbody>
+</table>
+Avg. of Sales- should = Avg. of unit price * sum of quantity but does not???
+<table>
+<tbody>
+<tr>
+<td>Row Labels</td>
+<td>Average of Unit Price</td>
+<td>Sum of Quantity</td>
+<td>Average of sales</td>
+<td>Sum of Field1</td>
+</tr>
+<tr>
+<td>
+<span><span>Andrew Fuller</span></span></td>
+<span><span>Andrew Fuller</span></span></td>
+<td><span><span>28.68634855</span></span></td>
+<td><span><span>6055</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>41,860,697.55</span></span></span></td>
+<td><span><span>41860697.55</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Anne Dodsworth</span></span></td>
+<span><span>Anne Dodsworth</span></span></td>
+<td><span><span>31.59065421</span></span></td>
+<td><span><span>2670</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>9,025,134.00</span></span></span></td>
+<td><span><span>9025134</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Janet Leverling</span></span></td>
+<span><span>Janet Leverling</span></span></td>
+<td><span><span>27.25364486</span></span></td>
+<td><span><span>7852</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>68,692,593.84</span></span></span></td>
+<td><span><span>68692593.84</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Laura Callahan</span></span></td>
+<span><span>Laura Callahan</span></span></td>
+<td><span><span>23.99711538</span></span></td>
+<td><span><span>5913</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>36,892,685.25</span></span></span></td>
+<td><span><span>36892685.25</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Margaret Peacock</span></span></td>
+<span><span>Margaret Peacock</span></span></td>
+<td><span><span>26.63640476</span></span></td>
+<td><span><span>9798</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$ 109,613,067.42</span></span></span></td>
+<td><span><span>109613067.4</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Michael Suyama</span></span></td>
+<span><span>Michael Suyama</span></span></td>
+<td><span><span>22.82714286</span></span></td>
+<td><span><span>3527</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>13,525,903.92</span></span></span></td>
+<td><span><span>13525903.92</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Nancy Davolio</span></span></td>
+<span><span>Nancy Davolio</span></span></td>
+<td><span><span>25.31142029</span></span></td>
+<td><span><span>7812</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>68,217,821.28</span></span></span></td>
+<td><span><span>68217821.28</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Robert King</span></span></td>
+<span><span>Robert King</span></span></td>
+<td><span><span>26.80403409</span></span></td>
+<td><span><span>4654</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;</span>21,955,291.54</span></span></span></td>
+<td><span><span>21955291.54</span></span></td>
+</tr>
+<tr>
+<td>
+<span><span>Steven Buchanan</span></span></td>
+<span><span>Steven Buchanan</span></span></td>
+<td><span><span>23.48230769</span></span></td>
+<td><span><span>3036</span></span></td>
+<td><span><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>8,341,197.48</span></span></span></td>
+<td><span><span>8341197.48</span></span></td>
+</tr>
+<tr>
+<td>Grand Total</td>
+<td>26.21851972</td>
+<td>51317</td>
+<td>2899457198</td>
+<td>2899457198</td>
+</tr>
+</tbody>
+</table>
+</p>
+<p>
+<table>
+<tbody>
+<tr>
+<td>
+<p><span>Row Labels</span></p>
+</td>
+<td>
+<p><span>Average of Unit Price</span></p>
+</td>
+<td>
+<p><span>Sum of Quantity</span></p>
+</td>
+<td>
+<p><span>Average of sales</span></p>
+</td>
+<td>
+<p><span>Sum of Field1</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Andrew Fuller</span></p>
+</td>
+<td>
+<p>
+<span>28.68634855</span></p>
+<span>28.68634855</span></p>
+</td>
+<td>
+<p>
+<span>6055</span></p>
+<span>6055</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;41,860,697.55</span></p>
+</td>
+<td>
+<p>
+<span>41860697.55</span></p>
+<span>41860697.55</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Anne Dodsworth</span></p>
+</td>
+<td>
+<p>
+<span>31.59065421</span></p>
+<span>31.59065421</span></p>
+</td>
+<td>
+<p>
+<span>2670</span></p>
+<span>2670</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;&nbsp;&nbsp;9,025,134.00</span></p>
+</td>
+<td>
+<p>
+<span>9025134</span></p>
+<span>9025134</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Janet Leverling</span></p>
+</td>
+<td>
+<p>
+<span>27.25364486</span></p>
+<span>27.25364486</span></p>
+</td>
+<td>
+<p>
+<span>7852</span></p>
+<span>7852</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;68,692,593.84</span></p>
+</td>
+<td>
+<p>
+<span>68692593.84</span></p>
+<span>68692593.84</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Laura Callahan</span></p>
+</td>
+<td>
+<p>
+<span>23.99711538</span></p>
+<span>23.99711538</span></p>
+</td>
+<td>
+<p>
+<span>5913</span></p>
+<span>5913</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;36,892,685.25</span></p>
+</td>
+<td>
+<p>
+<span>36892685.25</span></p>
+<span>36892685.25</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Margaret Peacock</span></p>
+</td>
+<td>
+<p>
+<span>26.63640476</span></p>
+<span>26.63640476</span></p>
+</td>
+<td>
+<p>
+<span>9798</span></p>
+<span>9798</span></p>
+</td>
+<td>
+<p><span>&nbsp;$ 109,613,067.42</span></p>
+</td>
+<td>
+<p>
+<span>109613067.4</span></p>
+<span>109613067.4</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Michael Suyama</span></p>
+</td>
+<td>
+<p>
+<span>22.82714286</span></p>
+<span>22.82714286</span></p>
+</td>
+<td>
+<p>
+<span>3527</span></p>
+<span>3527</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;13,525,903.92</span></p>
+</td>
+<td>
+<p>
+<span>13525903.92</span></p>
+<span>13525903.92</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Nancy Davolio</span></p>
+</td>
+<td>
+<p>
+<span>25.31142029</span></p>
+<span>25.31142029</span></p>
+</td>
+<td>
+<p>
+<span>7812</span></p>
+<span>7812</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;68,217,821.28</span></p>
+</td>
+<td>
+<p>
+<span>68217821.28</span></p>
+<span>68217821.28</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Robert King</span></p>
+</td>
+<td>
+<p>
+<span>26.80403409</span></p>
+<span>26.80403409</span></p>
+</td>
+<td>
+<p>
+<span>4654</span></p>
+<span>4654</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;21,955,291.54</span></p>
+</td>
+<td>
+<p>
+<span>21955291.54</span></p>
+<span>21955291.54</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Steven Buchanan</span></p>
+</td>
+<td>
+<p>
+<span>23.48230769</span></p>
+<span>23.48230769</span></p>
+</td>
+<td>
+<p>
+<span>3036</span></p>
+<span>3036</span></p>
+</td>
+<td>
+<p><span>&nbsp;$&nbsp;&nbsp;&nbsp;8,341,197.48</span></p>
+</td>
+<td>
+<p>
+<span>8341197.48</span></p>
+<span>8341197.48</span></p>
+</td>
+</tr>
+<tr>
+<td>
+<p><span>Grand Total</span></p>
+</td>
+<td>
+<p>
+<span>26.21851972</span></p>
+<span>26.21851972</span></p>
+</td>
+<td>
+<p>
+<span>51317</span></p>
+<span>51317</span></p>
+</td>
+<td>
+<p>
+<span>2899457198</span></p>
+<span>2899457198</span></p>
+</td>
+<td>
+<p>
+<span>2899457198</span></p>
+<span>2899457198</span></p>
+</td>
+</tr>
+</tbody>
+</table>
+</p>
+<p>Trying to do Avg unit price(instead of sum of unit price) 2nd column Is Avg. Unit price but when do calcualtion does sum of unit price * quantity - I am creating a New formula from the ribbon for pivot table</p>
+<p>&nbsp;also added average(unit price)* (quantity) but still comes up with sum of unit price(what's its actually doing)* quantity</p>
+<p>&nbsp;thanks for your help</p>
+<p>bkel</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jim Thomlinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JT"); this.style="display: inline-block";'
+<h3> jim thomlinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You have to be careful when aggregating and using averages. In the end you need weighted averages not simple averages. Here is an example</p>
+<p>
+<table>
+<tbody>
+<tr>
+<td>
+<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Units</span></td>
+<td><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Price</span></td>
+<td><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Total</span></td>
+</tr>
+<tr>
+<td>
+<span>1</span></td>
+<td><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>9.00</span></span></td>
+<td><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>9.00</span></span></td>
+</tr>
+<tr>
+<td>
+<span>999</span></td>
+<td><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>1.00</span></span></td>
+<td><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;</span>999.00</span></span></td>
+</tr>
+<tr>
+<td>
+<span>1,000</span></td>
+<td><span><span><span>&nbsp;</span>$<span>&nbsp;&nbsp;&nbsp;</span>5.00</span></span></td>
+<td><span><span><span>&nbsp;</span>$1,008.00</span></span></td>
+</tr>
+</tbody>
+</table>
+</p>
+<p>I sold 1 @ $9 and 999 at $1</p>
+<p>The average (9+1)/2 = $5</p>
+<p>But the true average is $1,008 / 1,000 = $1.008</p>
+<p>If I simply multuply through 1,000 * 5 I get $5,000</p>
+<p>The long and the short is that your average unit price needs to be calculated within the pivot table based on the Sum of Sales / Sum of Units. This is done as a calculated field.</p>
+<hr />
+If this post answers your question, please mark it as the Answer... Jim Thomlinson
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bkel  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You are helping clarify it -</p>
+<p>&nbsp;</p>
+<p>I have the Avg. price but need the Overall Avg. Sales see above 1st post- thanks for HELPING!!</p>
+<p>just curious of what exactly I should do in my Pivot table from above</p>
+<p>for example for anderw fuller _ I would Like the calcuatlion of the Avg. Price he sold * his quantity he sold</p>
+<p>so I created in the calculated field</p>
+<p>Avgerage of Sales = Avg. Unit Price * Sum Quantity</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jim Thomlinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JT"); this.style="display: inline-block";'
+<h3> jim thomlinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I guess I do not understand what you mean by average of sales. The sum of sales makes sense to me. Here is how I do it... In my source data I define the Extended amount (Units * Price). Now in My pivot table I have 3 metrics (Units, Price and Total). To
+ come up with an accurate average I use a calculated field as follows...</p>
+<p>Total / Units</p>
+<p>That will work for both individual items and aggregates. Perhaps I am missing something?</p>
+<hr />
+If this post answers your question, please mark it as the Answer... Jim Thomlinson
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Office 365&#58; E-mails automatically moved to deleted items - Microsoft Community</title>
+<h3> aashrith jayanth kalale &#40;ajkalale&#41;  say:</h3>
+<h2>            Office 365&#58; E-mails automatically moved to deleted items</h2>
+                    <p>In my Inbox of my office 365 account, I have found that the email I receive are being deleted and being sent to the deleted items folder.
+</p>
+<p>
+</p><p>Can anybody plz provide a solution so that my emails remain in my inbox and don't get deleted automatically as and when they are received.&nbsp;</p>
+<p>
+</p><p>Right now what I am doing is that I am going to the deleted items folder and recovering my emails every time I am receiving it.&nbsp;</p>
+<p>
+</p><p>Kindly give me technical support for my query.</p>
+<p>
+</p><p>It would be great if I can get a permanent solution to my problem.</p>
+<p>
+</p><p>I get the error message saying"We don't find anything to show here".&nbsp;</p>
+<p>
+</p><p>Original Title: Extremely Urgent</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi Aashrith,</span></span></p>
+<p>
+</p><p><span><span>I kindly request you to answer the below questions to assist you better.</span></span></p>
+<p>
+</p><p><span><span>1. What type of email account is configured in Outlook? Is it a POP, IMAP, Exchange ActiveSync or Exchange account?</span></span></p>
+<p><span><span>2. Do you have any rules created in Outlook?</span></span></p>
+<p>
+</p><p><span>Verify the same under Home Tab &gt; Rules &gt; Manage Rules &amp; Alerts.</span></p>
+<p><span>If found, remove the same and check if the issue gets resolved.</span></p>
+<p>
+</p><p><span><span>3. Do you face this issue with emails received from all the senders?</span></span></p>
+<p>
+</p><p><span><span>Reference:</span></span></p>
+<p><span><a href="https://support.microsoft.com/en-us/kb/2697913" target="_blank" rel="noreferrer nofollow"><span><span><span style="color: rgba(0, 108, 216, 1)">https://support.microsoft.com/en-us/kb/2697913</span></span></span></a></span></p>
+<p>
+</p><p><span><a href="http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook/outlook-2013-is-automatically-moving-my-emails-to/2075db06-8219-468f-a69d-8a0ef929cd29?db=5"><span><span><span style="color: rgba(0, 108, 216, 1)">http://answers.microsoft.com/en-us/office/forum/office_2013_release-outlook/outlook-2013-is-automatically-moving-my-emails-to/2075db06-8219-468f-a69d-8a0ef929cd29?db=5</span></span></span></a></span></p>
+<p>
+</p><p><span><span>You may get back with the above information to assist you better.</span></span></p>
+<p>
+</p><p><span><span>Thank you.</span></span></p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to log in to my old-facebook-log-in Skype account &#63; - Microsoft Community</title>
+<h3> mouncefbelkeziz  say:</h3>
+<h2>            How to log in to my old-facebook-log-in Skype account &#63;</h2>
+                    <p><strong>**Moved from French to English**</strong></p>
+<p>
+</p><p>I want to do the balance of contacts and conversation from the old account to my noew microsoft account, but impossible to find the facebook log in account ? thanks for the help</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> noevir_l  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi,
+</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Signing in to Skype using Facebook credentials is no longer available. After January 10<sup>th</sup>, Facebook Skype account user can no longer
+ sign in to Skype. </span></p>
+<p><span>&nbsp;</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Please do not hesitate to reply to this thread if you need further help.
+</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=account_and_paid_services">account_and_paid_services, </a> <br>
+<a href="/search?q=account_setup_and_maintenance">account_setup_and_maintenance, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lost Contact Photos - Microsoft Community</title>
+<h3> fayuns  say:</h3>
+<h2>            Lost Contact Photos</h2>
+                    Hi, for some reason suddenly all the individual contact photos have disappeared on my&nbsp; Nokia Lumia 800 phone. Any idea what has caused this and how to recover them?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+<a href="/search?q=online_services">online_services, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do you make a rule to filter out emails with a blank body&#63; - Microsoft Community</title>
+<h3> melikian  say:</h3>
+<h2>            How do you make a rule to filter out emails with a blank body&#63;</h2>
+                    I send lots of meeting invites to 50-450 people and want to filter out the generic responses (blank body) into one folder while allowing the rest to go into my inbox. Is there any way to do this? I don't see any rule to catch any words in body, only specific
+ words.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Eileen Gal" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "EG"); this.style="display: inline-block";'
+<h3> eileen gal  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi <strong>Melikian</strong>, <br />
+<br />
+<strong>Rules</strong> in <strong>Outlook</strong> are created to run automatically on incoming or outgoing emails. You will choose what triggers the rule as well as the actions the rule takes. Creating a rule to filter emails with a blank body may not be possible.
+ You may need to select a specific word to trigger the rule you've created. <br />
+<br />
+For more information about managing your email messages by using rules, please check on this
+<strong><a href="https://support.office.com/en-us/article/manage-email-messages-by-using-rules-c24f5dea-9465-4df4-ad17-a50704d66c59#ID0EAABAAA=2010" target="_blank" rel="noreferrer nofollow" title="Manage email messages by using rules">article</a></strong>.
+<br />
+<br />
+Let us know if you have any other queries that we can assist you with.<br />
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>BreadCrumb not visible in Share Point Online - Microsoft Community</title>
+<h3> vishnu maheshadapa  say:</h3>
+<h2>            BreadCrumb not visible in Share Point Online</h2>
+                    
+<p>Hi ,</p>
+<p>Team I am not seeing Bread Crumb in SharePoint online environment. We are in need of this breadcrumb as its a mandatory requirement for one of our clients.</p>
+<p>Gone through some articles where they are suggesting to modify master page and by adding asp site map path provider we can enable it. But we dont want to get this enabled using master page . what are other possible alternatives to enable the OOB breadcrumb
+ in SharePoint Online.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wangyanyu  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Vishnu,</p>
+<p>About Breadcrumb in SharePoint Online, I would like share with you a workaround that the out-of-the-box alternative is to enable the tree view for the site via clicking the gear symbol in the upper right<strong> &gt; Site settings &gt; Look and Feel &gt; Navigation
+ Elements &gt; Enable Tree View&gt; OK</strong>. More details can be found in the article:
+<a href="http://blog.matrixforce.com/2013/11/27/sharepoint-online-breadcrumb-alternative/" target="_blank" rel="noreferrer nofollow">
+SharePoint Online Breadcrumb Alternative</a>.</p>
+<p>For other possible alternatives to enable the OOB breadcrumb in SharePoint Online instead of using master page, I would like to suggest that you post this requirement to our dedicated
+<a href="https://social.msdn.microsoft.com/Forums/en-US/home?forum=sharepointsearch,sharepointdevelopment,sharepointgeneral,sharepointcustomization,sharepointadmin&amp;filter=alltypes&amp;brandIgnore=True&amp;sort=relevancedesc&amp;filter=alltypes" target="_blank" rel="noreferrer nofollow">
+Microsoft Developer Network forum</a>.&nbsp; We have a specific forum that handles custom SharePoint site related issue. Please sign in with a Microsoft account and click<strong> Ask a question</strong> to open a new thread.</p>
+<p>Thanks for your understanding.</p>
+<p>Shirley</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>When will Flash support be released for the Windows Phone 7 Internet - Microsoft Community</title>
+<h3> meanfredblue  say:</h3>
+<h2>            When will Flash support be released for the Windows Phone 7 Internet Explorer&#63;</h2>
+                    I just got my Samsung Focus yesterday.&nbsp; I had to switch from Verizon to AT&amp;T to get it and I was so impatient, I even did it with the knowledge that I will pay a steep fee to Verizon to terminate my contract early.&nbsp; I'm eager to get the most from my new
+ phone and one of the main things that it lacks is Flash support in its web browser.&nbsp; My sister and her husband have Android phones with Flash support that works pretty good.&nbsp; I knew that the Windows Phone 7 wouldn't have it initially, but I'm hoping it is
+ going to come out soon.&nbsp; Is there any news?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Joel Ivory Johnson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JI"); this.style="display: inline-block";'
+<h3> joel ivory johnson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<blockquote>&nbsp;I knew that the Windows Phone 7 wouldn't have it initially, but I'm hoping it is going to come out soon.&nbsp; Is there any news?</blockquote>
+No news yet. Thus far the only confirmed forthcoming feature is Copy+Paste. Details of other forthcoming features isn't available yet. With respect to Flash it's been stated that for Flash to be integrated into Internet Explorer we would first need an update
+ to Internet Explorer so that it supported a plug-in model.
+<hr />
+<div><a href="http://twitter.com/j2inet" target="_blank" rel="noreferrer nofollow">Joel Ivory Johnson</a> | <a href="http://www.j2i.net/" target="_blank" rel="noreferrer nofollow">
+http://www.j2i.net</a> | Windows Phone Developer MVP | Software Engineer </div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook.coms Safe Senders List - Microsoft Community</title>
+<h3> default username 45  say:</h3>
+<h2>            Outlook.coms Safe Senders List</h2>
+                    <p>How do I purge the entire list?</p>
+<p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi ps,
+<br />To clear the safe (or blocked) list, select the first entry in the list then hold shift and select the last then click the Delete icon.       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=people_and_contacts">people_and_contacts, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Tabs in ie 11 in child mode close automatically. - Microsoft Community</title>
+<h3> juanzapatag  say:</h3>
+<h2>            Tabs in ie 11 in child mode close automatically.</h2>
+                    <p>I am running windows 8.1.</p>
+<p>ie 11</p>
+<p>There are 4 users, two of them children.</p>
+<p>
+</p><p>The computer is setup with family Safety to restrict access to certain sites.</p>
+<p>
+</p><p>
+</p><p>When one of my children run k12 (home school) and they need to open a tab for a blackboard, the tab inmediatelly closes, only after several attempts is that the tab stays open, but if I try to open another tab, thaty other tab along with the one I just opened,
+ close. &nbsp;Both tabs close automatically leaving my child wiht the original tab.</p>
+<p>
+</p><p>The above behavior ONLY happes when in child mode. &nbsp;when I log in, and login inot the K12 page, I am able ot open all the tabs without any problem and they stay open.</p>
+<p>
+</p><p>Can any one please help. &nbsp;this behaviour is preventing my child from accessing the material needed for the classes.</p>
+<p>
+</p><p>And PLEASE, do not answer saying to let her use my account to do her workl, that will defeat the purpose of Family Safety settings.</p>
+<p>
+</p><p>Regards,</p>
+<p>
+</p><p>Juan Z.</p>
+<p>
+</p><p>By the way, when I run ie as an administrator in my child's account, the problem with the automatically closing tabs dissapear.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Juan,</p>
+<p>&nbsp;</p>
+<p>I understand that the Internet Explorer closes tabs automatically when you login to a child account and you try to open a new tab.</p>
+<p>&nbsp;</p>
+<p>For better understanding of the issue, please provide us following information:</p>
+<p>&nbsp;</p>
+<ol>
+<li>Are you facing this issue on all child accounts or does the issue occurs only on one of them?</li><li>Did you make any changes to the computer prior this issue?</li></ol>
+<p>&nbsp;</p>
+<p>This could be an issue with some settings on Internet Explorer or if some add-ons is creating this issue.</p>
+<p>&nbsp;</p>
+<p>I suggest you to follow the steps provided in the article below and see if it helps:</p>
+<p>&nbsp;</p>
+<p><a href="http://support.microsoft.com/kb/936213/no" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/936213/no</a>
+</p>
+<p>&nbsp;</p>
+<p><strong>Note:</strong> The Reset Internet Explorer Settings feature might reset security settings or privacy settings that you added to the list of Trusted Sites. The Reset Internet Explorer Settings feature might also reset parental control settings. We
+ recommend that you note these sites before you use the Reset Internet Explorer Settings feature. Resetting Internet Explorer isn't reversible, and all previous settings are lost after reset.</p>
+<p>&nbsp;</p>
+<p>Hope it helps, do get back to us if you need further assistance with Windows.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> juanzapatag  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>the issue happens on all child accounts.&nbsp;</p>
+<p>
+</p><p>I've reset ie settings, security settings and the issue still persists.</p>
+<p>
+</p><p>Once again, when I run ie as an administrator from my child's account, the issue dissappears.</p>
+<p>
+</p><p>Regards</p>
+<p>
+</p><p>Juan Zapata&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hi Juan,</span></p>
+<p>
+</p><p><span>Thank you for keeping us updated on the issue.</span></p>
+<p>
+</p><p><span>I suggest you to start Internet Explorer without add-ons and check if the issue persists.</span></p>
+<p>
+</p><p><span>Follow the steps below:</span></p>
+<p>
+</p><ol>
+<li><span>Press <strong>
+Windows key + R</strong></span></li><li><span>Type <strong>
+iexplore.exe -extoff</strong></span></li><li><span>Press <strong>
+Ok</strong></span></li></ol>
+<p>
+</p><p>
+</p><p><span>Hope it helps, do get back to us if you need further assistance</span></p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> juanzapatag  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The problem persists even running ie without add-ons.</p>
+<p>
+</p><p>One thing to make clear. The settings for ie are the same for child and for admin (me). &nbsp; The security is not done in ie, it is done through Family Safety Settings.</p>
+<p>and to enfatize, &nbsp;when I run ie in administrator mode from within the child account, the problem goes away.</p>
+<p>
+</p><p>Thank you</p>
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_11">internet_explorer_11, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Grouping mails on Hotmail - Microsoft Community</title>
+<h3> simonha  say:</h3>
+<h2>            Grouping mails on Hotmail</h2>
+                    I have been grouping my mails in threads on hotmail for the first time, as I recently found out how to do so. But it seems there must be a limit on capacity, as I can no longer open the thread I now have that has 38 mails, while I can open the shorter
+ ones. Is this the case? If so, how do I see the mail I cannot open? Can I revert to not grouping the mails, so they get split up into separate mails again? And if so, how. I can't figure out how I did it in the first place now.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ronaldo r.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hi,</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>I’m sorry for the delayed response. As I understand, you want to ungroup the emails in your mailbox. Let me assist
+ you on this.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>To turn conversation threading off, here’s how:</font></font></font></p>
+<ol>
+<li>
+<div>
+<font><font color="#000000"><font>Sign in to your account.</font></font></font></div>
+</li><li>
+<div>
+<font><font color="#000000"><font>In the upper-right corner of the page, click
+<b>wheel/cog icon</b>, and then click <b>More mail settings</b>.</font></font></font></div>
+</li><li>
+<div>
+<font><font color="#000000"><font>Under <b>
+Reading email</b>, click <b>Group by conversation and pre-load messages</b>.
+</font></font></font></div>
+</li><li>
+<div>
+<font><font color="#000000"><font>Under <b>
+Conversation settings</b>, tick <b>Show messages individually.</b></font></font></font></div>
+</li><li>
+<div>
+<font><font color="#000000"><font>Click <b>
+Save</b>. </font></font></font></div>
+</li></ol>
+<p><font><font color="#000000"><font>I hope this helps. Let us know how things turn out.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Thank you.</font></font></font></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> simonha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Ronaldo<br />
+Thanks for your help. I had found a way to do it by the time your message came, but&nbsp; your way is easier.
+<br />
+The reason I wanted to do so was that there appeared to be a maximum size for grouped conversations, as my messages were no longer sent. Can you tell me if this is true?
+<br />
+Cheers<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi <font color="#0072c6">SimonHa</font>,</p>
+<p>&nbsp;</p>
+<p>Normally, there is not limit in grouped conversations. Please answer the following questions for us to isolate the issue:</p>
+<p>&nbsp;</p>
+<ul>
+<li>Did you receive any error message upon opening that specific grouped conversation? If yes, please provide the exact error message.</li><li>Did you receive any error message upon sending emails? If yes, please provide the exact error message.</li></ul>
+<p>&nbsp;</p>
+<p>We're looking forward to your response.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> simonha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Paul<br />
+No, I didn't receive any error messages. My mails just would't send. I sent some to the same person successfully where the mails were also grouped, but with fewer mails in the group, so I assumed I'd reached a maximum size.<br />
+Simon<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Simon, </p>
+<p>&nbsp;</p>
+<p>Thank you for your response.&nbsp; Usually, you will be prompted an error message if the emails were not send.&nbsp; Please verify if the emails in question is showing in the sent folders.&nbsp; If it does, then the emails were successfully sent.&nbsp;
+</p>
+<p>&nbsp;</p>
+<p>Let us know.&nbsp; </p>
+<p>&nbsp;</p>
+<p>Regards!&nbsp;&nbsp; </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> simonha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi<br />
+No, the mails in question didn't show in my sent folders..<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi <font color="#0072c6">SimonHa</font>,</p>
+<p>&nbsp;</p>
+<p>Sorry for the delayed response, please answer the following questions for our investigation:</p>
+<p>&nbsp;</p>
+<ul>
+<li>You said you do not receive any error message upon sending emails, does it mean that your screen freezes or Outlook.com does not respond when you click the send button?</li><li>Please verify if this issue is happening on different browsers/computers.</li></ul>
+<p>&nbsp;</p>
+<p>We're looking forward to your response.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> simonha  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Outlook.com did not respond when I clicked the send button, but it was only with the group in question that it didn't respond. I tried many times.<br />
+I did not try to do the same thing with other browsers or computers.<br />
+Cheers<br />
+Simon<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ralph_YS" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "RA"); this.style="display: inline-block";'
+<h3> ralph_ys  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi <font color="#0072c6">SimonHa</font>,</p>
+<p>&nbsp;</p>
+<font>
+<p>Thank you for posting back here.</p>
+<p>&nbsp;</p>
+<font>
+<p>I understand the inconvenience this may have caused you but let me help you with that. As you mentioned, you're unable to send on that grouped&nbsp;conversation&nbsp;and it is&nbsp;not responding for the send button. For us to further isolate the issue, please try to do
+ it using other browser or computer.</p>
+<p>&nbsp;</p>
+<p>If issue persists, please provide us the affected email account and the subject of that grouped conversation for further investigation.
+<font>I have created a private message so you can provide the information needed for investigation. You need to be signed in to the Microsoft Community forum to view the link. Just click on "<b>You have a private reply to this message</b>" link just above your
+ post to view the message.</font></p>
+<p>&nbsp;</p>
+<font><font>
+<p>We are looking forward to your reply for further assistance.</p>
+<p>&nbsp;</p>
+<p>Regards.</p>
+</font></font></font>
+<p>&nbsp;</p>
+</font>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Word cannot be open because of a problem. Check with the - Microsoft Community</title>
+<h3> jayrawkk  say:</h3>
+<h2>            Microsoft Word cannot be open because of a problem. Check with the developer to make sure... You may need to reinstall... Be sure to install any updates...</h2>
+                    <span>
+                    <span>
+<p>Hi, I have been using Microsoft office for a while now on my Macbook. My Macbook is fairly new, one of the newest Macbooks available, i got it Christmas 2009. It definitely has an intel-based processor and updated to the newest 10.6.5 version. Whenever I
+ open Microsoft word, excel, powerpoint, or Outlook, an error pop-up says "Microsoft Word (or excel, powerpoint, outlook) cannot be opened because of a problem. Check with the developer to make sure Microsoft Word works with this version of Mac OS X. You may
+ need to reinstall this application. Be sure to install any available updates for this application and Mac OS X." This has happened with my previous Microsoft Office 2008, so i installed Microsoft office 2011, and it still occurs. I have the newest version
+ of my Mac OS X, and after I installed 2011, i downloaded all available updates for Microsoft Office. But it still won't let me run the main Word, etc. programs without this coming up.</p>
+<p><strong><span>Any Help? Thanks :)</span></strong></p>
+<ul>
+</ul>
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Stefan Blom" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stefan blom  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>Since you are using Office for Macintosh, you had better ask in a product forum for Macintosh versions. See this web site:</div>
+<div>&nbsp;</div>
+<div><a href="http://www.officeformac.com/productforums/" target="_blank" rel="noreferrer nofollow">http://www.officeformac.com/productforums/</a></div>
+<div>&nbsp;</div>
+<hr />
+Stefan Blom, Microsoft Word MVP
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cannot find a product key for Office on my MacBook - Microsoft Community</title>
+<h3> rashmibhautoa  say:</h3>
+<h2>            Cannot find a product key for Office on my MacBook</h2>
+                    <p>Hello&nbsp;</p>
+<p>
+</p><p>we have recently purchased a new MacBook and we are trying to activate Office however I cannot find the product key?&nbsp;</p>
+<p>
+</p><p>We are trying to use the existing product key but it is not working?</p>
+<p>
+</p><p>Help please</p>
+<p>
+</p><p>Oh apparently we have a separate email for microsoft having phoned them they cannot help us as they don't recognise my email address? how do i find this out?</p>
+<p>
+</p><p>Thank you</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jim Gordon MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "JG"); this.style="display: inline-block";'
+<h3> jim gordon mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<a href="https://www.google.com/url?sa=t&amp;rct=j&amp;q=&amp;esrc=s&amp;source=web&amp;cd=13&amp;cad=rja&amp;uact=8&amp;ved=0ahUKEwjRwrPRidDXAhWxYd8KHZdoA24QFgheMAw&amp;url=https%3A%2F%2Fsupport.office.com%2Fen-us%2Farticle%2FFind-your-product-key-for-Office-for-Mac-2011-670b19d6-7743-45ae-a53c-66080cec7e33&amp;usg=AOvVaw2NRmKr44-_X9vjGfRykcmR" target="_blank" rel="noreferrer nofollow">Find
+ your product key for Office for Mac 2011 - Office Support</a>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Life timer - Microsoft Community</title>
+<h3> john_dale  say:</h3>
+<h2>            Life timer</h2>
+                    <p>can somebody tell me how to read/understand the lifetimer, you can access it by pressing ##634#&nbsp;</p>
+<p>mine displays <strong>36:40:47</strong>. if its the call timer, i am pretty sure i haven't talked that long cumulatively,&nbsp;</p>
+<p>i just had this phone for like 2 weeks, had few phone calls, calls do not last more than one hour,&nbsp;</p>
+<p>pls tell me what to this means</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="David Scammell" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "DS"); this.style="display: inline-block";'
+<h3> david scammell  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi&nbsp;John_Dale,</p>
+<p>
+</p><p>Unfortunately, those special features are based on the phone manufacturer and the cellular service provider; they do not pertain to the Windows Phone OS. Additionally, these diagnostic codes change from manufacturer to manufacturer, and sometimes, from model
+ to model. You'll need to contact one of them (probably your service provider) to obtain additional information on the lifetimer.</p>
+<p>
+</p><p>I hope this helps!<br />
+David<br />
+</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=settings">settings, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 Duplicate Group - Microsoft Community</title>
+<h3> alex romp  say:</h3>
+<h2>            Outlook 2016 Duplicate Group</h2>
+                    <p>My primary machine is Windows 10 running the Office 365 Outlook application.&nbsp; I've always sorted my mailbox by "Flag Status" so that anything flagged stays at the top, and then the secondary sort is by received date.</p>
+<p>
+</p><p>Recently, I purchased a MacBook to use.&nbsp; I installed Outlook on there too.&nbsp; Ever since then, I'm getting duplicate groups (see screenshot below).&nbsp; The messages aren't duplicated.&nbsp; They're either in one or the other.</p>
+<p>
+</p><p>It seems like any message I "touch" with the Mac ends up in that top "Unflagged" group.&nbsp; These are just messages I opened or replied to on the MacBook instead of the PC (never touched the flag status).&nbsp; So now when I'm using the PC I need to scroll down
+ a full page to see new messages that come in because they're hitting that bottom group.&nbsp; I don't normally keep them collapsed like in that screenshot - I was just trying to show the relevant groups without showing all of the messages themselves.</p>
+<p>
+</p><p>I've searched around and I'm yet to see anybody else mention this, so I was curious if anybody on here had seen it or knew of any solution to it.</p>
+<p>
+</p><p>Thanks!</p>
+<p>
+</p><p>(no comments on the "unread" messages please, I get hundreds of "alert" emails per day and just need to read the subject - just need to do some housekeeping)</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/e25746ea-ad5a-4b78-a310-dab873115351?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/e25746ea-ad5a-4b78-a310-dab873115351?upload=true" /></a></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Coldwell Shao MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "CS"); this.style="display: inline-block";'
+<h3> coldwell shao msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Alex,</p>
+<p>
+</p><p>Thanks for your post. For this kind of display issue,<span>I suggest that you can try to download the OutlookResetPreferences&nbsp;(<a href="https://msdnshared.blob.core.windows.net/media/2017/12/OutlookResetPreferences.zip" target="_blank" rel="noreferrer nofollow"><strong>Download
+ Here</strong></a>) to reset your Outlook preferences and to see if it works.</span></p>
+<p>
+</p><p><span>How to use:</span></p>
+<p>
+</p><p><span>1.Open <strong>OutlookResetPreferences utility</strong>.</span></p>
+<p><span>2.Click the <strong>Reset Now!</strong> button. This will quit Outlook if it’s open and reset the preferences back to defaults. You can quit Reset Outlook Preferences after resetting.</span></p>
+<p>
+</p><p><span>Please kindly note that this utility will reset all Outlook Preferences back to defaults. If the issue persists after resetting preferences, I recommend you can request further assistance in Outlook for Mac
+</span><span><a href="https://answers.microsoft.com/en-us/msoffice/forum/msoffice_outlook-mso_mac-mso_mac2016/new-contact-support-feature-in-outlook-2016-for/d4fc21c4-25e2-4e10-b943-1fba6542b517"><span>build-in support channel</span></a><span> which focus on
+ Outlook for Mac issue.</span></span></p>
+<p>Have a nice day!</p>
+<p>
+</p><p><span>Best regards,</span></p>
+<p><span>Coldwell</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook_for_mac">outlook_for_mac, </a> <br>
+<a href="/search?q=for_business">for_business, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Cortana closes when I try to sign in - Microsoft Community</title>
+<h3> glenjoseph  say:</h3>
+<h2>            Cortana closes when I try to sign in</h2>
+                    <p>I reseted my Microsoft Lumia 640 xl to Windows 10 mobile. When I tap sign in to cortana it just closes.</p>
+<p>
+</p><p>How can I sign into Cortana?</p>
+<p>
+</p><p>( I think the Microsoft account app is uninstalled)</p>
+<p>
+</p><p>
+</p><p><em>[Moved from Windows / Windows 10 / Cortana &amp; search]</em></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Glen,</p>
+<p>
+</p><p>
+</p><p>The issue that you are experiencing on Cortana could be a software issue. To better help you, can you tell us the OS build installed on your phone? Go to
+<strong>Settings</strong> &gt; <strong>System</strong> &gt; <strong>About</strong> &gt; <strong>
+More</strong> <strong>info</strong>. What troubleshooting have you tried so far?</p>
+<p>
+</p><p>You can try performing a <strong>soft</strong> <strong>reset</strong> to refresh your phone and then sign in to Cortana again. To do this, press and hold the
+<strong>Volume</strong> <strong>down</strong> and <strong>Power</strong> <strong>
+button</strong> at the same time until the phone vibrates and restart. Don't forget to connect to a stable internet connection (Wi-Fi or data connection) when trying to sign in to Cortana.<br />
+</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=cortana">cortana, </a> <br>
+<a href="/search?q=600-series">600-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>blocking a contact - Microsoft Community</title>
+<h3> irinaglushkova_966  say:</h3>
+<h2>            blocking a contact</h2>
+                    <p>I had blocked a person but then I decided to unblock,and now i dont see their messages which they have send me while they were blocked.</p>
+<p>When will i be able to receive their messages?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jannine_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<div>
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/4bc71927-2e03-44d0-ad7d-4c04edce6af3" title="carlaestrada">
+<p>
+</p><p>
+</p><p>Welcome to Skype Community forum!</p>
+<p>
+</p><p>If a contact blocks you on Skype, you'll not be able to see it on your end. You'll still be seeing the status of the contact and it will still appear on your contact list. However, if a contact blocks you on Skype, one indication is that this user is always
+ in an offline status on your end.</p>
+<p>
+</p><p>On your case, if you're still seeing the status of this user on away, this user didn't block you on Skype.</p>
+<p>
+</p><p>Please let us know if you have any questions or other concerns.</p>
+<p>
+</p><p>Thank you!</p>
+<p>
+</p></div>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_ios">skype_for_ios, </a> <br>
+<a href="/search?q=messaging">messaging, </a> <br>
+<a href="/search?q=instant_messaging">instant_messaging, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Errors with burning tracks with Windows Media Player - Microsoft Community</title>
+<h3> jan philips  say:</h3>
+<h2>            Errors with burning tracks with Windows Media Player</h2>
+                    <p>I'm getting errors when trying to burn some tracks using Media Player.&nbsp; The CDs play and the songs play within Media Player.</p>
+<p>
+</p><p>The long story:</p>
+<p>
+</p><p>I put a soundtrack CD with 33 tracks into the CD drive and ripped it.&nbsp; I tried to burn it to CD but immediately four of the tracks said they had an error.&nbsp; Clicking on "empty CD" showed a red X to the left.&nbsp; The info just said that there was an error when
+ trying to write it.&nbsp; I put the CD in another computer - the same four tracks came up with errors.&nbsp; I removed them from the burn list and again tried to burn. Immediately two more tracks came up with the error.&nbsp; I removed those two and tried to burn again.&nbsp;
+ Immediately two more tracks came up with errors.&nbsp; I think this happened once again.&nbsp; After I'd removed 8 or 10 of the tracks, it would burn.</p>
+<p>
+</p><p>I put in a different CD 20 songs.&nbsp; Four of the tracks came up with errors.&nbsp; I removed them from the burn list and tried to burn again - one more track immediately came up with an error.&nbsp; I removed it from the list and tried to burn again and one more track
+ came up with an error.&nbsp; I removed it from the burn list and the rest of the tracks burned.</p>
+<p>
+</p><p>Again, the CD plays with no errors and the ripped tracks play in Media Player.</p>
+<p>
+</p><p>What is going wrong?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ricw-nw  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jan - yes, it's a known bug in WMP particularly affecting Windows 10 users. Unfortunately WMP gets very little maintenance these days as MS has pretty much given up on disc based technology.</p>
+<p>I only burn discs (using CD/RW) to test issues reported here, but I may have&nbsp; chanced upon an action which seems to fix this particular problem. I'm still testing at the moment but so far I have not seen this error reappear on either of my laptops. I'll
+ get back after the New Year holiday... if you can get hold of a handful of RW discs so that you can avoid wasting your write-once discs that would be a good move. All the best for 2018... R.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jan philips  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            One more thing - about four CDs copied successfully.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ricw-nw  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for the update&nbsp;- that's why I'm not certain enough to say 'try this' just yet - WMP will work sometimes and not others... it's to do with temporary burn files not clearing properly. I need to run a few more test burns to feel absolutely sure I have
+ 'fixed' it! - Cheers R.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jan philips  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I downloaded a trial version of a straight-forward disk-copying piece of software.&nbsp; It copied the two CDs that WMP had problems with, apparently without a problem.&nbsp; (I'm playing back one of them right now.)<br />
+<br />
+Two more things about WMP: <br />
+<br />
+(1) about five of my blank Taiyo Yuden CDs it said were not empty.&nbsp; I put them aside and tried them on different software, and they worked, so they were really blank.<br />
+<br />
+(2) My DVD drive is E:&nbsp; and sometimes WMP would say "e:\ - invalid path" or "invalid folder" - something like that.<br />
+<br />
+BTW, I'm using Windows 10 home, 64-bit.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ricw-nw  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>There are some decent CD programs available - iTunes is usually reliable (and free) but there is a small issue with that at present (I'm sure that will soon be put right) - much as I like WMP I think we have to accept that it won't be around for much longer
+ (or that it will be relegated to being just a player). Even its younger sibling Groove has been cut back already.
+</p>
+<p>btw my W10 laptop came with an alternative disc burner pre-installed. This is often the case now (mine has
+<strong>Cyberlink Power2Go</strong> which in testing has never failed so far...)</p>
+        </p>
+<a href="/search?q=music,_movies_&#38;_tv">music,_movies_&#38;_tv, </a> <br>
+<a href="/search?q=windows_media_player">windows_media_player, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

@@ -1,0 +1,2212 @@
+    <title>Validating Form Module - Microsoft Community</title>
+<h3> soggycashew  say:</h3>
+<h2>            Validating Form Module</h2>
+                    
+<p>Hello, I found this module and it works&nbsp;great except I cant get it to work without using a "Close Button" to triger the code if closed. Im using the default close that the report has and I dont want to use a close button so how could I triger the validation
+ when either the form is closed OR the DB window is closed with the form open. Thanks!</p>
+<p>'http://www.dailyaccesstips.com/code-for-microsoft-access-validation-of-data/</p>
+<p>'Runing this routine from the OnOpen event of any form<br />
+'using Call SetValidatorEventHandlers(Me)<br />
+'will replace any OnGotFocus event code with a call<br />
+'to the Validator function.</p>
+<p>'Place in the 'Tag' property of each control you want to validate the following symbols and characters:<br />
+'"&nbsp;&nbsp; *n&nbsp;&nbsp; The form control may not be left empty.<br />
+'"&nbsp;&nbsp; *d&nbsp;&nbsp; The control must contain a valid date.<br />
+'"&nbsp;&nbsp; *+&nbsp;&nbsp; The control must have an amount greater than zero.<br />
+'"&nbsp;&nbsp; *@&nbsp;&nbsp; The control must be a valid email address.</p>
+<p>'Other types of validation may be added by you as needed. You may combine these pairs of characters if needed.<br />
+'If you do not wish to refer to the form's controls actual name in your validation message to the user, you may<br />
+'specify a preferred alternative name by adding this to the end of the tag property.<br />
+'~My Preferred Control Name<br />
+'Replace 'My Preferred Control Name' with the control name you want the user to see.</p>
+<p><br />
+Public Sub SetValidatorEventHandlers(frm As Form)<br />
+On Error GoTo errline<br />
+Dim ctl As Control, tagstr As String<br />
+For Each ctl In frm.Controls<br />
+Select Case ctl.ControlType<br />
+Case acTextBox, acComboBox, acListBox<br />
+If ctl.Visible = True Then<br />
+ctl.OnGotFocus = "=Validator()"<br />
+End If<br />
+Case acCommandButton<br />
+If ctl.Visible = True And Len(ctl.Tag) &gt; 0 Then<br />
+Select Case ctl.Tag<br />
+Case "*Close"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*Close" &amp; Chr(34) &amp; ")"<br />
+Case "*First"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*First" &amp; Chr(34) &amp; ")"<br />
+Case "*Previous"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*Previous" &amp; Chr(34) &amp; ")"<br />
+Case "*Next"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*Next" &amp; Chr(34) &amp; ")"<br />
+Case "*Last"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*Last" &amp; Chr(34) &amp; ")"<br />
+Case "*New"<br />
+ctl.OnClick = "=CommandButtonCodeActiveForm(" &amp; Chr(34) &amp; "*New" &amp; Chr(34) &amp; ")"<br />
+Case Else<br />
+End Select<br />
+End If<br />
+Case Else<br />
+End Select<br />
+Next<br />
+exitline:<br />
+Exit Sub<br />
+errline:<br />
+Select Case Err.Number<br />
+Case Else<br />
+MsgBox "There was an error in the program.&nbsp; Please notify database administrator of the following error: " &amp; Chr(10) &amp; "Error Number: " &amp; Err.Number &amp; Chr(10) &amp; Err.Description, vbCritical, "Please write this error down and note what you were doing at the time."<br />
+GoTo exitline<br />
+Resume Next<br />
+End Select<br />
+End Sub<br />
+Public Function CommandButtonCodeActiveForm(CommandTagAction As String)<br />
+On Error GoTo errline<br />
+If Validator() = True Then<br />
+Select Case CommandTagAction<br />
+Case "*Close"<br />
+DoCmd.Close acForm, Screen.ActiveForm.Name<br />
+Case "*First"<br />
+DoCmd.GoToRecord , , acFirst<br />
+Case "*Previous"<br />
+DoCmd.GoToRecord , , acPrevious<br />
+Case "*Next"<br />
+DoCmd.GoToRecord , , acNext<br />
+Case "*Last"<br />
+DoCmd.GoToRecord , , acLast<br />
+Case "*New"<br />
+DoCmd.GoToRecord , , acNewRec<br />
+Case Else<br />
+End Select<br />
+End If<br />
+exitline:<br />
+Exit Function<br />
+errline:<br />
+Select Case Err.Number<br />
+Case 2105 'Impossible navigation attempt<br />
+Resume Next<br />
+Case Else<br />
+MsgBox "There was an error in the program.&nbsp; Please notify database administrator of the following error: " _<br />
+&amp; Chr(10) &amp; "Error Number: " &amp; Err.Number &amp; Chr(10) &amp; Err.Description, vbCritical, _<br />
+"Please write this error down and note what you were doing at the time."<br />
+GoTo exitline<br />
+End Select<br />
+End Function<br />
+Public Function Validator() As Boolean<br />
+On Error GoTo errline<br />
+Dim TabOrderedControls As New Collection<br />
+Dim ControlNames() As String<br />
+Dim i As Long<br />
+Dim ctl As Control<br />
+Dim CurrentControlTabIndex As Long<br />
+Dim strFailedCtlName As String<br />
+Dim bolFailedValidation As Boolean<br />
+Dim strErrorMsg As String<br />
+'Is Form ready to be validated by this microsoft access validation code<br />
+If Screen.ActiveForm.NewRecord And Screen.ActiveForm.Dirty = False Then<br />
+Exit Function<br />
+End If<br />
+ReDim ControlNames(Screen.ActiveForm.Controls.Count)<br />
+'Save any pending edits<br />
+If Screen.ActiveForm.Dirty Then<br />
+Screen.ActiveForm.Dirty = False<br />
+End If<br />
+'Where are we in the tab order<br />
+'If pressing a command button, consider we are to validate all tab order controls (Not just ones earlier than tab index of the command button.)<br />
+If Screen.ActiveControl.ControlType = acCommandButton Then<br />
+CurrentControlTabIndex = 999<br />
+Else<br />
+CurrentControlTabIndex = Screen.ActiveControl.TabIndex<br />
+End If</p>
+<p>For Each ctl In Screen.ActiveForm.Controls<br />
+Select Case ctl.ControlType<br />
+Case acTextBox, acComboBox, acListBox<br />
+'Set yellow backround to white, if previously set to yellow<br />
+ctl.BackColor = -2147483643<br />
+'Populate the 'ControlNames' array by control tab order<br />
+If ctl.TabIndex &lt; CurrentControlTabIndex Then<br />
+ControlNames(ctl.TabIndex) = ctl.Name<br />
+End If<br />
+Case Else<br />
+'skip<br />
+End Select<br />
+Next<br />
+'Populate collection 'TabOrderedControls' using ControlNames array.<br />
+For i = 0 To UBound(ControlNames)<br />
+If ControlNames(i) &lt;&gt; "" Then<br />
+TabOrderedControls.Add Screen.ActiveForm.Controls(ControlNames(i))<br />
+End If<br />
+Next i<br />
+'Start validation<br />
+For Each ctl In TabOrderedControls<br />
+'Test for null (empty) on form control<br />
+If InStr(1, ctl.Tag, "*n", 1) &gt; 0 Then<br />
+If IsNull(ctl.Value) Then<br />
+strErrorMsg = " needs to be filled in."<br />
+bolFailedValidation = True<br />
+GoTo ValidatorFalure<br />
+End If<br />
+End If<br />
+'Test for a valid date<br />
+If InStr(1, ctl.Tag, "*d", 1) &gt; 0 Then<br />
+If Not IsDate(ctl.Value) Then<br />
+strErrorMsg = " must contain a valid date."<br />
+bolFailedValidation = True<br />
+GoTo ValidatorFalure<br />
+End If<br />
+End If<br />
+'Test for a value greater than zero<br />
+If InStr(1, ctl.Tag, "*+", 1) &gt; 0 Then<br />
+If Not (ctl.Value) &gt; 0 Then<br />
+strErrorMsg = " amount must be greater than zero."<br />
+bolFailedValidation = True<br />
+GoTo ValidatorFalure<br />
+End If<br />
+End If<br />
+'Test for a valid email address symbol<br />
+If InStr(1, ctl.Tag, "*@", 1) &gt; 0 Then<br />
+If Not InStr(1, ctl.Value, "@", 1) &gt; 0 Then<br />
+strErrorMsg = " amount must be greater than zero."<br />
+bolFailedValidation = True<br />
+GoTo ValidatorFalure<br />
+End If<br />
+End If<br />
+'You may add additional validation here:<br />
+ValidatorFalure:<br />
+If bolFailedValidation = True Then<br />
+ctl.BackColor = 65535 'yellow<br />
+'~ The tilde means there is an alternative preferred control name<br />
+'After any tilde ~ there should be no other validation * asterisk symbols<br />
+If Not InStr(1, ctl.Tag, "~", 0) = 0 Then<br />
+strFailedCtlName = Trim(Mid(ctl.Tag, InStr(1, ctl.Tag, "~", vbBinaryCompare) + 1)) 'Retreive prefered control name if different than real control name.<br />
+End If<br />
+If Len(strFailedCtlName) = 0 Then<br />
+MsgBox "The " &amp; ctl.Name &amp; strErrorMsg, vbInformation, ctl.Name &amp; " missing value…"<br />
+Else<br />
+MsgBox "The " &amp; strFailedCtlName &amp; strErrorMsg, vbInformation, strFailedCtlName &amp; " missing value…"<br />
+End If<br />
+ctl.SetFocus<br />
+If ctl.ControlType = acComboBox Then 'If combo box, drop down the pick list.<br />
+ctl.Dropdown<br />
+End If<br />
+Validator = False<br />
+Exit Function<br />
+End If<br />
+Next ctl<br />
+Validator = True<br />
+exitline:<br />
+If Not TabOrderedControls Is Nothing Then<br />
+Set TabOrderedControls = Nothing<br />
+End If<br />
+Exit Function<br />
+errline:<br />
+Select Case Err.Number<br />
+'Form window not visible yet to see Screen.ActiveControl<br />
+'(Only needed when setting event handlers by code<br />
+'using the 'SetValidatorEventHandlers' function.)<br />
+Case 2475<br />
+Resume exitline<br />
+Case Else<br />
+MsgBox "There was an error in the program. Please notify database administrator of the following error: " _<br />
+&amp; Chr(10) &amp; "Error Number: " &amp; Err.Number &amp; Chr(10) &amp; Err.Description, vbCritical, _<br />
+"Please write this error down and note what you were doing at the time."<br />
+GoTo exitline<br />
+End Select<br />
+End Function</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="SoggyCashew" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "SO"); this.style="display: inline-block";'
+<h3> soggycashew  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Any takers?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Graham Mayor" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> graham mayor  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I don't use Access, so I don't know whether the following will help, but you can trap the clicking of the X in the top right of a User Form with the following code:</p>
+<p>Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)<br />
+If CloseMode = vbFormControlMenu Then<br />
+&nbsp;&nbsp; 'e.g.<br />
+&nbsp; &nbsp; MsgBox "You clicked the X"<br />
+End If<br />
+End Sub</p>
+<p>&lt;oxicottin&gt; wrote in message news:*** Email address is removed for privacy ***...</p>
+<blockquote>
+<p>Any takers? </p>
+</blockquote>
+<hr />
+Graham Mayor - Word MVP<br />
+<a href="http://www.gmayor.com" target="_blank" rel="noreferrer nofollow">www.gmayor.com</a><br />
+Posted via the Communities Bridge<br />
+<a href="http://communitybridge.codeplex.com/" target="_blank" rel="noreferrer nofollow">http://communitybridge.codeplex.com/</a><br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> petertayloraus  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I found the code useful for my access database project however I had two problems with it.</p>
+<p>a) the above code listed produces a 2455 error about a property of Dirty.</p>
+<p>b) the code doesn't vaildate the two combo boxes&nbsp;type of controls I have on the form when I tab through this.
+</p>
+<p>Behaviourly&nbsp;when pressing tab, the cursor just passes right through without validating. Which is frustrating.</p>
+<p>&nbsp;</p>
+<p>Any suggestions?</p>
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Credentials - Microsoft Community</title>
+<h3> sam aruti  say:</h3>
+<h2>            Credentials</h2>
+                    <p>I have a user that recently had her My Documents folder moved to OneDrive. As soon as the move occurred Excel started to ask the user to login to her Office365 Business account each time she tries to save a file. When I check the user account information
+ it looks like the user is logged into the account. So far the only thing I can see that is odd is with the Windows Credentials. There is no user name on the credential. I have tried to delete all Windows credentials and reboot, still the same thing, no user
+ name. I've tried to edit the credential manually, again no change in behavior.</p>
+<p>
+</p><p>Our environment is a local Exchange server, our user names are different than our Internet addresses. This is a typical credential</p>
+<p>
+</p><p>Internet Address: MS.Outlook.15:*** Email address is removed for privacy ***</p>
+<p>User Name: xxx\user_name (where xxx is our internal domain)</p>
+<p>Password: ********</p>
+<p>Persistence: Enterprise</p>
+<p>
+</p><p>In the case of this specific user the User Name is blank</p>
+<p>
+</p><p>We are running Windows 10, latest update and all updates for Office 365 have been installed.</p>
+<p>Any ideas on how to resolve this would be appreciated</p>
+<p>
+</p><p>Thanks</p>
+<p>Sam</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> sam aruti  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Problem was resolved by deleting entries under <span>HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\Common\Identity\Identities and then rebooting</span>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Modifying Ribbon and ALT shortcuts. - Microsoft Community</title>
+<h3> westcoastken  say:</h3>
+<h2>            Modifying Ribbon and ALT shortcuts.</h2>
+                    <p><span>I've recently migrated from Win 7/Office 2007 to Win 8.1/Office 365 (but currently using the&nbsp;2016 Preview). I'm trying to do the following:<br />
+<br />
+I have email templates of literally 2 dozen emails that go out daily/every other day.</span></p>
+<p><span>To streamline the process in Outlook 2007&nbsp;I did the following:</span></p>
+<p>
+</p><p><span>1. Set up a new&nbsp;toolbar item
+</span><span>in the standard toolbar </span><span>and called it&nbsp;"Email Templates" (in the screenshots I added "</span><span>Email Templates II</span><span>"
+ item</span><span>&nbsp;so as not to disturb my original.</span></p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/b89e61c5-37e1-4b00-b5d4-e7a668799dba" /></p>
+<p><span>2. Then I inserted the&nbsp;"New Message" items.</span></p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/d905354f-7fc9-4536-a005-366ae46edc66" /></p>
+<p><span>3/4. I assigned a hyperlink directly to an Outlook message template.</span></p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/a75c10b8-45f1-4ab9-8cf6-cc177336a4e2" /><img src="https://filestore.community.support.microsoft.com/api/images/8c694f20-8fc1-4f93-a4f4-96c43c9ce479" /></p>
+<p><span>5. Named the new message item accordingly with an ampersand inserted for ALT shortcut keys.</span></p>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/df709659-02a6-46c6-8f43-90ec35c8d002" /><span><br />
+<br />
+So from then on when I hit: ALT M and then the corresponding shortcut key (B in the screenshots) it would open the appropriate template.<br />
+<br />
+End result: two commands (three keystrokes) and BINGO! the correct template was opened.<br />
+<br />
+Since I've jumped right from 2007 to 2016, I'm not accustomed to the Ribbon yet and I can't figure out how to customize the Outlook 365 ribbon to allow me to A. create a new group like this or B. modify the ALT shortcut keys of new/existing Ribbon items.</span></p>
+<p>
+</p><p><span>I know how to open a Template via: New Items &gt;&gt; More Items &gt;&gt; Choose Form &gt;&gt; Scroll to "User Templates in File System" &gt;&gt; Find the correct Template (many of which
+ have almost identical names since they are sent for similar reasons).<br />
+<br />
+Not such a big deal until you have to do it 2 dozen times in a row - sometimes more.<br />
+<br />
+I had hopes when I saw the "Quick Steps" tool that I could setup stuff there, but it's so limited in commands and the new message command there converts to plain text and these emails all have links/pictures/etc... in them.<br />
+<br />
+</span></p>
+<p><span>I spent an hour and a half getting bounced from support person to support person - even letting them remote access both systems so I could show them EXACTLY what
+ I was trying to do - and then on the last person the connection was so bad that I couldn't hear them. They were supposed to call back but...HAHAHAHAHAHA.<br />
+<br />
+Hopefully someone here can help me.</span></p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="TeK Knight" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "TK"); this.style="display: inline-block";'
+<h3> tek knight  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            C<span>heck if these links help.<br />
+</span><a href="http://www.slipstick.com/outlook/customize-toolbar-ribbon-or-qat/" target="_blank" rel="noreferrer nofollow">http://www.slipstick.com/outlook/customize-toolbar-ribbon-or-qat/</a>
+<span><br />
+</span><a href="http://www.extendoffice.com/documents/outlook/1324-outlook-add-template-shortcut.html" target="_blank" rel="noreferrer nofollow">http://www.extendoffice.com/documents/outlook/1324-outlook-add-template-shortcut.html</a>
+<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> westcoastken  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thanks Ted,<br />
+<br />
+Before I get to what may be a solution,&nbsp;in the second link:</p>
+<p>
+</p><p>The first method is what I was talking about above with my "hopes when I saw the Quick Steps tool". The problem with that is it changes the formatting to plain text and my templates have links/picture/etc...</p>
+<p>
+</p><p>The second option on that page doesn't really save any time. I already set a link to "Choose Form" on the ribbon - this saves literally two clicks. You still have to scroll to the right directory and then sort through dozens of templates to find the right
+ one. Meh.</p>
+<p>
+</p><p>It's simpler, and what I've done for the moment, is&nbsp;to have a link to the Templates folder on my Desktop since at least there I can open the folder to full screen to locate the correct Templates. I can also create Desktop shortcuts with friendly names but
+ again, this is a silly workaround.</p>
+<p>
+</p><p>Back up to&nbsp;the first link you sent:<br />
+<br />
+"You cannot create hyperlinked buttons to launch forms or other applications from the ribbon or QAT." - LOL, tell me something I didn't know! But they did! Because...</p>
+<p>
+</p><p>It's followed by a link to this... http://www.slipstick.com/outlook/hyperlink-templates/</p>
+<p>
+</p><p>THIS looks hopeful, but it has me creating Macros. I've never done that in Office. Wish me luck, I'll let you know how it works out. I'll try it now after I read the page a couple of times. "/<br />
+<br />
+Thanks,</p>
+<p><br />
+Ken</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> westcoastken  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>OK, this (<a href="http://www.slipstick.com/outlook/hyperlink-templates/)" target="_blank" rel="noreferrer nofollow">http://www.slipstick.com/outlook/hyperlink-templates/)</a> worked - I created a macro to a template and added it to the Ribbon. Unfortunately, the item is called "<span>Project1.ThisOutlookSession.MakeItem</span>"
+ and I have no idea how to properly name the macro in the VBA editor OR create a new one. Each time I hit ALT F11 it opens THIS macro.</p>
+<p>
+</p><p>I will continue to explore, but any and all help is welcome.<br />
+<br />
+Thanks,</p>
+<p>
+</p><p>Ken</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> westcoastken  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>BTW, I do know how to rename the Ribbon item. I'm talking about renaming the macros themselves since I'm going to need to create about 2 dozen (one for each template) I need to be able to change the name from "<span>Project1.ThisOutlookSession.MakeItem</span>"
+ to a friendly name so I can tell which macro does what.</p>
+<p>
+</p><p>Also, anyone know how I modify the ALT shortcut keys of new/existing Ribbon items? In 2007 you just put an ampersand before the letter you wanted to use. For example: "Missed &amp;Deadline"</p>
+<p>would set "d" as the ALT+ shortcut.<br />
+<br />
+Thanks!</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>i would like to make a phone call afther i made payment of &#36;10 can - Microsoft Community</title>
+<h3> giuseppe agliozzo  say:</h3>
+<h2>            i would like to make a phone call afther i made payment of &#36;10 can please show me&#63;</h2>
+                    please reply by email or sms
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi giuseppe 
+<br />Greetings! I am Vijay, an Independent Advisor. I am here to work with you on this problem.
+<br />
+<br />Have you bought Skype credit?
+<br />
+<br />How do I make a call in Skype? - <a href="https://support.skype.com/en/faq/FA10613/how-do-i-make-a-call-in-skype" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA10613/how-do...</a>
+<br />
+<br />Do let me know if you have any more question or require further help.
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=skype_to_phone">skype_to_phone, </a> <br>
+<a href="/search?q=skype_for_windows">skype_for_windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Convert column width and row height to centimeters instead of pixels. - Microsoft Community</title>
+<h3> happy_girl3  say:</h3>
+<h2>            Convert column width and row height to centimeters instead of pixels.</h2>
+                    
+<p>I have a word document that I need to copy into an excel sheet so that I can get the table to calculate automatically.&nbsp; I have the word table in centimeters but to replicate this in excel I need to specify the column width and row height in centimetres and
+ not hte default pixels that Excel displays.</p>
+<p>Is this possible, or am I trying something that isn't possible</p>
+<p>&nbsp;</p>
+<p>Thanks in advance</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ganesh Kumar N" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "GK"); this.style="display: inline-block";'
+<h3> ganesh kumar n  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<p><span>Open Excel 2007 &gt; click on the Office button-&gt; Excel options-&gt; Advanced tab-&gt; Display</span></p>
+<p><span>Click on the dropdown for ruler units and select centimeters-&gt; click OK</span></p>
+<hr />
+Ganesh Kumar N
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to easily switch between cams during skype call &#40;version - Microsoft Community</title>
+<h3> soureel  say:</h3>
+<h2>            how to easily switch between cams during skype call &#40;version 8.3&#41;&#63;</h2>
+                    In the previous version, there was a tiny icon on the Skype screen so that during a call I could immediately switch between my laptop cam and my external webcam. With Version 8, that icon is no longer there and I have to go into video setting to change
+ the cam- awkward, and interrupts the flow of the call. Is there a shortcut in Version 8 to do this?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> kenneth_f  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi <a href="https://answers.microsoft.com/en-us/profile/9126be0d-e5b7-436c-988e-0c6b48d9f79a" title="soureel">
+<p>
+</p><p>I apologize for this but the option or feature was not available on Skype 8. We will take this as a feedback and let our developers know about this. Thanks!</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Timur Aleshin" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "TA"); this.style="display: inline-block";'
+<h3> timur aleshin  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi soureel,</p>
+<p>
+</p><p>We have added a new way to quickly switch between cameras in Skype 8.34 and above. You can now right click (or long press) on your own video preview to select from a list of available cameras. Check out this post for more details:&nbsp;<a href="https://answers.microsoft.com/en-us/skype/forum/all/skype-insider-preview-quickly-switch-cameras/f08373a0-dbf9-4768-8bbe-36a5bc84cfdf">https://answers.microsoft.com/en-us/skype/forum/all/skype-insider-preview-quickly-switch-cameras/f08373a0-dbf9-4768-8bbe-36a5bc84cfdf</a>&nbsp;(the
+ post says it's available to Insiders, but we have released it to the general public now).&nbsp;<br />
+<br />
+Please let me know if you have any questions or feedback!</p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=everything_else">everything_else, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>After last update of OneDrive for mac it is stuck in sync, when there - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            After last update of OneDrive for mac it is stuck in sync, when there is nothing to sync, everything is up to date</h2>
+                    <p>On Aug. 4, 2017 (yesterday) I downloaded and installed the recommended update of OneDrive (version 17.3.6945) for mac.</p>
+<p>
+</p><p>Since then OneDrive has been stuck on trying to sync. When I update any files (create/edit, delete), OneDrive goes into sync, but doesn't seem to stop syncing! When I force OneDrive to stop (quit), and check my OneDrive folders on the web (through a browser),
+ I find that all the updates have actually been done. However the OneDrive MAC App still runs trying to sync. those same files. An additional problem is that it is getting my CPU hot! OneDrive is utilizing almost constantly 95% of CPU resources. So, I have
+ ot shut it down.</p>
+<p>
+</p><p>Any advice how to fix the problem? Maybe uninstall and install the previous version of the app (previous to&nbsp;version 17.3.6945 for mac?</p>
+<p>
+</p><p>Thanks in advance</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>OneDrive finally seems to be working again.</p>
+<p>
+</p><p>I followed all the steps above, but that didn't solve the problem.</p>
+<p>
+</p><p>I wanted ot isolate whether the problem is in one of my files (unacceptable characters iin filename, zero size, etc.), or in the application itself and how it is configured on my mac.</p>
+<p>
+</p><p>So, I reset OneDrive one more time and re-connected my mac, and created a new test folder with only one file in it to see if it syncs. But it didn't. The same problem happened again where it was stuck in syncing.</p>
+<p>
+</p><p>Next, I reset OneDrive one more time, re-connected my mac, but selected only one folder to sync out of the hundreds of folders that make up my whole OneDrive.</p>
+<p>
+</p><p>It did the same thing, got hung up on syncing, but I left it this time and maybe after close to 20 minutes it started running and syncing that one single folder and FINISHED!</p>
+<p>
+</p><p>I reset OneDrive again, reconnected my mac and chose all of the hundreds of folders as before. Again, stuck on syncing for about 10-15 minutes, then all of the sudden started working again and finished. I just did small changes on one file and this time
+ it worked correctly and synced it within few seconds.</p>
+<p>
+</p><p>I can't explain what happened, other than theorizing that this new version had to spend a long period of time ot get its counters/flags/status up to date and then start working again. For whatever this is worth, this is my explanation. If this is true, this
+ version has a bug, and I don't know when it will re-appear agin.</p>
+<p>
+</p><p>For now, I am ok with continuing my work as-is, and thanks Yoga for your support!</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Yoga Yao MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "YY"); this.style="display: inline-block";'
+<h3> yoga yao msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Iyad,<br />
+<br />
+Glad to hear OneDrive works now and thanks for sharing your experience.<br />
+<br />
+Please feel free to post a new thread in this forum if you have other questions, and we are willing to help you separately.
+<br />
+<br />
+Regards,<br />
+Yoga
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onedrive">onedrive, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2016 Not compatible with Email Service - Microsoft Community</title>
+<h3> cmcn40  say:</h3>
+<h2>            Outlook 2016 Not compatible with Email Service</h2>
+                    <p>I have Office 365 for business and several weeks ago when I called in to revert to outlook 2013 I was told I need to purchase outlook 2013.&nbsp;</p>
+<p>
+</p><p>After purchasing and calling to find out how to do this I was told they were NOT compatible and I would not be able to use both products since 2016 would replace 2013 when I installed it.</p>
+<p>
+</p><p>I need to know what I need to do to use outlook and the other office programs whether I need to just purchase home and student or if there is another way to use 365 and the 2013 version of outlook.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> cmcn40  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Update:</p>
+<p>
+</p><p>I changed over to the home and student version of Office 365 and was able to use Outlook without issues.</p>
+<p>
+</p><p>Thanks for the replies.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Win 10 x64 &#40;&#38; x32&#63;&#41; will not install if JMicron JMB36X - Microsoft Community</title>
+<h3> john121&#40;2&#41;  say:</h3>
+<h2>            Win 10 x64 &#40;&#38; x32&#63;&#41; will not install if JMicron JMB36X SATA card is installed</h2>
+                    <p>MotherBoard is MSI 990XA-GD55 (AMD Chipset RD990). I use all 6 of the MB's SATA ports, but need more.</p>
+<p>
+</p><p>I have a Jmicron JMB36x 2x SATA extension installed in PCI x1 slot (JMB36x&nbsp;has 1x IDE slot, but this is not used).</p>
+<p>
+</p><p>However, no matter what I try, Win 10 x64 will not install with the card present. Win 10 &nbsp;Install routine gives random changing error messages on install screen saying disk is GPT but should be MBR. Switched drive status from MBR&nbsp;to GPT and&nbsp;error message
+ would change from one to the other, and even said there was insufficient space on a 2TB clean drive, when switching from GPT to MBR! It was impossible to install driver during Win 10 install to try to ensure Win 10 could see the card. Having the card installed
+ with no drives connected to the JMB36x also caused the install to fail. Win 10 would fail whether the Install drive (C:) was connected to the MB or the JMB36x, it made no difference and Win 10 install fails! Win 10 fails to install regardless of disk size
+ (tested from 1TB to 3TB).</p>
+<p>
+</p><p>The only solution was to completely remove the card from the PCI x1 slot (also tried in spare Graphics card x16 slot which didn't work either!), install windows, then&nbsp;switch off and reinstall card with drives attached, then install driver on re-boot!</p>
+<p>
+</p><p>Can this be fixed in time for the RTM release?</p>
+<p>
+</p><p>Oh, this is also an issue in Win 7 x64 (I haven't tried to install in Win 8/8.1 environment).</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Srimadhwa B" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> srimadhwa b  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+</p><p><span><span>Hi John, </span></span></p>
+<p>
+</p><p><span><span>Thank you for the reply and update.</span></span></p>
+<p>
+</p><p><span><span>Your efforts to work on this issue is very much appreciated.</span></span></p>
+<p>
+</p><p><span><span>As you are unable to use the Feedback app, you can use the “<strong>Windows Suggestion Box on UserVoice</strong>” as an alternative to send your feedback.</span></span></p>
+<p>
+</p><p><span><span>Refer to this article by “<strong>Nirmal S</strong>” to know more on “<strong>How to share feedback on Windows 10 Technical Preview?</strong>” :
+</span><a href="http://answers.microsoft.com/en-us/windows/forum/windows_tp-winipp/how-to-share-feedback-on-windows-10-technical/5e501781-a580-43e3-8926-40ae19343805"><span style="color: rgba(17, 34, 204, 1)">http://answers.microsoft.com/en-us/windows/forum/windows_tp-winipp/how-to-share-feedback-on-windows-10-technical/5e501781-a580-43e3-8926-40ae19343805</span></a></span></p>
+<p>
+</p><p><span>Cheers.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=install,_upgrade,_and_activate">install,_upgrade,_and_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>error code continued Ox80070050 - Microsoft Community</title>
+<h3> cxmup  say:</h3>
+<h2>            error code continued Ox80070050</h2>
+                    <p>i dont have the original installer to reinstall what now</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Stephen Boots" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "SB"); this.style="display: inline-block";'
+<h3> stephen boots  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Same machine as: <a href="http://answers.microsoft.com/en-us/windows/forum/windows_xp-performance/windows-update-winxp-home-kb8982670-will-not-load/c368c0f1-4b4e-4d93-8e05-2684b29b3e37">
+http://answers.microsoft.com/en-us/windows/forum/windows_xp-performance/windows-update-winxp-home-kb8982670-will-not-load/c368c0f1-4b4e-4d93-8e05-2684b29b3e37</a>&nbsp;with the XP failed update? Why are you now also dealing with MSE or are you?</p>
+<p>&nbsp;</p>
+<p>Are you referring to MSE? If so, uninstall MSE:</p>
+<p><a href="http://answers.microsoft.com/en-us/protect/forum/protect_start/uninstalling-mse/a63b8c4b-58ed-437e-8086-fa08d80725a4">http://answers.microsoft.com/en-us/protect/forum/protect_start/uninstalling-mse/a63b8c4b-58ed-437e-8086-fa08d80725a4</a></p>
+<p>Before installing again from the official download page:</p>
+<p>What operating system and service pack?</p>
+<p>Prior Security Software?</p>
+<p>Any security software still installed?</p>
+<p>A possible reason for this problem is that you have conflicting security software installed fully or partially on the PC. Remove all other security software from the PC.</p>
+<p>You may need to use a cleanup tool to remove your prior security software:</p>
+<p><a href="http://answers.microsoft.com/en-us/protect/forum/protect_start/list-of-anti-malware-program-cleanupuninstall/407bf6da-c05d-4546-8788-0aa4c25a1f91">http://answers.microsoft.com/en-us/protect/forum/protect_start/list-of-anti-malware-program-cleanupuninstall/407bf6da-c05d-4546-8788-0aa4c25a1f91</a>
+ (also found here: <a href="http://experts.windows.com/w/experts_wiki/156.aspx" target="_blank" rel="noreferrer nofollow">
+http://experts.windows.com/w/experts_wiki/156.aspx</a>)</p>
+<p><span style="font-weight: bold; text-decoration-line: underline">Be sure to review this post:</span><span>
+</span><a href="http://answers.microsoft.com/en-us/protect/forum/protect_start/check-list-for-installing-microsoft-security/bf757e6a-e320-4a67-92bc-767e6acb26c4"><span>Check list for installing Microsoft Security Essentials</span></a><span>
+ (also found here: </span><a href="http://experts.windows.com/w/experts_wiki/89.aspx" target="_blank" rel="noreferrer nofollow"><span>http://experts.windows.com/w/experts_wiki/89.aspx</span></a><span>)</span></p>
+<p>&nbsp;</p>
+<p><span style="font-weight: bold">If that fails to resolve the problem, open an email support case:</span></p>
+<p>&nbsp; </p>
+<p>To open an email support case, start here:</p>
+<p><a href="https://support.microsoftsecurityessentials.com/" target="_blank" rel="noreferrer nofollow"><span>https://support.microsoftsecurityessentials.com/</span></a></p>
+<p>&nbsp;</p>
+<p><span>-steve</span><span> </span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Fixing &#34;Publisher Cannot Complete The Operation&#34; - Office 2010 - Microsoft Community</title>
+<h3> amit.kapoor  say:</h3>
+<h2>            Fixing &#34;Publisher Cannot Complete The Operation&#34; - Office 2010</h2>
+                    I spend 7-8 hours trying to fix this and finally I am successful. The solution steps I followed:<br />
+<ol>
+<li>Change default printer (solution that worked for most people out there)</li><li>Remove all the printers that I don't use. (still no go)<br />
+</li><li>Reinstall Office. (still no go)</li><li>Update Windows &amp; Office. (still no go)</li><li>Remove ADOBE PDF add-on for PDF generation &amp; remove all other apps I don't use (only a few) (the solution).<br />
+</li></ol>
+What finally worked for me is step 5. I strongly believe that it was Adobe PDF printing add-on. Even after removing the Adobe PDF printer, nothing worked, but the last step really solved it for me.<br />
+<br />
+Tip for everyone facing this issue: Remove all printer related software/tools one by one and see which one is the culprit.
+<br />
+<br />
+<br />
+<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Sudharsan V" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "SV"); this.style="display: inline-block";'
+<h3> sudharsan v  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Glad to know your issue is resolved.<br />
+Thanks for posting the solution in the thread so that others with similar issues can refer your thread to resolve their issue.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2013 - Can &#39;Find Related&#39; feature default to search - Microsoft Community</title>
+<h3> joeycheunghoyin  say:</h3>
+<h2>            Outlook 2013 - Can &#39;Find Related&#39; feature default to search only the current folder&#63;</h2>
+                    <p>Dear all,</p>
+<p>
+</p><p>I am looking for a way set the 'find related' feature to search for only the current folder.</p>
+<p>
+</p><p>The issue is I use the "find related messages from sender" feature frequently and move incoming emails into another folders. Unfortunately, even if I set the option to default to search the current folder, the "find related" feature still returns results
+ from the entire mailbox. </p>
+<p>
+</p><p>This leads to a longer search times and those items that have already been moved will also been shown up.</p>
+<p>
+</p><p>May I ask would there be any fix?</p>
+<p>
+</p><p>Many thanks in advances!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><span>Hi,<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Welcome to Microsoft Community.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>We are<span>&nbsp; </span>
+currently working on the issue and <span>&nbsp;</span>would get back to you as soon as there is any updates about the same.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Thank you.</span></p>
+<p><span>&nbsp;</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> eddiebhai-theoriginal  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello - I have a similar annoying issue with "find related message" that searches ALL mailbox instead of the "current mailbox".<br />
+<br />
+@Harsha - any updates to share now? Thank you!
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Parameter Criteria on DateSerial Function - Microsoft Community</title>
+<h3> saar3369  say:</h3>
+<h2>            Parameter Criteria on DateSerial Function</h2>
+                    <p>Hi,</p>
+<p>
+</p><p>I have a Sample # where the date is the first part of the number. I use Left and Mid functions to extract the year, month and day and then DateSerial to join it in a normal date.</p>
+<p>
+</p><p>Then I need to summarise the data in a query by month. This I can do successfully.</p>
+<p>
+</p><p>However, now I want to enter criteria to define which month's summary I need. But then I get different types of error messages.</p>
+<p>
+</p><p>My search on the Internet shows that there are a number of people with similar problems.</p>
+<p>
+</p><p>Is it possible to enter criteria on a field whose underlying field has DateSerial in it?</p>
+<p>
+</p><p>If not, is there any other way in which I can put the date together? Other than using Date Serial.</p>
+<p>
+</p><p>Thank you!</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            As the Sample # column's value presumably represents the year and month as substrings at specific positions then you don't need to worry about computing a date/time value from it; simply restrict the query on the substrings.&nbsp; If the value starts with the
+ date in the format yyyymmdd for instance then:<br />
+<br />
+WHERE LEFT([Sample #],4) = "2014"<br />
+AND MID([Sample #],5,2) = "08"<br />
+<br />
+would return the current month's rows.<br />
+<br />
+But the reason you have to jump through these hoops is that you are using a single column structured key.&nbsp; This is a bad idea.&nbsp; The key should be a composite one of two or more columns, of which one is a column of date/time data type.&nbsp; You can easily return
+ the full structured value at any time by concatenating the formatted values of the columns into a single string expression in a computed column in a query, or a computed control in a form or report.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Nokia 101 - Assign SIM to contact - Microsoft Community</title>
+<h3> malmostoso  say:</h3>
+<h2>            Nokia 101 - Assign SIM to contact</h2>
+                    
+<p>Hello everybody, I just got a Nokia 101 (FW 7.20) and I noticed there is the option to assign SIM1 or SIM2 to text or calls.</p>
+<p>Is it possible to set a specific SIM to a specific contact, so that all communication (call + text) with that contact goes through that SIM?</p>
+<p>&nbsp;</p>
+<p>I use the phone for work and I'd like to use the Work SIM for the Work contacts, and the private SIM for the private contacts.</p>
+<p>&nbsp;</p>
+<p>Thank you!</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="techbuzzireland" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "TE"); this.style="display: inline-block";'
+<h3> techbuzzireland  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You assign contacts to the sim not the other way around
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> malmostoso  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for your reply, I suspected I couldn't do it. It would have been useful.</p>
+<p>&nbsp;</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>word 2016 cannot open .doc file - Microsoft Community</title>
+<h3> botanene  say:</h3>
+<h2>            word 2016 cannot open .doc file</h2>
+                    <p>I have a couple of .doc files I worked on last year (office 2013) that don't open in Office 2016 (64 bit). They still open in Office 2013 (I aske some else to try it for me) and after saving to .docx they open again.
+</p>
+<p>Strangely enough LibreOffice opens the .doc files without a problem. Compatibility of file types seems to be more difficult for Microsoft than for freeware...</p>
+<p>Is there one or the other setting in Office 2016 that I might have to change (I do not want to check all my files for compatibility :-).</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>Hello,</span></p>
+<p>
+</p><p><span>Welcome to Microsoft Community and thank you for posting your query.</span></p>
+<p>
+</p><p><span style="color: rgba(0, 0, 0, 1)"><span>Few more details would help us to provide a better response.</span></span></p>
+<ol>
+<li><span>What happens when you try to open .doc file? Do you receive any error message?</span></li><li><span>Does this issue persist while opening file with other file format?</span></li><li><span>Are you able to open the .doc file through Word&gt; File &gt; Open?</span></li></ol>
+<p>
+</p><p><span>Please reply to us with the information asked for further assistance.</span></p>
+<p>
+</p><p><span>Thank you.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> botanene  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Parth,</p>
+<p>
+</p><p>Very strange, can't replicate the error anymore. In the afternoon I have restarted Word and the PC several times with no improvement, now I am at home and the PC is no longer docked - however it was not restarted since the last time I had the problem.</p>
+<p>
+</p><p>Anyway what happened was the following:</p>
+<p>- Word hangs and says it has encountered a problem while opening the file, and that it is trying to recover the file. Word closed.</p>
+<p>- Next time I opened Word, the file (or a newly saved version) was in the document recovery pane, but trying to open that version of the file still gave the same problem. Word generated a file with extension .asd and with with a name that has 'Liverecovery
+ save of' preceding the original file name.</p>
+<p>- Also the file (the original one) was listed in the 'disabled items' list (file/options/add-ins/go...). So it was basically judged to be unfit to be opened by Word.</p>
+<p>
+</p><p>Hope this pattern is something you can recognize?</p>
+<p>
+</p><p>Thanks very much for your efforts.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>To fix this issue, try opening control panel and search for Default Programs.</p>
+<p>Click on Set Your Default Programs.</p>
+<p>Now from the list of the installed applications, click WORD 2016 and click SET THIS PROGRAM AS DEFAULT and click OK.</p>
+<p>This step mostly fixes this issue.</p>
+<p>If your issue is still not resolved, open programs and features from control panel or press Win+R keys and type appwiz.cpl and click OK.</p>
+<p>Now from the list of installed applications, right click on Office 365 and click change.</p>
+<p>Now perform and ONLINE REPAIR and let it complete.</p>
+<p>Once the online repair is completed, try opening your .doc files, they should open fine with Word 2016.</p>
+<p>
+</p><p>If these steps doesn't resolve the issue, then please press Win+R keys and in the run box, type eventvwr and click OK.</p>
+<p>From the event viewer, check for the Word error and provide all the error codes and error details for further investigation.</p>
+<p>Thanks</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unusual Sign-in Activity - Microsoft Community</title>
+<h3> optical24  say:</h3>
+<h2>            Unusual Sign-in Activity</h2>
+                    <p>I just received an email from Microsoft saying:&nbsp;</p>
+<p>
+</p><p>Unusual sign-in activity</p>
+<p>
+</p><p>We detected something unusual about a recent sign-in to the Microsoft account&nbsp;*****.
+</p>
+<p>
+</p><p>Sign-in details:</p>
+<p>Country/region: India</p>
+<p>IP address: 120.61.34.167</p>
+<p>Date: 6/22/2018 12:26 PM (GMT)</p>
+<p>Platform: Mac OS</p>
+<p>Browser: Chrome</p>
+<p>
+</p><p>Please go to your recent activity page to let us know whether or not this was you. If this wasn't you, we'll help you secure your account. If this was you, we'll trust similar activity in the future.</p>
+<p>
+</p><p>I checked the email address: *** Email address is removed for privacy *** and according to Microsoft, it is legit. Source "https://support.microsoft.com/en-ca/help/13967/microsoft-account-unusual-sign-in". I checked my "recent activity" on both
+ my email and recovery email, but there seems to be no unusual sign-ins? As a precaution, I did change my password.&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> victorperezcmg  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello,
+<br />Please change your password, the information received is coming from Azure AD, the services that handle the Microsoft accounts       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            it's probably a phishing attempt... i hope you typed account.microsoft.com  in the browser and did not click a link in the email...       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> optical24  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for answering my concern. I definitely did not click on the link in the email. Instead, I went to account.microsoft.com in the browser and changed my password from there.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Great, you know your stuff. :)       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Account frozen - Microsoft Community</title>
+<h3> mattsparrow  say:</h3>
+<h2>            Account frozen</h2>
+                    I cannot seem to sign into my Skype account despite putting in the correct passwords etc. There seems to be an issue with Microsoft live, but its impossible to get anywhere there are no answers anywhere and nobody to talk to. I am going round in circles
+ and just want to use my Skype account!!!! Help
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> angela gunning  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I can't use Skype either something has happened. I even uninstalled it on my computer and no-one is getting my request.&nbsp; &nbsp;&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jomel_g  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi <a href="https://answers.microsoft.com/en-us/profile/912641c8-7450-4cff-98b3-2cc2826af8b2" title="MattSparrow">
+<p>
+</p><p>What is the exact interrupting message that you're getting when you sign in?</p>
+<p>Also, can you access your Skype account without problem on the Skype website: <a href="https://secure.skype.com" target="_blank" rel="noreferrer nofollow">
+https://secure.skype.com</a> ?</p>
+<p>
+</p><p>I look forward to your response.</p>
+<p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> antoine davous  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for your message.</p>
+<p>
+</p><p>Since 08/02/2018, I can't login anymore on Skype from Skype client.</p>
+<p>I tried with my Skype id and with the address registered with it, and no way, I get a systematic :</p>
+<p>"The Microsoft account doesn't exist. Enter a different account or get a new one."</p>
+<p>
+</p><p>However, I can login to my account in Skype website which tells that my account exists (?)...</p>
+<p>
+</p><p>This is very annoying ...</p>
+<p>Regards</p>
+<p>Antoine</p>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_windows_desktop">skype_for_windows_desktop, </a> <br>
+<a href="/search?q=getting_started">getting_started, </a> <br>
+<a href="/search?q=sign_in">sign_in, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Away status Skype 8.12 - Microsoft Community</title>
+<h3> manuelperez1  say:</h3>
+<h2>            Away status Skype 8.12</h2>
+                    <p>Hey, is it just me or the Away status is gone in 8.12? Only three options? (Invisible, Active, Do not disturb).</p>
+<p>
+</p><p>I consider "Away" a very useful status to let people know that you are not in front of the computer. Any chance to customize statuses in the future? Thanks</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    13 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jannine_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<div>
+<p>Hello <a href="https://answers.microsoft.com/en-us/profile/63749874-ac90-49b9-9ceb-8266ddf822c8" title="ManuelPerez1">
+<p>
+</p><p>
+</p><p>On the new Skype application for Window, setting the status on away is currently unavailable. However, you may still use and download the classic version of Skype to see the different statuses on Skype. Here's the link for the classic version of Skype:
+<span>
+<a href="http://www.skype.com/go/getskype-msi" target="_blank" rel="noreferrer nofollow"><span><span style="color: rgba(0, 0, 255, 1)">http://www.skype.com/go/getskype-msi</span></span></a></span></p>
+<p>
+</p><p>Let us know if you have any further questions or clarifications.</p>
+<p>
+</p><p>Thank you!</p>
+<p>
+</p></div>
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_windows_desktop">skype_for_windows_desktop, </a> <br>
+<a href="/search?q=messaging">messaging, </a> <br>
+<a href="/search?q=instant_messaging">instant_messaging, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Creating sub-documents from parts of master document - Microsoft Community</title>
+<h3> utinni  say:</h3>
+<h2>            Creating sub-documents from parts of master document</h2>
+                    <p>I have a master document with a lot of parts included, but will often need to make documents from this document that do not include all headings (levels include 1 and 2) of the master. Each part is not long, but they are many. I am looking for a streamlined
+ fashion to move terms over to shell documents prepared for different types of scenarios.
+</p>
+<p>
+</p><p>My best guess is using macros and may a user-form to move it over, but I'm new to the more advanced uses of word, especially macros. I'm familiar with Excel Macros, so I can see how it is possible there, but not here.
+</p>
+<p>
+</p><p>If I could get a direction on how best to go about this, I can look around for specifics as to more details, but any information on best direction would be great as I'm at a loss other than that guess above.
+</p>
+<p>
+</p><p>Thanks for the help!</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>To </p>
+<p>&nbsp;</p>
+<p>You may refer to the post of ‘Charles Kenyon’ in the following thread and check if it helps.</p>
+<p><a href="http://answers.microsoft.com/en-us/office/forum/office_2010-word/master-documents-and-subdocuments-in-word-2010/c9a1d51f-5af8-4801-b8e2-270f0cea009d">http://answers.microsoft.com/en-us/office/forum/office_2010-word/master-documents-and-subdocuments-in-word-2010/c9a1d51f-5af8-4801-b8e2-270f0cea009d</a>
+</p>
+<p>&nbsp;</p>
+<p>In case the above does not help, for a VBA code or Macro solution, you may post your query in the Customization Community.</p>
+<p><a href="http://answers.microsoft.com/en-us/office/forum/customize">http://answers.microsoft.com/en-us/office/forum/customize</a></p>
+<p>&nbsp;</p>
+<p>I hope the above information helps.</p>
+<p>&nbsp;</p>
+<p>Thank you.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Expression in forms not updating to table - Microsoft Community</title>
+<h3> shaneyanock  say:</h3>
+<h2>            Expression in forms not updating to table</h2>
+                    I have 2007 Access. How do I get an expression on a form to update on the table. The expression results are showing on the form but not on the table.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ken Sheridan" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "KS"); this.style="display: inline-block";'
+<h3> ken sheridan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span>The first question is whether the result of the expression is time independently determined by the values
+ in the columns referenced by the expression.<span>&nbsp; </span>If so then you should not store it in a column in a table, but compute it, either in a computed control as you are doing, or in a computed column in a query.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>An example of an expression whose result
+<i>should not</i> be stored in a column in a table would be:</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>=[UnitPrice]*[Quantity]</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>where both UnitPrice and Quantity are columns in an OrderDetails table.<span>&nbsp;
+</span>The gross price being computed here is time independently determined by UnitPrice and Quantity, so can be computed at any time.<span>&nbsp;
+</span>Storing it in a table would introduce redundancy and the possibility of update anomalies.</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>An example of an expression whose result
+<i>should</i> be stored in a column in a table would be:</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>=[cboProductID].Column(1)</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>where cboProductID is a combo box control bound to the ProductID in an OrderDetails table, where the combo
+ box's RowSource is:</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>SELECT ProductID, UnitPrice, Product FROM Products ORDER BY Product;</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>In this case UnitPrice is not time independently determined by ProductID as the price of a product will
+ change over time, whereas the price in each row in OrderDetails should remain static as that when the order was created.<span>&nbsp;
+</span>So in this case the control should not use the above expression as its ControlSource property, but should be bound to a UnitPrice column in OrderDetails, and the current Unit price should be assigned to this control by means of the following code in
+ the AfterUpdate event procedure of the cboProductID combo box:</span></p>
+<p><span>&nbsp;</span></p>
+<p><span>Me.UnitPrice = Me.cboProductID.Column(1)</span></p>
+<p><span>&nbsp;</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="John W. Vinson" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "JW"); this.style="display: inline-block";'
+<h3> john w. vinson  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Generally, you <strong>wouldn't want to</strong>&nbsp;do this. </p>
+<p>&nbsp;</p>
+<p>Storing data into a table when it can be calculated accomplishes three things: it wastes disk space (trivial these days I know), wastes time (almost any calculation is MUCH faster than a disk fetch), and worst, risks the integrity of your data. If the calculated
+ field or one of the fields that went into the calculation is edited, you now have data which is
+<em>wrong, </em>with no easy way to tell that it is wrong or what is the correct value! Generally you just want to recalculate the expression whenever it's needed.</p>
+<p>&nbsp;</p>
+<p>If you feel that this is not applicable in your case please post the expression and explain why you need to store the result.</p>
+<p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            As Ken and John explained you do not want to do this. As a general rule we don't store calculated values, so you don't even want to have the field in your table. The expression you use can be used anywhere you need to display that value.&nbsp;
+<div><br />
+<div>But a word of explanation, for a control on a form to update the underlying table the control's Controlsource property needs to be set to the field in the table. So you can't have a controlsource set to an expression AND the field.&nbsp;</div>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>New install&#58; where are program icons&#63; - Microsoft Community</title>
+<h3> johnmcquillian  say:</h3>
+<h2>            New install&#58; where are program icons&#63;</h2>
+                    Just installed 2010 by download. The applications work with existing office files but there are no office icons anywhere to be seen to launch new programs. When I look in 'all programs' from the start button menu I see an MS Office folder but the folder
+ is empty. When I look on the control panel for installed programs Office is definitely there. How do I get the usual program icons onto the start menu or task bar or anywhere i can see them?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Deepa Raj" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> deepa raj  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Johnmcquillian,</p>
+<p><span>Thanks for the question! This issue may occur if you have multiple versions of Office installed on the computer or if the Office installation is corrupt. Don’t worry we can help you with this issue, but I’m going to need a little more information first.
+</span></p>
+<p>&nbsp;</p>
+<p><span>What is the edition of Office installed on the machine?</span></p>
+<p><span>Did you download and install Office 2010 trial or a full version?</span></p>
+<p>&nbsp;</p>
+<p><span>Lets us follow the below steps and check if it helps fix the issue.</span></p>
+<p>&nbsp;</p>
+<ol>
+<li><span>Verify if you have multiple versions of Office installed on the machine by going to programs and features list.</span>
+</li></ol>
+<ul>
+<li><span>Go to Control panel </span></li><li><span>Programs and features </span></li><li><span>Look for the installed Office suites </span><span>. </span></li></ul>
+<p><span>2. If there are no multiple versions of Office<span> </span>in the list, close the window and follow the below steps.</span>
+</p>
+<ul>
+<li><span>Check if you are able to view and access the Office icons from the default installed location.</span></li></ul>
+<p><span>Windows 7 32bit: C:\Program Files\Microsoft Office\Office14</span></p>
+<p><span>Windows 7 64bit: C:\Program Files(x86)\Microsoft Office\Office14</span></p>
+<p><span>Or</span></p>
+<ul>
+<li><span>Hold Windows key + R</span></li></ul>
+<ul>
+<li><span>In Run window type </span><span style="font-weight: bold">%programfiles%</span><span>
+</span></li></ul>
+<ul>
+<li><span>Go to Microsoft Office, Office 14 and look for Outlook.exe </span></li></ul>
+<ul>
+<li><span>If you find Excel or Word try to open the program and check if you are able to access it.</span></li></ul>
+<ul>
+<li><span>If you are able to open then create shortcuts for the Outlook applications on the desktop, right click on each Office icon one by one and click on
+</span><span style="font-weight: bold">Send</span><span> </span><span style="font-weight: bold">to, Desktop (Create shortcut).</span></li></ul>
+<p>&nbsp;</p>
+<p><span>3. If the above steps fail, then try performing a repair\uninstall and reinstall the Office 2010 suite and check if the icons appears.</span>
+</p>
+<p><a href="http://office.microsoft.com/en-us/project-help/repair-or-remove-office-2010-HA010357402.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-us/project-help/repair-or-remove-office-2010-HA010357402.aspx</a></p>
+<p>(Note: If you are uninstalling and reinstalling the Office suite , ensue to have the product key and the setup file to reinstall the suite)
+</p>
+<p>&nbsp;</p>
+<p>I hope the above steps helps. If you need any further assistance reply and we will be glad to assist you.</p>
+<p>Thanks</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I backup the data on my 6700 slide&#63; - Microsoft Community</title>
+<h3> ingoingo  say:</h3>
+<h2>            How do I backup the data on my 6700 slide&#63;</h2>
+                    
+<p>I have a 6700 slide, and I have problems with the memory. The phone says the memory is full, even though I removed all the files I can, and cleared the cache in the internet browser. When i remove things the amount of memory doesn't change at all. Now I
+ can't take photos, and I can't put any music in my phone at all, it's very frustrating!</p>
+<p>&nbsp;</p>
+<p>I read that it could be a good idea to hard reset the phone to free up memory. But then I'll need to do a backup on my data, but how do I do that?&nbsp;</p>
+<p>It's basically the contacts i need to backup, since I sort of removed all the other files....</p>
+<p>&nbsp;</p>
+<p>I'm using a Mac, so I can't use the PC suite program.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> graham lees  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+                        <span><img class="thread-message-content-reply-to" src="/static/images/inreplyto.svg" alt="Reply" /></span> In reply to deleted message                    <div class="thread-message-content-reply-message wrapWord hidden-rsp">
+            
+            Rather unhelpful (why no button for that?) &nbsp;Person has a Mac and says they cannot use PC Suite ...&nbsp;
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> abi99 &#40;2&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Graham, why Nokia was not interested in a one-button backup in Symbian/S60, that is beyond me as well. Therefore, we have to find workarounds now. Does one of these help:</p>
+<p>A) Nokia » Menu » (Office ») File manager » Options » Back up phone memory</p>
+<p>B) Nokia » Menu » Contacts » Options » Create backup » Phone to memory card</p>
+<p>C) Apple Boot Camp</p>
+<p>D) acquaintance with Windows computer</p>
+<p>
+</p><p>However, your friend is about migrating to a new phone, isn’t he? In that case, please, mention the new phone model as well. Perhaps we find an easier way to migrate the data. Then, on the new phone he might be able to create a backup more easily.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> graham lees  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry, slow on this thread. &nbsp;We moved from Slide to SONY Xperia E4 (Android) to iPhone SE (iOS) ... I think we captured all required data. &nbsp;Thanks. &nbsp;
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>N79 in silent mode with bluetooth headset&#58; sound does not go to - Microsoft Community</title>
+<h3> sodaftl  say:</h3>
+<h2>            N79 in silent mode with bluetooth headset&#58; sound does not go to bluetooth headset</h2>
+                    
+<p>cell: nokia N79</p>
+<p>bluetooth headset: &nbsp;java JX10</p>
+<p>&nbsp;</p>
+<p>SW version: 20.175, custom version 20.175.2343, type RM-350</p>
+<p>&nbsp;</p>
+<p>issue: in silent mode, no sound goes to the bluetooth headset when someone calls...! anyone knows about a fix?</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> russian_blue  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>There is NO fix, as far as I know.</p>
+<p>I have a Nokia E6-00, and MULTIPLE bluetooth headsets (I have a hard time trying to find a comfortable fit + good sound combo).</p>
+<p>I also own a Nokia N79, like you do.</p>
+<p>So, with all of my other headsets I DO have a sound coming in the bluetooth headsets when the silent profile is activated in my cell phones (BOTH of them), but with the NEWEST Nokia BH-609. there is NONE.</p>
+<p>I think, it is the bluetooth - phone incompatibility.</p>
+<p>I decided I will try another headset, thinking, it might be that the unit was defective, but after reading your post, I think it is just a bug.</p>
+<p>If I were you, I would try a different headset with your Nokia N79, maybe even several headsets, in silent mode.</p>
+<p>IF none of them works, then something is wrong with your phone.</p>
+<p>BUT, alas, there is NO fix.</p>
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=symbian,_nokia_x,_and_meego">symbian,_nokia_x,_and_meego, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>My favorites folders are still out there on C&#58;&#47;users, but IE - Microsoft Community</title>
+<h3> miloinsandiego  say:</h3>
+<h2>            My favorites folders are still out there on C&#58;&#47;users, but IE is not showing them</h2>
+                    Something went odd in my Win7 computer about a week again and a whole lot of default locations in my computer started pointing to an external drive location instead of my C:/users/milo file.<br />
+<br />
+IE seems to have taken a hit.&nbsp; It works in general, but nothing shows up for Favorites anymore.<br />
+I can still see that the C:/users/milo/favorites file is on my hard drive, but IE doesn't seem to point to it anymore.<br />
+When I do the dropdown on "favorites", it just shows four menu options, with nothing underneath "Organize Favorites".&nbsp;
+<br />
+And if I click on that option, all that happens is that the menu disappears.<br />
+<br />
+I've tried the Restore Settings button...the "reset" button...uninstalling version 9...nothing seems to be pointing it back to C:/users/milo/favorites.<br />
+Some threads have said to right click on "Favorites" and look at a "Locations" tab, but I don't know if they mean the menu options called Favorites (right clicking there only shows toolbar options) or if they mean to right-click on the "Favorites" and choose
+ properties from there, but there's no Locations tab there either.<br />
+<br />
+There must be some way to just tell IE where to look for "Favorites", right?<br />
+<br />
+Add to the frustration that I tried to get back to IE9...it runs a few minutes and then tells me it couldn't do it...with no explanation.<br />
+But one thing at a time.&nbsp;&nbsp; Thanks!<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Rohit Chettri" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "RC"); this.style="display: inline-block";'
+<h3> rohit chettri  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p><b><span>Method I:</span></b></p>
+<p><span>I would suggest you to try the following steps to fix your favorites or favorites bar.
+</span></p>
+<p><span>a. Open the
+<b>Start menu</b>.</span></p>
+<p><span>b. In the Start Search, type in the
+<b>shell: Favorites</b> for the missing Personal User folder and press <b>
+Enter</b>. </span></p>
+<p><span>NOTE: For example, I'm using the shell: My Music shell command for the Music personal user folder.</span></p>
+<p><span>c. This should open the
+<b>missing personal user folder</b> from its <b>current location</b> and
+<b>replace it in the Start menu.</b></span></p>
+<p><span>NOTE: Check to see if the personal user folder has returned to the Start menu or
+<b>C:\Users\(user name) location.</b> Sometimes a <b>restart is needed</b>. If the user folder did not return, then proceed to
+<b>Method 2</b> below.</span></p>
+<p><b><span>Method II:</span></b></p>
+<p><span>a.
+<b>Right click</b> on the user folder that you want to restore the default location for and click on
+<b>Properties</b>.</span></p>
+<p><span>NOTE: Do this from the
+<b>C:\Users\ (user name)</b> location for the best results and not from the Start menu user folders.</span></p>
+<p><span>b. Click on the
+<b>Location</b> tab. </span></p>
+<p><span>NOTE: If you do not have a Location tab, then this is not the correct user folder and is only a normal folder that has the same name as the
+ user folder. You will most likely need to use <b>step c</b> in this case instead.</span></p>
+<p><span>c. Click on the
+<b>Restore Default button</b> and click on <b>OK</b>. </span></p>
+<p><span>d. If you get this, then click on
+<b>Yes</b>.</span></p>
+<p><span>e. Click on
+<b>Yes</b>. </span></p>
+<p><span>WARNING: If you do not click on Yes, you will have two copies of the personal user folder in the main (user name) folder with one being as
+ described in the NOTE under step b.</span></p>
+<p><span>Hope this helps and keep us posted.</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MiloInSanDiego" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "MI"); this.style="display: inline-block";'
+<h3> miloinsandiego  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for writing.&nbsp; I accidentally clicked the button that said it was answered but I have not made progress.&nbsp; Please read on:<br />
+<br />
+<br />
+I'm not following step B.&nbsp; If I click the start button, a white search box pops up that says "Search Programs and files".&nbsp; I'm assuming that's where you're suggesting that I type in "<span><b>shell: Favorites".&nbsp;</b> If i'm wrong about that, that's the main
+ thing.&nbsp; If I'm right, keep reading...<b><br />
+<br />
+</b></span>I type in "shell: Favorites" in quotes and it only finds your email to me.&nbsp; Or, I type it without quotes (as you probably intended) and it brings up about 15 emails and documents that have these words in it.&nbsp;&nbsp;&nbsp; I don't follow at all what the word
+ 'shell' with the colon is supposed to be accomplishing there.&nbsp; Regardless, this leaves me unsure how to proceed.<br />
+<br />
+If you didn't mean for me to type the word shell at all and just meant Favorites (in which case I don't know what shell referred to), I did that and it found 2700 items.&nbsp; Among them, there are 13 folders called Favorites and one of those is the one that I want
+ IE to point to.&nbsp; Is there something you're asking me to do with that folder?&nbsp; I am not getting what would "<span>open the
+<b>missing personal user folder</b> from its <b>current location</b> and <b>replace it in the Start menu."&nbsp;&nbsp;
+</b>All i've done is search on the word "Favorites".<br />
+<br />
+Clearly i'm missing something big here.<br />
+<br />
+<br />
+I opened Exploring and drilled down to C:\Documents and Settings\milo\Favorites .&nbsp; As alluded to in your note, there is no&nbsp; "Locations" tab.&nbsp;&nbsp; I don't know how it could be "only a normal folder that has the same name" when it's the only folder there, but I
+ continued with your directions.&nbsp; It says to "Click on the Restore Default button"&nbsp; What "Restore Default" button?&nbsp; The only thing I could find in the Properties box that said that was on a tab called "Customize" and there's a "Restore Default" that is for
+ folder pictures, but that doesn't seem to connect to this issue at all.<br />
+<br />
+Then I thought, maybe Rohit means directly off the right click and not under the Properties box.&nbsp; There is an option there called "Restore Previous Versions" but as that doesn't quite match your wording and isn't a "button", i wasn't going to try that without
+ being told that that was what you were referring to.<br />
+<br />
+<br />
+<br />
+</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Joe-C." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "JO"); this.style="display: inline-block";'
+<h3> joe-c.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Miloln</p>
+<p>&nbsp;</p>
+<p>Not sure if you have tried restoring your favorites this way, but check out Steven's steps in the link below they might be a little easier to follow. Hope that helps some.</p>
+<p><a href="http://answers.microsoft.com/en-us/ie/forum/ie9-windows_7/links-disappear-from-favorites-folder/452c36cc-9966-e011-8dfc-68b599b31bf5">http://answers.microsoft.com/en-us/ie/forum/ie9-windows_7/links-disappear-from-favorites-folder/452c36cc-9966-e011-8dfc-68b599b31bf5</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MiloInSanDiego" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "MI"); this.style="display: inline-block";'
+<h3> miloinsandiego  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Joe and thanks for the effort.<br />
+Unfortunately, I got as far as this step:<br />
+<ul>
+<li>Click <strong>Previous Versions</strong></li><li>Wait for the list of previous versions to load</li><li>Select a version that was before you lost the files/folders</li></ul>
+<p>but where the list could come up, it comes up with "There are no previous versions available"<br />
+</p>
+<br />
+I believe the source of all this trouble is that during a back-up to my external hard drive (called M:) last week -- something I do weekly with a simple drag and drop of folders from the C: drive -- something went wrong and when I woke in the morning, my user
+ profile seemed to point to M!&nbsp; I've slowly been straightening it out....repointing Outlook to my C drive (easily done), macros back to C: (no problem there either), etc.&nbsp; But i suspect something in IE got hosed at that time and it's looking in the wrong place
+ for my favorites.&nbsp; In fact, if I go to a website and choose a random webpage and say "Add to favorites", it doesn't object.&nbsp; It's putting it somewhere, I think.&nbsp; I just have no idea where or why it isn't, at least, showing newly assigned favorites.<br />
+<br />
+I just added a silly random youtube video to my favorites on IE.&nbsp; http://www.youtube.com/watch?v=kZUPCB9533Y&nbsp;&nbsp; My hope was that if I could search my computer via the start button for kZUPCB9533Y, it might tell me if it actually saved that favorite somewhere.&nbsp;
+ The search turned up nothing.<br />
+<br />
+Thank you both again for any more ideas you have.&nbsp; Kind of maddening!<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert aldwinckle on forums  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>If I click the start button, a white search box pops up that says "Search Programs and files".&nbsp; I'm assuming that's where you're suggesting that I type in "<span><b>shell: Favorites".&nbsp;</b> If i'm wrong about that, that's the
+ main thing.</span><span><br />
+</span></blockquote>
+<p><br />
+You don't want a space between the two words.&nbsp; The only separator is the colon.</p>
+<p>However, I think trying to use the Start menu Search bar could be problematic anyway.&nbsp;&nbsp; I would do it in either a&nbsp; Run... dialog (e.g. press Win-R for that) or in a&nbsp;Windows Explorer&nbsp;window's Address bar (press Win-E and then Alt-d before typing for that).&nbsp;&nbsp;
+ Either should leave you in an Explorer window with the path to the current Favorites folder in its Address bar, press Alt-d, Ctrl-c to see and capture that.</p>
+<p>When you do that you should then be able to go up in the path (e.g. use the parent "bread crumb link"&nbsp;or otherwise navigate up one level&nbsp;Alt-V,G,U) to show that folder in the Windows Explorer window.&nbsp; If you right-click on that you may then be able to see
+ the Location tab which could allow you to Move...&nbsp;the folder.&nbsp;&nbsp; I'm not sure how well that would work if it involves a different drive though.</p>
+<p>&nbsp;</p>
+<p>FYI</p>
+<p>Robert Aldwinckle<br />
+---</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MiloInSanDiego" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "MI"); this.style="display: inline-block";'
+<h3> miloinsandiego  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I held the Windows button and clicked the R.&nbsp; A little window popped up that said Run at the top.<br />
+In the entry field, I typed shell:Favorites without a space.&nbsp; A nasty noise was made and a pop-up came up that said "Windows cannot find 'shell:Favorites'.&nbsp; Make sure you typed the name correctly and try again."<br />
+<br />
+Tried it with the external drive both on and off with the same results.<br />
+<br />
+If I had gotten further, though, I'm not sure I'd have known what bread-crumb-link referred to.&nbsp; ;-)<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> robert aldwinckle on forums  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>"Windows cannot find 'shell:Favorites'.&nbsp; Make sure you typed the name correctly and try again."</p>
+</blockquote>
+<p><br />
+That's interesting.&nbsp;&nbsp; It may explain your symptom.&nbsp;&nbsp; See if that message is because&nbsp;of the shell:&nbsp; part or because of the Favorites part.&nbsp;&nbsp;&nbsp; E.g. try the same thing with&nbsp; shell:History&nbsp; and&nbsp; shell:cache</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<blockquote>
+<p>If I had gotten further, though, I'm not sure I'd have known what bread-crumb-link referred to. ;-)</p>
+</blockquote>
+<p><br />
+I am assuming that the OS is W7.&nbsp;&nbsp; There is a new feature in it in which the normal path in the Address bar is usually hidden and broken into "links".&nbsp;&nbsp; The presentation is thus called "bread crumbs".&nbsp;&nbsp; Hmm...&nbsp; well a web search proves that in fact the feature
+ has been present in Windows since Vista and apparently is better knows as "breadcrumb bar"&nbsp; (no space).&nbsp;&nbsp; I could not find any useful official description.&nbsp;&nbsp; As usual it must be one of the intuitively obvious UI components of Windows which needs no documentation
+ or explanation.&nbsp;&nbsp; ;&nbsp; }</p>
+<p>&nbsp;</p>
+<p>FYI</p>
+<p>Robert<br />
+---</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MiloInSanDiego" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "MI"); this.style="display: inline-block";'
+<h3> miloinsandiego  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            This problem got solved with my bigger problem:&nbsp; I have no idea why but the computer started running many resources off my external drive instead of C: .&nbsp; On a whim, I tried doing the "System Restore" repeatedly until suddenly, it started looking at C:
+ again.<br />
+<br />
+And the IE problem disappeared with it.<br />
+        </p>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>lumia 950 xl proximity and light sensor - Microsoft Community</title>
+<h3> siamakp  say:</h3>
+<h2>            lumia 950 xl proximity and light sensor</h2>
+                    Hello every one. I have lumia 950xl. I did update my phone and after that my proximity and light sensor not working. Is anyone know why and how can I fix it?<br />
+Thanks in advance
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Joe Men" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> joe men  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hello,</p>
+<p>
+</p><p>
+</p><p>Regarding your concern about the light and proximity sensors not working after installing an update, we recommend that you soft reset your phone by pressing and holding the
+<strong>Volume down </strong>+ <strong>Power</strong> buttons until it vibrates.</p>
+<p>
+</p><p>If the issue persists after your phone restarts, <strong><a href="https://support.microsoft.com/en-us/help/17232/windows-10-mobile-back-up" target="_blank" rel="noreferrer nofollow" title="Back up your stuff">back up your stuff</a></strong> and
+<strong><a href="https://support.microsoft.com/en-us/help/10768/windows-10-mobile-reset-my-phone" target="_blank" rel="noreferrer nofollow" title="Reset my phone">hard reset</a></strong> your phone..</p>
+<p>
+</p><p>Let us know the outcome after soft or hard resetting your phone.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=software_update">software_update, </a> <br>
+<a href="/search?q=900-series">900-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

@@ -1,0 +1,2279 @@
+    <title>calculating time in Word 2010 tables - Microsoft Community</title>
+<h3> sscmaple  say:</h3>
+<h2>            calculating time in Word 2010 tables</h2>
+                    <p>I am editing a staff timesheet created in Word 2010.&nbsp; I cannot find a formula that will calculate hours that exceed midnight.&nbsp;
+</p>
+<p>I have 4 "time" columns: start work (C3), end work (D3), start break (E3), end break (F3).&nbsp;
+</p>
+<p>The formula "=((D3-C3+(D3&lt;C3))-(F3-E3+(F3&lt;E3)))*24" works in excel but not in Word.
+</p>
+<p>Can this be done in Word? </p>
+<p>&nbsp;</p>
+<p>Thank you </p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="macropod" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "MA"); this.style="display: inline-block";'
+<h3> macropod  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Word, not being a spreadsheet program,&nbsp;does not support many of of spreadsheet functions you find in Excel.</p>
+<p>The simplest method of gaining such functionality is to embed an Excel worksheet into your document.</p>
+<p>If you don't want to do that, you'll need to use either a macro or some complex field coding. For that latter - and just about everything else you might want to do with dates via field coding&nbsp;in Word - check out my Microsoft Word Date Calculation Tutorial,
+ at:</p>
+<div><a href="http://lounge.windowssecrets.com/index.php?showtopic=249902" target="_blank" rel="noreferrer nofollow">http://lounge.windowssecrets.com/index.php?showtopic=249902</a></div>
+<div>or</div>
+<div><a href="http://www.gmayor.com/downloads.htm#Third_party" target="_blank" rel="noreferrer nofollow">http://www.gmayor.com/downloads.htm#Third_party</a>&nbsp;</div>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="macropod" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "MA"); this.style="display: inline-block";'
+<h3> macropod  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The only practical way of doing this in Word would be to use formfields or content controls in columns C through G, coupled to 'on-entry' and 'on-exit' macros to do the calculations. For a formfield solution, where the formfields are defined as the "Date"
+ type with a "00:00" format, the macro encoding might look like:</p>
+<p>Option Explicit<br />
+Dim iRow As Long</p>
+<p>Private Sub Document_Open()<br />
+Call GetRow<br />
+End Sub</p>
+<p>Sub GetRow()<br />
+iRow = Selection.Rows(1).Index<br />
+End Sub</p>
+<p>Sub Calc()<br />
+Dim sTm1 As Single, sTm2 As Single, sTm3 As Single, sTm4 As Single<br />
+Dim sTmEarly As Single, sTmLate As Single, sTmSum As Single, i As Long<br />
+With Selection.Tables(1).Rows(iRow).Range<br />
+&nbsp; sTm1 = CSng(CDate(.FormFields(1).Result))<br />
+&nbsp; sTm2 = CSng(CDate(.FormFields(2).Result))<br />
+&nbsp; sTm3 = CSng(CDate(.FormFields(3).Result))<br />
+&nbsp; sTm4 = CSng(CDate(.FormFields(4).Result))<br />
+&nbsp; If sTm1 &lt;&gt; 0 And sTm2 &lt;&gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp; sTmEarly = sTm2 - sTm1<br />
+&nbsp; End If<br />
+&nbsp; If sTm3 &lt;&gt; 0 And sTm4 &lt;&gt; 0 Then<br />
+&nbsp;&nbsp;&nbsp; sTmLate = sTm4 - sTm3<br />
+&nbsp; End If<br />
+&nbsp; .FormFields(5).Result = CDate(sTmEarly + sTmLate)<br />
+End With<br />
+With Selection.Tables(1)<br />
+&nbsp; For i = 2 To .Rows.Count - 1<br />
+&nbsp;&nbsp;&nbsp; sTmSum = sTmSum + CSng(CDate(.Rows(i).Range.FormFields(5).Result))<br />
+&nbsp; Next<br />
+&nbsp; sTmSum = Round(sTmSum * 24, 0)<br />
+&nbsp; .Rows.Last.Range.FormFields(1).Result = Format(Int(sTmSum), "00") &amp; ":" &amp; Format((sTmSum - Int(sTmSum)) * 60, "00")<br />
+End With<br />
+End Sub</p>
+<p>where 'GetRow' is the on-entry macro for every formfield in columns C through F and&nbsp; 'Calc' is the corresponding on-exit macro. The formfields for holding the calculated hours in column G all have the 'fill in enabled' option unchecked. A table with a single
+ heading row and a tally on the last row (in the only formfield on&nbsp;that row)&nbsp;is assumed and that cell&nbsp;is configured for plain text input (again, with the 'fill in enabled' option unchecked).</p>
+<p>Frankly, it's a whole lot easier in Excel, which has all the required functionality built in. Even with all the&nbsp;bother of creating the form in Word, it can be crippled by something as simple as the user's macro security settings.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Problem when closing Google Chrome or Internet Explorer - Microsoft Community</title>
+<h3> jessica_1991  say:</h3>
+<h2>            Problem when closing Google Chrome or Internet Explorer</h2>
+                    <span>
+                    <span>
+<p><span>When closing Google Chrome or Internet Explorer this message appears:</span></p>
+<p><span><span>"The application Google Chrome has stopped working due to a problem. Windows are about to shut down the program and you will be informed if a solution is available."</span></span></p>
+<p><span><span>Unfortunately, no solution to the problem has appeared! Could you please help me solve this problem?</span></span></p>
+<p><span><span>(PS: I appologise for any mistakes I' ve made when discribing the problem! I'm Greek, so my English aren't the best...)
+</span></span></p>
+<p><span><span>PLEASE REPLY SOMEBODY! I REALLY NEED YOUR HELP!</span></span></p>
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> waseemulla shariff  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span><span>Hi
+</span></span><span>Jessica_1991,<br />
+<br />
+Thank you for visiting Windows Vista Forums.</span></p>
+<p><span>We like to know more information about the computer. Answer the following questions so that we can assist you better.</span></p>
+<p>
+<span><span><span>·</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>Which is the edition of Windows Vista installed on the computer?</span></p>
+<p>
+<span><span><span>·</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><span>What is the version of Internet Explorer (IE)?</span></p>
+<p><span>Google chrome is a non Microsoft program. I suggest you to uninstall and reinstall the Google Brower for better functionality.</span></p>
+<p><span>For better functionality of Internet Explorer try the following steps.<br />
+Optimize and reset the IE settings to default for better functionality.</span><strong><br />
+</strong><span>I’m adding a link that includes all the steps to optimize and reset the IE settings to default</span><strong><span>.<br />
+How to optimize Internet Explorer: </span></strong><a href="http://support.microsoft.com/kb/936213" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/936213</span></a><strong><br />
+<br />
+<span>NOTE: </span></strong><span>Make sure to run the Microsoft Fix it successfully to reset the IE settings to default.</span></p>
+<p><span>For your reference, I’m adding a link that includes steps for: How to troubleshoot Internet Explorer issues in Windows Vista:
+</span><a href="http://support.microsoft.com/kb/936215" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/936215</span></a><br />
+<br />
+<span>Hope this information is helpful.<br />
+<br />
+Regards,<br />
+Syed V - Microsoft Support.<br />
+Visit our </span><a href="http://social.answers.microsoft.com/Forums/en-US/answersfeedback/threads/" target="_blank" rel="noreferrer nofollow"><span>Microsoft Answers Feedback Forum
+</span></a><span>and let us know what you think.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Security Essentials &#38; &#36;Recycle.Bin - Microsoft Community</title>
+<h3> phattez  say:</h3>
+<h2>            Microsoft Security Essentials &#38; &#36;Recycle.Bin</h2>
+                    Hi all.&nbsp; <br />
+<br />
+When I run a full scan, MSE shows many items in $recycle.bin.&nbsp; These are files I know I deleted a while back, no longer exist on the drive &amp; the recycle bin is empty (even when following the full path shown on the MSE window).&nbsp; It's really annoying as I don't
+ know whether space can be reclaimed from the drive or whether it's simply an issue with MSE.&nbsp; Is there any way to correct this issue?<br />
+<br />
+Thanks all.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> phattez  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Cheers for your thoughts guys. <br />
+<br />
+There are definitely no files in the recycle bin, hidden or otherwise. <br />
+The files don't show as being infected.<br />
+A pic of the scan in progress is available on the following URL: http://tinypic.com/r/288wk86/7<br />
+<br />
+If I manually type the folder name mentioned, I get a dialog saying windows can't find the file/folder. it's definitely a genuine folder that I did delete around 2 months back, so it looks like there's a memory of the files somewhere, but they don't actually
+ exist.&nbsp; MSE also seems to scan inside the non-existant .rar files which is very odd.&nbsp;
+<br />
+<br />
+Thought I'd try a chkdsk, which showed the below.&nbsp; Is it weird that it shows 72192 file records but lower down only 1081 files?&nbsp; Or is that a red herring?<br />
+<br />
+C:\Windows\system32&gt;chkdsk h:<br />
+The type of the file system is NTFS.<br />
+Volume label is Storage.<br />
+<br />
+WARNING!&nbsp; F parameter not specified.<br />
+Running CHKDSK in read-only mode.<br />
+<br />
+CHKDSK is verifying files (stage 1 of 3)...<br />
+File verification completed.<br />
+&nbsp; 213 large file records processed.<br />
+&nbsp; 0 bad file records processed.<br />
+&nbsp; 0 EA records processed.<br />
+&nbsp; 0 reparse records processed.<br />
+CHKDSK is verifying indexes (stage 2 of 3)...<br />
+&nbsp; 72478 index entries processed.<br />
+Index verification completed.<br />
+&nbsp; 0 unindexed files scanned.<br />
+&nbsp; 0 unindexed files recovered.<br />
+CHKDSK is verifying security descriptors (stage 3 of 3)...<br />
+&nbsp; 72192 file SDs/SIDs processed.<br />
+Security descriptor verification completed.<br />
+&nbsp; 144 data files processed.<br />
+CHKDSK is verifying Usn Journal...<br />
+&nbsp; 36373352 USN bytes processed.<br />
+Usn Journal verification completed.<br />
+Windows has checked the file system and found no problems.<br />
+<br />
+&nbsp;488384000 KB total disk space.<br />
+&nbsp;375218004 KB in<span style="font-weight: bold"> 1081 files.</span><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 992 KB in 145 indexes.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0 KB in bad sectors.<br />
+&nbsp;&nbsp;&nbsp; 188804 KB in use by the system.<br />
+&nbsp;&nbsp;&nbsp;&nbsp; 65536 KB occupied by the log file.<br />
+&nbsp;112976200 KB available on disk.<br />
+<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4096 bytes in each allocation unit.<br />
+&nbsp;122096000 total allocation units on disk.<br />
+&nbsp; 28244050 allocation units available on disk.<br />
+<br />
+C:\Windows\system32&gt;<br />
+<br />
+Thanks guys<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Unable to load texas holdem and zayna poker from internet explorer. - Microsoft Community</title>
+<h3> suek488  say:</h3>
+<h2>            Unable to load texas holdem and zayna poker from internet explorer.</h2>
+                    
+<p><span><strong>Original title</strong>: <span><span>texas holdem, on zayna poker will not load</span></span><a href="http://social.answers.microsoft.com/Forums/en-US/InternetExplorer/thread/87adedf1-a04c-45d2-8b87-6338c52bf1b1?outputAs=rss" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2fi4.social.answers.microsoft.com%2fForums%2fresources%2fimages%2ftrans.gif%3fcver%3d2.13.0068.4" /></a></span></p>
+<p><span>I can not load texas holem on zayna poker, it say a tab has been removed</span></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Nithyananda J" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "NJ"); this.style="display: inline-block";'
+<h3> nithyananda j  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>Hi <strong>Suek488</strong>,</div>
+<div>&nbsp;</div>
+<div>1. Are you able to access the other videos and games on internet?<br />
+2. What is the exact error message?<br />
+3. Do you receive this error message on other third party browsers?</div>
+<div>&nbsp;</div>
+<div><strong>Method 1:</strong></div>
+<div>&nbsp;</div>
+<div>Since most of the games require Java runtime library or Adobe flash to work I would advise you to install the Adobe</div>
+<div>Flash player and Java runtime library on Internet Explorer.</div>
+<div>&nbsp;</div>
+<div><strong>a. Update Flash player and Java Flash:</strong></div>
+<div>&nbsp;</div>
+<div><strong>I would recommend you to update the Adobe flash-player from the website below:</strong><br />
+<a href="http://get.adobe.com/flashplayer/" target="_blank" rel="noreferrer nofollow">http://get.adobe.com/flashplayer/</a></div>
+<div>&nbsp;</div>
+<div><strong>b. Also download and install the Java Runtime library from link below:<br />
+</strong><a href="https://www.java.com/en/" target="_blank" rel="noreferrer nofollow">https://www.java.com/en/</a><br />
+&nbsp;<br />
+<strong>Method 2:</strong></div>
+<div>&nbsp;</div>
+<div>a. If the issue still exists you may consider optimizing the Internet Explorer.</div>
+<div>&nbsp;</div>
+<div>Refer to the link below for more information.</div>
+<div>&nbsp;</div>
+<div><strong>How to optimize Internet Explorer?</strong><br />
+<a href="http://support.microsoft.com/kb/936213" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/936213</a><br />
+&nbsp;<br />
+b. If nothing works in resolving the issue try resetting the Internet Explorer.</div>
+<div>&nbsp;</div>
+<div><strong>How to reset Internet explorer:</strong><br />
+<a href="http://support.microsoft.com/kb/923737" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/923737</a></div>
+<div>&nbsp;</div>
+<div><strong>Note</strong>: After resetting the Internet explorer you would require to install the Java runtime library and Adobe flash again.</div>
+<div>&nbsp;</div>
+<div><strong>Disclaimer:</strong><br />
+Please note that running Reset Internet Explorer Settings will reset all user-defined settings including those set by installed extensions, toolbars and other add-ons to IE Defaults. This includes all Security, Privacy and Zone settings. Also this will clear
+ browsing history, delete all temporary Internet Files, cookies, form data and especially all stored passwords.<br />
+<hr />
+<hr />
+<b>Thanks and Regards:<br />
+<b>I. Suuresh Kumar - Microsoft Support. <br />
+<br />
+<a href="http://social.answers.microsoft.com/Forums/en-US/answersfeedback/threads" target="_blank" rel="noreferrer nofollow">Visit our Microsoft Answers Feedback Forum and let us know what you think.</a><br />
+</b></b>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_8">internet_explorer_8, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Help in removing avgrep.txt from my computer - Microsoft Community</title>
+<h3> hassyshields  say:</h3>
+<h2>            Help in removing avgrep.txt from my computer</h2>
+                    <p>My computer became very slow two days ago so I rebooted but when it flashed back up it advised me to open in safe mode. I then did this then scanned for viruses and one came up as AVGREP.TXT</p>
+<p>I'm having difficulties removing it so far and all the online tools to help rid the virus, want money or my visa before it will continue.
+</p>
+<p>Does anyone have any ideas on how I can get rid of it? My program is windows 7
+</p>
+<p>thankyou so much. </p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Ahaap" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AH"); this.style="display: inline-block";'
+<h3> ahaap  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><font color="#000000"><font><font>These are free on demand scanners that may help:</font></font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">Malwarebytes Antimalware Free -
+</font><a href="http://www.malwarebytes.org/products/malwarebytes_free" target="_blank" rel="noreferrer nofollow"><font>http://www.malwarebytes.org/products/malwarebytes_free</font></a><font color="#000000"><font><font> Please note, do not accept the trial
+ version of MBAM Pro as it will conflict with MSE while the free version will not.</font></font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">Superantispyware Free -
+</font><a href="http://www.superantispyware.com/downloadfile.html?productid=superantispywarefree" target="_blank" rel="noreferrer nofollow"><font>http://www.superantispyware.com/downloadfile.html?productid=superantispywarefree</font></a></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">TDSSKiller (free) -
+</font><a href="http://support.kaspersky.com/faq/?qid=208283363" target="_blank" rel="noreferrer nofollow"><font>http://support.kaspersky.com/faq/?qid=208283363</font></a></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">HitmanPro (free for 30 days) -
+</font><a href="http://www.surfright.nl/en/hitmanpro" target="_blank" rel="noreferrer nofollow"><font>http://www.surfright.nl/en/hitmanpro</font></a></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><span><font color="#000000">You might also try this web site -
+</font><a href="http://www.bleepingcomputer.com/" target="_blank" rel="noreferrer nofollow"><font>http://www.bleepingcomputer.com</font></a><font><font color="#000000"><font> - contains details for many of the common infections, often immediately
+ after they began to appear in the wild, and instructions are provided for how to remove the infections using their malware removal guides. They also have forums where you can seek help from people who specialize in malware removal.</font></font></font></span></p>
+<p><span><font color="#000000">&nbsp;</font></span></p>
+<p><b><span><font color="#000000"><font>If that does not work,
+</font></font></span></b></p>
+<p><font><b><span><font color="#000000">If you are using Microsoft Security Essentials,
+</font></span></b><span style="color: rgba(42, 42, 42, 1)">s</span><span style="color: rgba(0, 0, 0, 1)">tart here -
+</span><span style="color: rgba(42, 42, 42, 1)"><a href="https://support.microsoftsecurityessentials.com/" target="_blank" rel="noreferrer nofollow"><font>https://support.microsoftsecurityessentials.com/</font></a></span><span style="color: rgba(0, 0, 0, 1)">
+ and select the link that says - I think my computer is infected. Options will vary by region, but phone support leads you to Microsoft Answer Desk (</span><span style="color: rgba(42, 42, 42, 1)"><a href="http://www.answerdesk.com/" target="_blank" rel="noreferrer nofollow"><font>http://www.answerdesk.com/</font></a>)<font><b>
+ in the US at this time.</b> After an initial free consultation, a fee will be charged for assistance, based on the details of the case.</font></span></font></p>
+<p><span style="color: rgba(42, 42, 42, 1)"><font>&nbsp;</font></span></p>
+<p><span style="color: rgba(42, 42, 42, 1)"><font>Otherwise go to your current AV provider.</font></span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="PrashantKumar96" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "PR"); this.style="display: inline-block";'
+<h3> prashantkumar96  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            AVGREP.TXT is a log file saved by AVG Rescue CD (<a href="http://forums.avg.com/in-en/avg-forums?sec=thread&amp;act=show&amp;id=88709" target="_blank" rel="noreferrer nofollow">http://forums.avg.com/in-en/avg-forums?sec=thread&amp;act=show&amp;id=88709</a>). So it can't be suspicious. You can contact
+<a href="http://www.avg.com/support" target="_blank" rel="noreferrer nofollow">AVG Support</a> for more help on this file.<br />
+<br />
+However, if you think your PC is infected you can download and scan your PC with <a href="http://www.microsoft.com/security/scanner/en-us/default.aspx" target="_blank" rel="noreferrer nofollow">
+Microsoft Safety Scanner</a>. And if you lost control from your PC then try <a href="http://windows.microsoft.com/en-US/windows/what-is-windows-defender-offline" target="_blank" rel="noreferrer nofollow">
+Windows Defender Offline</a>.
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lumia 535 subtitels for movies not working - Microsoft Community</title>
+<h3> mihailo andjelic  say:</h3>
+<h2>            Lumia 535 subtitels for movies not working</h2>
+                    <p><img src="https://filestore.community.support.microsoft.com/api/images/d277869a-36fc-44b8-98d6-2ab61297191f" />Hello my name is Mihailo and i have Microsoft lumia 535 device.I have a problem with subtitles in my xbox video app.When
+ i start play movie i go to setting and i see title is tutned off and i cant turn it on i dont no WHY?He not allows me to turn it on.Please can you help me.</p>
+<p>You can see in this picture (titlovi: Iskljuceno-thats on serbian launguage).I CANT TURN IT ON.</p>
+<p>
+</p><p>Thank you very much,</p>
+<p>Mihailo</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Bleu S." role="img">
+<h3> bleu s.  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, <a href="https://answers.microsoft.com/en-us/profile/6f1f5f0d-33cf-449f-ada9-d1740bb69e5a" title="Mihailo Andjelic">
+Mihailo Andjelic</a>. You may check the post of Vasilia K' regarding subtitle in Xbox Video app. Here's the link:
+<a href="http://answers.microsoft.com/en-us/mobiledevices/forum/mdlumia-mdcamera/xbox-video-app-for-windows-phone-81-subtitle/9fddcfca-2f19-4b7c-bc8a-bab6aa3f5080">
+http://answers.microsoft.com/en-us/mobiledevices/forum/mdlumia-mdcamera/xbox-video-app-for-windows-phone-81-subtitle/9fddcfca-2f19-4b7c-bc8a-bab6aa3f5080</a>.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=camera,_photos_&#43;_videos">camera,_photos_&#43;_videos, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>switch off - Microsoft Community</title>
+<h3> icoolguy1995  say:</h3>
+<h2>            switch off</h2>
+                    
+<p>every time a open ovi store on my nokia 500 <strong>phone starting to switch off now what to do</strong></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> jic_e7  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Firstly, try turning your phone off for 10 seconds, then turn back on.</p>
+<p>Make sure you have latest software on your phone, i.e. plug phone into Nokia PC Suite and press on the update button.</p>
+<p>If that does not work, then try restoring factory settings as your last option.</p>
+<p>Take care.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=asha_and_nokia_series_30&#47;series_40">asha_and_nokia_series_30&#47;series_40, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>MS Word 365 Help Pop-Up on Opening Document - Microsoft Community</title>
+<h3> jeff villwock  say:</h3>
+<h2>            MS Word 365 Help Pop-Up on Opening Document</h2>
+                    <p>In the last week or so, every time I open a Word document, a Help Screen Pops Up on the right side of the window.&nbsp; Very annoying.</p>
+<p>
+</p><p>How do I stop this automatic pop-up?</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ariel acu  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jeff,</p>
+<p>
+</p><p>In some cases, the pop-up screens in Word appear when it encounters an issue with opening a document or running the app. Regarding your concern, can you send us a screenshot showing the pop-up window that appears when opening a Word document? Also, can you
+ tell us if it occurs when you launch the Word app?<br />
+<br />
+In the meantime, we recommend that you install the latest Office update on your computer to make sure that it's updated. You may refer to this
+<em><strong><a href="https://support.office.com/en-us/article/Install-Office-updates-2ab296f3-7f03-43a2-8e50-46de917611c5" target="_blank" rel="noreferrer nofollow">link</a></strong></em> for the steps.<br />
+<br />
+We look forward to your reply. </p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>All 365 Apps Stuck at Loading - Microsoft Community</title>
+<h3> azriazmi1  say:</h3>
+<h2>            All 365 Apps Stuck at Loading</h2>
+                    Hi, I am new to 365. Just subscribed yesterday. Downloaded &amp; Installed successfully on my MAC High Sierra 10.13.<br />
+<br />
+But when I tried to open the apps (e.g Words, Powerpoint etc), Sign In Pops In, Entered My ID then the apps started to "Loading" ..... and it keeps "loading" endlessly. Restarted my MAC also resulting the same.<br />
+<br />
+Need advise and help. Appreciate it very much. Thank you.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Launch the Finder
+<br />Click Applications
+<br />Right click each Office application then click Move to Trash
+<br />
+<br />Restart your Mac
+<br />
+<br />Download and install the older version Office for Mac 2016 from the following page then sign in:
+<br />
+<br /><a href="https://support.office.com/en-us/article/how-to-go-back-to-office-2016-for-mac-15-xx-versions-from-16-xx-e88ed6c8-6fb4-40a1-9540-529000d3d20f" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/how-to...</a>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>how to connect VB.NET with a Microsoft Access data base&#63; - Microsoft Community</title>
+<h3> sanjay07  say:</h3>
+<h2>            how to connect VB.NET with a Microsoft Access data base&#63;</h2>
+                    sir, i want to know about the connection between VB.NET and ACCESS. can any one say code to connect ?
+<div>i also need some tutorials..&nbsp;</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Vanderghast" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-small"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vanderghast  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>It depends on your version of Visual Studio. With VS2010, it is rather simple.</p>
+<p>- Create a new project (say, a vb class&nbsp;library)</p>
+<p>- From the menu, under Data, Add new data source ....</p>
+<p>-&nbsp;Database&nbsp; [next]</p>
+<p>- Entity data model [next]</p>
+<p>- Dataset [next]</p>
+<p>- [New connection] browse and spot your accdb file; credentials ( user Admin, no password by default),
+</p>
+<p>- [next]</p>
+<p>- Dialog:"The connection you selected uses a local data file that is not in the current project. Would you ... Press F1 fo rmore info." Press F1 if it is new to you. I chose [no], to keep the file out of the project, but with the connection accessible from
+ the config file that come with the dotNet application. You can change the NAME of the connectionString, since it is a string that can be read in the configuration file, or assigned programatically.[Next]</p>
+<p>- Select the tables and queries to&nbsp;have as context [finish]</p>
+<p>- Click on the generated xsd file, you have the equivalent of the Relations Views under Access, but in addition, you can modify the tables, the relations, and define methods (like local stored procedures) under each table (queries). You can add more tables/
+ relations with the right clickcontext menu.</p>
+<p>&nbsp;</p>
+<p>You can now reach your data in a very convenient way, with strong typed names, quite easily, such as:</p>
+<p>Public Sub Sample()<br />
+&nbsp;&nbsp; Dim t As New database1DataSetTableAdapters.Query1TableAdapter<br />
+&nbsp;&nbsp; t.GetData()<br />
+&nbsp; ... do something with your disconnected data<br />
+End Sub</p>
+<p>&nbsp;</p>
+<p>What you do next is up to you.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Excel Table Formula content disappeared - Microsoft Community</title>
+<h3> &#40;ppp&#41;  say:</h3>
+<h2>            Excel Table Formula content disappeared</h2>
+                    <p>I have created a table in excel, under the column (with Header "Concern Level"), I have typed a long formula. however I later &nbsp;found out the excel has changed the formula content to&nbsp;<strong>=[</strong><strong>@[Concern Level (Formula)]],</strong> the calculation
+ result is still correct.</p>
+<p>
+</p><p>Event I convert the table back to range, the cell is showing a representation instead of the formula content.</p>
+<p>
+</p><p>I would like to modify the formula, so how can i display the formula content again?</p>
+<p>
+</p><p>Thank yo so much for your help!!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Rhina Vib" role="img">
+<h3> rhina vib  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>Hi,</span><br />
+<br />
+<span>For assistance regarding this concern, click this&nbsp;<a href="https://social.msdn.microsoft.com/Forums/en-US/home?ppud=4" target="_blank" rel="noreferrer nofollow">link</a>.</span><br />
+<br />
+<span>Let us know if you have other questions.</span><br />
+<br />
+<span>Thank you.</span>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> &#40;ppp&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>Thank you for your reply.</p>
+<p>However, i could not find the answer for the questions in the link.</p>
+<p>Is it related to some code / vba?</p>
+<p>I am just a basic excel user, I don't know what has happened.</p>
+<p>
+</p><p>I just want to show my original formula like <strong>=offset(A:A,match(.....)</strong> instead of a short form&nbsp;<strong>=[</strong><strong>@[Concern Level (Formula)]],</strong></p>
+<p>
+</p><p>Would you kindly give some more guidance?</p>
+<p>
+</p><p>Many thanks.</p>
+<p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> &#40;ppp&#41;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Sorry, I have made a mistake. I have found the formula in another column of the table.</p>
+<p>Problem solved.</p>
+<p>Can I delete this post?</p>
+<p>Thanks.</p>
+<p><br />
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Lost product key for Publisher 2002 - Microsoft Community</title>
+<h3> elizabethdietel  say:</h3>
+<h2>            Lost product key for Publisher 2002</h2>
+                    I have a disk for Publisher 2002 that came with an old Dell computer that I no longer have.&nbsp; I need it to view a publication that was just sent to me.&nbsp; How can I install it on&nbsp;my new computer without a product key?&nbsp; I paid for this program which is no
+ longer usable!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Rohn007" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "RO"); this.style="display: inline-block";'
+<h3> rohn007  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You are in the position of a person who has burned up a $100 bill. The bank will not give you a replacement unless you can prove you really had a bill that burned up: provide them with the ashes.
+<br />
+<br />
+You have lost track of the Product Key, so unless you have adequate alternate proof of the purchase, MS will not replace the product key.<br />
+<br />
+Here are MS's replacement policy. I strongly suspect you don't have enough proof to satisfy them. But maybe you will get lucky.<br />
+<br />
+<div>
+<b>Replacements</b>
+<b>How to obtain a new product key for a Microsoft Office suite, Lost Product Key support</b> -
+<a href="http://support.microsoft.com/kb/823570" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/823570</a>
+<p>If your purchase was through the Microsoft Store, You can contact them at 1-877-696-7786 or login using your credentials in the link below:
+<a href="http://store.microsoft.com/" target="_blank" rel="noreferrer nofollow"><span>http://store.microsoft.com</span></a>&nbsp; and they may be able to provide download details.</p>
+<p>If your purchase was through Digital River, refer the following link:<span>
+</span><a href="https://store.digitalriver.com/DRHM/servlet/ControllerServlet?Action=DisplayContactFormPage&amp;SiteID=msshus&amp;Locale=en_US&amp;Env=BASE" target="_blank" rel="noreferrer nofollow"><span>https://store.digitalriver.com/DRHM/servlet/ControllerServlet?Action=DisplayContactFormPage&amp;SiteID=msshus&amp;Locale=en_US&amp;Env=BASE</span></a></p>
+<p><span>&nbsp;</span></p>
+<b>Get replacement product key from Microsoft - </b><a href="http://office-watch.com/t/n.aspx?articleid=1628&amp;zoneid=12" target="_blank" rel="noreferrer nofollow">http://office-watch.com/t/n.aspx?articleid=1628&amp;zoneid=12</a><b>
+</b>
+<p><span>&nbsp;</span></p>
+<b>How to identify, locate, and replace a product key - </b><a href="http://support.microsoft.com/kb/811224" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/811224</a>
+<p><span>&nbsp;</span></p>
+<b>Replace lost Office product keys 2003, 2002, 2000 </b><a href="http://office.microsoft.com/en-us/help/replace-lost-office-product-keys-HA001150834.aspx" target="_blank" rel="noreferrer nofollow">http://office.microsoft.com/en-us/help/replace-lost-office-product-keys-HA001150834.aspx</a><b>
+</b>
+<p><span>&nbsp;</span></p>
+<b>Replace a lost or damaged Microsoft Office 2007 or 2003 product key -
+</b><a href="http://support.microsoft.com/kb/2548260" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/2548260</a>
+<span>&nbsp;</span>
+How to replace a damaged, invalid or lost product key for a full version
+<p>If you have followed the tips in the previous section and you still cannot unlock Office with your product key, or if you cannot find your product key, you can obtain a new one. To do this, contact Microsoft Support. Find the support
+ telephone number for your area by running the Product Activation Wizard on your computer.&nbsp;&nbsp; For more information about how to run the Product Activation Wizard, click the following article number to view the article in the Microsoft Knowledge Base:
+<a href="http://support.microsoft.com/kb/950929" target="_blank" rel="noreferrer nofollow">How to contact a Microsoft Product Activation Center</a>&nbsp;&nbsp;</p>
+<p>When you contact Microsoft for a new Office product key, please have the following items available for the customer service representative:&nbsp;
+</p>
+<p><span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span>The product CD-ROM.&nbsp;</p>
+<p><span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span>The computer serial number on which you want to install the Office suite.&nbsp;</p>
+<p><span><span>·<span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span>The readable parts of your original product key (if available).</p>
+<p><span>&nbsp;</span></p>
+<b>How to replace Microsoft software or hardware, order service packs, and replace product manuals
+</b><a href="http://support.microsoft.com/kb/326246/" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/326246/</a><b>
+</b>
+<p><span>&nbsp;</span></p>
+<br />
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> davidf2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Replace lost Office product keys:&nbsp; <a href="http://office.microsoft.com/en-us/help/replace-lost-office-product-keys-HA001150834.aspx" target="_blank" rel="noreferrer nofollow">
+http://office.microsoft.com/en-us/help/replace-lost-office-product-keys-HA001150834.aspx</a></p>
+<p>If your version is an OEM or you can't get new keys for some other reason, you can download and install a trial version of Publisher 2010 which will allow you to view the Publisher file. Here is one source for a download:
+<a href="http://microsoft-publisher.en.softonic.com/" target="_blank" rel="noreferrer nofollow">http://microsoft-publisher.en.softonic.com/</a></p>
+<p>DavidF</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>10240 Stalls on Boot - Microsoft Community</title>
+<h3> jac70  say:</h3>
+<h2>            10240 Stalls on Boot</h2>
+                    Recently I have noticed my system stalling on boot or resume from sleep. It happens when I come to log in to my account. I am using a PIN to log in and when I enter my number the spinning circles start to animate and then almost instantly freeze - the
+ system will then appear to hang for about 30 seconds. Then the system will come back and go to the dekstop though I might see some rendering issues with the UI. The icons on the desktop might be bunched into the middle as they would be if I changed to default
+ resolution and then back again or the Window UI might revert to the basic UI that is included with Windows7.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)">Hi Jac,</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Thank you for being part of Windows 10 Insider Preview.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">We are sorry for the delay in response and need to know whether your issue is resolved or not.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">We appreciate that you tried to set the screen resolution. Kindly be informed that, it is recommended to change the screen resolution to the 100% recommended level for the better
+ display. The recommended level of display resolutions vary from the device to device.
+</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">If the issue is not resolved, follow the below methods and check if it helps.</span></p>
+<p>
+</p><p>Kindly follow the below methods and check if you face the rendering issues.</p>
+<p><strong>Method 1:</strong></p>
+<p>Boot the computer in Safe Mode and place the computer in Clean Boot and check if the issue persists.</p>
+<p><strong>Step 1:</strong></p>
+<p>Safe mode starts Windows with a limited set of files and drivers. Startup programs don't run in safe mode, and only the basic drivers needed to start Windows are installed.</p>
+<p>I would suggest you to try the steps in the below Microsoft help article on How to Boot into Safe mode.</p>
+<p><a href="http://windows.microsoft.com/en-us/windows-8/windows-startup-settings-safe-mode" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/windows-8/windows-startup-settings-safe-mode</a></p>
+<p><span>The steps for Windows 8.1 applies well to Windows 10 also.</span></p>
+<p><strong>Step 2:</strong></p>
+<p><span>A clean boot is performed to start Windows by using a minimal set of drivers and startup programs. This helps eliminate software conflicts that occur when you install a program or an update or when you run a program in Windows.</span></p>
+<p>I would suggest you to refer the below Microsoft help article on How to Perform Clean boot.</p>
+<p><a href="https://support.microsoft.com/en-us/kb/929135" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 176, 240, 1)">https://support.microsoft.com/en-us/kb/929135</span></a></p>
+<p><span>The steps for Windows 8.1 applies well to Windows 10 also.</span></p>
+<p><strong>Disclaimer<span style="color: rgba(0, 0, 0, 1)">:</span></strong><span style="color: rgba(0, 0, 0, 1)"> Please reset the computer to start as usual after troubleshooting with clean boot by referring above article.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">If the issue persists, follow the below method.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">&nbsp;</span></p>
+<p><strong><span style="color: rgba(51, 51, 51, 1)">Method 2:</span></strong></p>
+<p><span style="color: rgba(51, 51, 51, 1)">I suggest you to update the display adapter drivers through device manager and check if it helps.</span></p>
+<p><strong><span style="color: rgba(51, 51, 51, 1)">Update Display Drivers</span></strong></p>
+<p><span style="color: rgba(51, 51, 51, 1)">Please follow the steps given here to uninstall and then reinstall the Display drivers.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">a) Press
+<strong>Windows +X</strong> keys on the keyboard.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">b) Select
+<strong>Device Manager</strong>.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">c) Find and double-click
+<strong>Display driver</strong>.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">d) Right-click the device, and click
+<strong>Update driver software</strong>.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">e) Follow the onscreen instructions to update the display drivers.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">If the issue persists, I suggest you to update the latest display adapters from the manufacturer’s website and check if it helps.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Kindly let us know if you need any further assistance with Windows. We are glad to assist you.</span></p>
+<p>
+</p><p><span style="color: rgba(51, 51, 51, 1)">Thank you.</span></p>
+<p>
+</p><p>&nbsp;</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jac70  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I solved this problem. </p>
+<p>
+</p><p>It was caused by a USB flash drive plugged into a USB 2.0 port. I think this drive may be faulty. SInce removing it I no longer have the issue.</p>
+<p>
+</p><p>Thanks</p>
+        </p>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=performance_and_maintenance">performance_and_maintenance, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook on iPad - can&#39;t delete in batches and sweep rules - Microsoft Community</title>
+<h3> natlider  say:</h3>
+<h2>            Outlook on iPad - can&#39;t delete in batches and sweep rules aren&#39;t activating</h2>
+                    <p>hi&nbsp;</p>
+<p>
+</p><p>I've recently started using an iPad; but very inexperienced user of anything Apple related.&nbsp;</p>
+<p>When I use hotmail on iPad (or outlook.com) I can't seem to delete multiple emails from inbox?</p>
+<p>also inbox and sweep rules dont seem to be activated - eg rule to only keep latest email and delete previous and rule to delete older &gt;3days aren't being followed so my inbox is quite full and cluttered</p>
+<p>please help!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi there,</p>
+<p>
+</p><p><span>To get better clarity on the issue please answer the questions below:</span></p>
+<p>
+</p><p><span>1. How exactly are you trying to access Outlook? Is it through Email client, browser or Native app?</span></p>
+<p><span>2. Do you face the issue specifically on one rule?</span></p>
+<p>
+</p><p><span>Please get back to us with the above information so that we can assist you further.</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carolyncobb  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I use the outlook app on an iPad Air II
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Copy selected cells on one sheet and paste them in another sheet based - Microsoft Community</title>
+<h3> josoye  say:</h3>
+<h2>            Copy selected cells on one sheet and paste them in another sheet based on a cell value</h2>
+                    Hi guys,
+<div><br />
+</div>
+<div>I'm a newbie and also new to excel vba. I have two &nbsp;worksheets, "Entry form" and "Database" in my workbook. I am trying to put together a macro button to find the cell value D5(Entry form) in the column A:A (database), &nbsp;if found, copy selected cells (B5:D5,B7,B9)
+ from entry form and paste in the adjacent cells of the row with the value in the database sheet. You help will be much appreciated</div>
+<div><br />
+</div>
+<div>Here is my code, although i will appreciate alternative coding</div>
+<div><br />
+</div>
+<div>
+<div>'Match value D3 and replace data</div>
+<div><br />
+</div>
+<div>&nbsp;Dim sht As Worksheet, outsht As Worksheet, r As Long</div>
+<div>&nbsp;Dim rfoundCell As Range</div>
+<div>&nbsp;Dim Jref As Range</div>
+<div>&nbsp;Dim LookRange As Range</div>
+<div>&nbsp;</div>
+<div>&nbsp;Set outsht = Sheets("Database")</div>
+<div>&nbsp;Set sht = ActiveSheet</div>
+<div>&nbsp;Set Jref = sht.Range("D3")</div>
+<div><br />
+</div>
+<div>&nbsp;Set rfoundCell = outsht.Range("A2:A" &amp; outsht.Range("A" &amp; Rows.Count).End(xlUp).Row).Find(what:=Jref.Value, LookIn:=xlValues, lookat:=xlWhole)</div>
+<div><br />
+</div>
+<div>If Not rfoundCell Is Nothing Then</div>
+<div><br />
+</div>
+<div>'Transfer form data across</div>
+<div><br />
+</div>
+<div>&nbsp;r = outsht.Range("A" &amp; Rows.Count).End(xlUp).Row + 1</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 1) = sht.Range("D3")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 2) = sht.Range("B5")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 4) = sht.Range("C5")</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 5) = sht.Range("D5")</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 6) = sht.Range("B7")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 7) = sht.Range("C7")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 8) = sht.Range("D7")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 13) = sht.Range("B9")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 14) = sht.Range("B11")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 15) = sht.Range("B13")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 16) = sht.Range("B15")</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 17) = sht.Range("B18")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 18) = sht.Range("B20")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 19) = sht.Range("C20")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 20) = sht.Range("D20")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 21) = sht.Range("B22")&nbsp;</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 23) = sht.Range("C24")</div>
+<div>&nbsp; &nbsp; outsht.Cells(r, 24) = sht.Range("D24")&nbsp;</div>
+</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andreas Killer" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> andreas killer  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            For static input forms, it's easier to build one routine that copies the data between the sheets and use 2 arrays to define the cells.<br />
+<br />
+Option Explicit<br />
+<br />
+Sub Test()<br />
+&nbsp; 'Store the data<br />
+&nbsp; LoadSaveData False<br />
+End Sub<br />
+<br />
+Sub LoadSaveData(Optional ByVal LoadData As Boolean = True)<br />
+&nbsp; Dim R As Range<br />
+&nbsp; Dim i As Integer<br />
+&nbsp; Dim FormField, DataField<br />
+&nbsp; FormField = Array("D5", "C5", "B5", "B7", "B9")<br />
+&nbsp; DataField = Array("A1", "B1", "C1", "D1", "E1")<br />
+&nbsp; <br />
+&nbsp; With Sheets("Database")<br />
+&nbsp;&nbsp;&nbsp; 'Search the ID in column A<br />
+&nbsp;&nbsp;&nbsp; Set R = .Columns("A").Find(Range(FormField(0)), LookIn:=xlValues, LookAt:=xlWhole)<br />
+&nbsp;&nbsp;&nbsp; 'Found?<br />
+&nbsp;&nbsp;&nbsp; If R Is Nothing Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'No get the next empty row<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set R = .Range("A" &amp; Rows.Count).End(xlUp).Offset(1)<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp; If LoadData Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For i = 0 To UBound(FormField)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Range(FormField(i)) = Intersect(R.EntireRow, Range(DataField(i)).EntireColumn)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 'Store the data<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For i = 0 To UBound(FormField)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Intersect(R.EntireRow, Range(DataField(i)).EntireColumn) = Range(FormField(i))<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next<br />
+&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp; End With<br />
+End Sub<br />
+<br />
+You can also build dynamic input forms, e.g. if the headings in the database sheet in row 1 are the same in the cells on the left side of the input cell in the input form.
+<br />
+<br />
+And if you create a named range for all input cells, you can visit each cell in that range, get the value of the cell on the left side (the heading), search it in row 1 in the database sheet, and store it in the same way as in the routine above. Here is an
+ example:<br />
+<br />
+http://dl.dropbox.com/u/35239054/SimpleFormDatabase.xls<br />
+<br />
+Andreas.<br />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> josoye  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks for you reply. I have managed to sort this out in another forum. your help is much appreciated
+<div><br />
+<div>Cheers, Joseph</div>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Critical alert. - Microsoft Community</title>
+<h3> juantorres057  say:</h3>
+<h2>            Critical alert.</h2>
+                    <p>i got this critical alert that says i got safety alert and call them immediately the Error &nbsp; is #365904efbc2b7b8 i dont know if this is real</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bruce Hagen &#126; MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-small"; this.setAttribute("alt", "BH"); this.style="display: inline-block";'
+<h3> bruce hagen &#126; mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>It's a common scam. Click the OK button at the bottom of the popup. You should then see a box Do not allow this site to create new messages. Check it and then close the window.</p>
+<p>
+</p><p><br />
+If that does not resolve it, use the Task Manager to exit the browser. Reboot and see if the pop-up goes away.</p>
+<p>
+</p><p><br />
+How to Use the New Task Manager.<br />
+<a href="http://www.wikihow.com/Open-Windows-Task-Manager" target="_blank" rel="noreferrer nofollow">http://www.wikihow.com/Open-Windows-Task-Manager</a></p>
+<p>
+</p><p><br />
+If the problem persists, for any browser:</p>
+<p>
+</p><p><br />
+Remove Tech Support Scam pop-up (Call For Support Scam)<br />
+<a href="http://malwaretips.com/blogs/remove-tech-support-scam-popups/" target="_blank" rel="noreferrer nofollow">http://malwaretips.com/blogs/remove-tech-support-scam-popups/</a></p>
+<p>
+</p><p><br />
+Please read:</p>
+<p>
+</p><p><br />
+PSA: Tech Support Scams Pop-Ups on the Rise<br />
+<a href="https://blog.malwarebytes.org/fraud-scam/2014/11/psa-tech-support-scams-pop-ups-on-the-rise/" target="_blank" rel="noreferrer nofollow">https://blog.malwarebytes.org/fraud-scam/2014/11/psa-tech-support-scams-pop-ups-on-the-rise/</a></p>
+<p>
+</p><p><br />
+Breaking down a notably sophisticated tech support scam M.O.<br />
+<a href="https://blogs.technet.microsoft.com/mmpc/2017/03/02/breaking-down-a-notably-sophisticated-tech-support-scam-m-o/" target="_blank" rel="noreferrer nofollow">https://blogs.technet.microsoft.com/mmpc/2017/03/02/breaking-down-a-notably-sophisticated-tech-support-scam-m-o/</a></p>
+<p>
+</p><p><br />
+For more information, see this post by GreginMich<br />
+<a href="https://answers.microsoft.com/en-us/protect/forum/protect_other-protect_scanning/1-888-2361-scam/0990122e-61a9-431b-947e-a904c202fa7c?msgId=8d26f1a8-041a-4351-9c24-a222fb305cbd">https://answers.microsoft.com/en-us/protect/forum/protect_other-protect_scanning/1-888-2361-scam/0990122e-61a9-431b-947e-a904c202fa7c?msgId=8d26f1a8-041a-4351-9c24-a222fb305cbd</a>
+</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=scanning,_detecting,_and_removing_threats">scanning,_detecting,_and_removing_threats, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Remove current month calendar from printing at top when printing - Microsoft Community</title>
+<h3> jennjones  say:</h3>
+<h2>            Remove current month calendar from printing at top when printing outlook calendar in monthly view.</h2>
+                    <p>Original Title: print calendar</p>
+<p>&nbsp;</p>
+<p>When I go to print a monthly view of my calendar, it also displays 2 smaller calendar's at the top. The smaller calendar's are the current month and the next month. I don't need a smaller view of the current month because it is printing large. Is there a
+ way to change the smaller calendar's to be the previous month and the next month?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Raju S Das" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> raju s das  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span><font><font color="#000000"><font>Hi Jenn,</font></font></font></span></p>
+<p>&nbsp;</p>
+<p><span><font><font color="#000000"><font>You would not be able to change the default calendars displayed in the month view.</font></font></font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)"><font><font>You may consider sending feedback and suggestions for the same using the link below:</font></font></span></p>
+<p><span><a href="http://mymfe.microsoft.com/Office/feedback.aspx?formID=375" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)"><font>http://mymfe.microsoft.com/Office/feedback.aspx?formID=375</font></span></a></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(0, 0, 0, 1)">I hope it helps. Let us know if you need further help.</span></p>
+<p><span style="color: rgba(0, 0, 0, 1)">Thank you.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Hotmail Storage Folders &#38; Future of Windows Live - Microsoft Community</title>
+<h3> lstew123  say:</h3>
+<h2>            Hotmail Storage Folders &#38; Future of Windows Live</h2>
+                    <p>Does anyone know how to get Hotmail's <strong>Storage Folders</strong> to show up in the
+<strong>new</strong> Outlook.com programming?&nbsp; Made the transition/conversion, however my Storage Folder's didn't or don't show up.&nbsp; Why is Outlook.com only transferring/converting only&nbsp;contacts, current emails and calendars over instead of the
+<strong>entire account (ie, personal Storage Files)</strong>?</p>
+<p>&nbsp;</p>
+<p>Also, I have Windows Live 2009&nbsp;installed on my computer, will that programming continue to work after Outlook transition deadline (Summer 2013)?&nbsp; In other words, will I still be able to use that program&nbsp;to&nbsp;sync with Outlook.com, view and file my emails in
+ Windows Live?&nbsp; Just looking at other options if&nbsp;I cannot transfer my personal Storage Folders to Outlook.com.</p>
+<p>&nbsp;</p>
+<p>Thank you for your attention in this matter.&nbsp; Looking forward to a timely response from Microsoft.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Raymond P." aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "RP"); this.style="display: inline-block";'
+<h3> raymond p.  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><span style="color: rgba(51, 51, 51, 1)"><font>Hi LStew123,</font></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">By upgrading to Outlook.com, you are only upgrading the user interface of Hotmail to the new user interface; hence all your emails should still stay in your Inbox. However, regarding your concern about the storage folders,
+ is this the storage folder you see in Windows live mail? If so, please be informed that you can only see the storage folders in a mail client (Windows live mail).</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">In addition, you can still use Windows live version 2009 even after the transition to Outlook.
+</span><span style="color: rgba(51, 51, 51, 1)">Also, we suggest that you use the up-to-date version which is Windows live mail 2012 to make the most out of your mail client.</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">To know more about the new Outlook, you can refer to this article:</span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)"><a href="http://answers.microsoft.com/en-us/windowslive/forum/mail-email/frequently-asked-questions-for-outlookcom/806676a2-ec0b-4fb9-bdfe-fc23c5596738"><strong><span style="color: rgba(0, 112, 192, 1)">Frequently
+ Asked Questions for Outlook.com</span></strong></a></span></p>
+<p>&nbsp;</p>
+<p><span style="color: rgba(51, 51, 51, 1)">Thank you.</span></p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lstew123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you for your response.&nbsp; </p>
+<p>&nbsp;</p>
+<p>Regarding the Storage Folders, Hotmail and Windows Live <u>used to be sync'd</u>.&nbsp; So when you opened Hotmail, your Storage Folders
+<strong><u>were there</u></strong>.&nbsp; Prior to Outlook.com the Storage Folders <u>
+<strong>were in Hotmail</strong></u>.&nbsp; After the upgrade to Outlook.com, they no long show up and
+<strong><u>don't seem to be sync'd</u></strong> with Windows Live.&nbsp; Is there something I should be turning on so both accounts (Outlook.com and&nbsp;Windows Live)&nbsp;have the same information
+<strong>(all folders)</strong>?</p>
+<p>&nbsp;</p>
+<p>Thank you again for your attention in this matter and look forward to another response soon.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lstew123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            PS Raymond P, since I am running Windows XP, is it possible to update to 2012?&nbsp;&nbsp;The system requirements for 2011 did not include XP, part of the reason I am still on 2009.&nbsp; Please advise on this question and the other question I posted a couple of days
+ ago.&nbsp; Thanks you
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi LStew123,</p>
+<p>&nbsp;</p>
+<p>Please be informed that viewing the <strong>Storage folders</strong> is not available in Outlook.com.</p>
+<p>Regarding your question with Windows Live Mail, you are correct. You cannot use Windows Live 2011 up to the recent version because you are using Windows XP.&nbsp; Recent versions of Windows Live Mail does not support Windows XP.</p>
+<p>&nbsp;</p>
+<p>If you have any additional questions, feel free to ask.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Windows Live Mail (WLMail) Storage folders are only on your computer.</p>
+<p>&nbsp;</p>
+<p>If you mean user created account folders, then all Hotmail account folders will sync.</p>
+<p>Are the folders subfolders?&nbsp; Subfolders can be hidden.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lstew123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Thank you Paul M and Ron Sommer for&nbsp;taking the time to respond to my posts.</p>
+<p>&nbsp;</p>
+<p>Ron Sommer, if what you say is true that the "user created subfolders" are still there and can be seen in Outlook.com, please provide instructions on how to get them to appear in Outlook.com as this has been my question from the beginning.&nbsp; Otherwise I disagree
+ with you that the Storage Folders are only on my computer.&nbsp; Please read on.</p>
+<p>&nbsp;</p>
+<p><strong>I am <u>very</u> disappointed in the Outlook.com Update and the responses</strong> I'm seeing here, let alone the time it is taking to get responses to my questions.&nbsp;
+</p>
+<p>&nbsp;</p>
+<p>As I mentioned before in my previous 2-posts, would have thought that the Microsoft programmers would have taken into account about syncing
+<strong><u>all</u></strong> old Hotmail email accounts with the new Outlook.com updated version since Hotmail has been around for so long a period of time,
+<strong>not just a portion</strong> (Calendar, New Mail &amp; Contacts).&nbsp; Have read other posts on this website where
+<strong>I am not the only one</strong> who is wondering what happened to their personal user created&nbsp;sub-folders that they have been archiving their emails to for years (historical archives/personal sub-folders).</p>
+<p>&nbsp;</p>
+<p>My <strong>Hotmail account on Internet Explorer <u>was</u> syncing &amp; sharing&nbsp;with Windows Live 2009 prior to Outlook.com update.&nbsp;&nbsp;A</strong><strong>ll my program and
+<u>personal</u> sub-folders (archived emails) would&nbsp;and is&nbsp;showing up in&nbsp;Internet Explorer's Hotmail and Windows Live 2009 accounts.</strong>&nbsp;
+</p>
+<p>&nbsp;</p>
+<p>Have other computers I have <strong>not </strong>upgraded to Outlook.com yet and I see my personal user created sub-folders
+<strong>still in Internet Explorer's Hotmail</strong>.&nbsp; So know I am not dreaming that Internet Explorer's Hotmail does sync with my Windows Live 2009.</p>
+<p>&nbsp;</p>
+<p>Now, with the new Outlook.com on one computer which&nbsp;I&nbsp;did update, it shows the program folders
+<strong>and none</strong> of the personal storage sub-folders that I archived my old emails in Internet Explorer's Hotmail and Windows Live 2009.&nbsp; Find this problematic, since now I will have 2-programs with different user created sub-folders/archives.&nbsp; For
+ example, Outlook.com will have&nbsp;latest received archived emails, but those emails will&nbsp;<strong><u>not</u></strong> show up archived in Windows Live 2009
+<strong>or vise versa</strong>.&nbsp; <strong>Get the picture?</strong>&nbsp; No syncing or sharing between the two programs, right?&nbsp; Information between the two programs are not shared or sync'd&nbsp;<strong><u>except</u> your Contacts, Calendars and New Email</strong>.&nbsp;
+ Just don't get it, if this information (Contacts, Calendars and New Mail)&nbsp;is shared/sync'd between the two programs, why can't the personal user created storage sub-folders be too?&nbsp; Internet Explorer Hotmail
+<strong>was and is&nbsp;able to to do it.</strong></p>
+<p>&nbsp;</p>
+<p>Please don't take offense to my next statement,&nbsp;just wondering as&nbsp;Forum Moderators and Consumer Apps MVP (not familiar with those titles) are you linked with Microsoft Programming to be able to answer my questions or are you just seasoned computer users?</p>
+<p>&nbsp;</p>
+<p>Still looking for answers because the responses I've received just don't make sense.&nbsp;
+</p>
+<p>&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I am not connected to the Microsoft programmers.&nbsp; </p>
+<p>&nbsp;</p>
+<p>Syncing contacts and calendar is different than syncing emails.&nbsp; The setups are in different places.</p>
+<p>The Microsoft account used to sign in to WLMail determines which Microsoft account contacts and calendar are synced to WLMail.&nbsp;&nbsp;</p>
+<p>Each&nbsp;email account setup in WLMail connects to that account's server.&nbsp; If the account uses http or imap protocol, the folders and emails will sync.&nbsp; WLMail connects to the server, syncs emails and folders, then disconnects.&nbsp; Any changes made in WLMail will
+ not appear on the server until WLMail does a send/receive.</p>
+<p>&nbsp;</p>
+<p>Your browser is displaying what is on the email server.&nbsp; Login to your account with your browser and work offline.&nbsp; The browser will have to go back online to display a different email.</p>
+<p>&nbsp;</p>
+<p>Mac users and older browser users are having trouble with outlook.com.</p>
+<p>It may be that WLMail 2009 has trouble with outlook.com too.</p>
+<p>&nbsp;</p>
+<p>I will start my old computer with WLMail 2009 and test for problems.</p>
+<p>&nbsp;</p>
+<p>What happens if you create a new folder in WLMail 2009?</p>
+<p>Does the folder appear on the server?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lstew123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Mr. Sommer&nbsp;appreciate the quick response to my latest post.</p>
+<p>&nbsp;</p>
+<p>Sorry, but I'm lost when you start talking about "servers".&nbsp; All&nbsp;I know, is that when I accessed Hotmail through Internet Explorer 8, my user created storage files were there.&nbsp; So to me, those files were on Hotmail.com's servers and now they are not showing
+ up in Outlook.com.&nbsp; So what happened to those files which were being access by Internet Explorer's Hotmail and why won't they show up?&nbsp; As far as non-technical personal computer user here, I have no clue where to look to find out what server is saving my information
+ since that was an automatic thing these programs did for you.</p>
+<p>&nbsp;</p>
+<p>The address that shows in IE's Browser Window when I click on Hotmail <strong>
+now</strong> reads as following:</p>
+<p><a href="https://login.live.com/login.srf?wa=wsignin1.0&amp;rpsnv=11&amp;ct=1362872924&amp;rver=6.1.6206.0&amp;wp=MBI&amp;wreply=http:%2F%2Fmail.live.com%2Fdefault.aspx%3Frru%3Dinbox&amp;lc=1033&amp;id=64855&amp;mkt=en-us&amp;cbcxt=mai&amp;snsc=1" target="_blank" rel="noreferrer nofollow">https://login.live.com/login.srf?wa=wsignin1.0&amp;rpsnv=11&amp;ct=1362872924&amp;rver=6.1.6206.0&amp;wp=MBI&amp;wreply=http:%2F%2Fmail.live.com%2Fdefault.aspx%3Frru%3Dinbox&amp;lc=1033&amp;id=64855&amp;mkt=en-us&amp;cbcxt=mai&amp;snsc=1</a></p>
+<p>Now with a "Microsoft Veri Sign" next to the address.</p>
+<p>&nbsp;</p>
+<p>The address that used to show in IE's Browser Window when I clicked on Hotmail before the Outlook.com update read as follows:</p>
+<p>&nbsp;</p>
+<p><a href="http://www.hotmail.com/login" target="_blank" rel="noreferrer nofollow">http://www.hotmail.com/login</a>&nbsp; Which now defaults to the other above listed server link.</p>
+<p>&nbsp;</p>
+<p>Now how WLMail2009 connects to my Hotmail account I have not clue since I do not use a browser to access my mail, only through the WL 2009&nbsp;programming installed on my computer.</p>
+<p>&nbsp;</p>
+<p>So as I said, my issue is not with WLMail 2009, it is with Internet Explorer 8 Hotmail versus the new Outlook.com program and the missing files&nbsp;with it's ability to sync to another program and share all information, not partial information&nbsp;like New Emails,
+ Contact &amp; Calendar.</p>
+<p>&nbsp;</p>
+<p>In regards to your question about creating a new folder in WLMail 2009, if I create a new folder, it shows in WLMail 2009 everytime.&nbsp; But, "Does the folder appear on the server", what the heck are you talking about?&nbsp; How would I check that with a program
+ locally installed on my computer?&nbsp; Does the new file show in Outlook.com?&nbsp; No, since WLM and Outlook.com are not talking to each other regarding personal user created folders.&nbsp; Do I have access to servers?&nbsp; Can you explain to me what you meant by that question?</p>
+<p>&nbsp;</p>
+<p>In regards to your comment, "It may be that WLMail 2009 has trouble with Outlook.com.&nbsp; Don't think it&nbsp;is just with WLMail 2009, since my personal user created files folders, which I believe were on IE 8 Hotmail servers&nbsp;didn't and haven't&nbsp;show up after the
+ Outlook.com update.</p>
+<p>&nbsp;</p>
+<p>Feel like I'm repeating myself over and over again with this post, and as I said am getting very frustrated with this new programming issue.&nbsp; Microsoft has not made this update an easy one as they have in the past for non-technical computer users who use
+ their computers for recreation.</p>
+<p>&nbsp;</p>
+<p>Let me know if you have any other insights to my question.</p>
+<p>&nbsp;</p>
+<p>Thank you.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> lstew123  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            PS&nbsp; Mr. Sommer, have noticed that recently if I create or respond to&nbsp;an email in WLMail, the emails are not showing up in Outlook.com.&nbsp; So if there is any syncing between the accounts
+<strong>it's not a good sync.</strong>&nbsp; This really confuses me since in the link/address I provided in my previous post is shows "login.live.com" when signing into Outlook.com.&nbsp;
+<strong>SO</strong>, really don't think the link between the two programs are working correctly.&nbsp; What do you think?
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ron sommer mvp 2009-2017  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You need to readd the Hotmail account to WLMail 2009.</p>
+<p>&nbsp;</p>
+<p>First, right click on the Hotmail account name in the folder pane in WLMail, Properties, uncheck Include this account when receiving emails or synchronizing.</p>
+<p>&nbsp;</p>
+<p>Add the Hotmail account as a new account.</p>
+<p>If you have a lot of messages online, it may take some time to sync all messages to your computer.</p>
+<p>&nbsp;</p>
+<p>Login to your account with Internet Explorer.</p>
+<p>After the account looks the same in IE and WLMail, you will have to create the missing folders in the new account in WLMail.</p>
+<p>After the folders appear in IE, you can start copying messages from the old account to the new account in WLMail.</p>
+<p>Changes made in WLMail will not appear in IE until you do a Send/Receive.</p>
+<p>&nbsp;</p>
+<p>After all folders and messages are in the new account and in IE, you can remove the old account.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Installation error 80070643 - Microsoft Community</title>
+<h3> bigchaps  say:</h3>
+<h2>            Installation error 80070643</h2>
+                    I get an install error of 80070643 when attempting to install...<br />
+<br />
+Looking through the install log,&nbsp;I see this error<br />
+<br />
+SI (s) (E0:1C) [19:17:10:808]: Note: 1: 1401 2: HKEY_LOCAL_MACHINE\Software\Classes\*\shellex\ContextMenuHandlers\MSSE 3: 5
+<br />
+MSI (s) (E0:1C) [19:17:10:808]: Product: Microsoft Security Essentials -- Error 1406. Could not write value&nbsp; to key \Software\Classes\*\shellex\ContextMenuHandlers\MSSE.&nbsp; System error .&nbsp; Verify that you have sufficient access to that key, or contact your support
+ personnel.<br />
+<br />
+Does anyojne know what the permissions on the Key should be?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="BillFill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "BI"); this.style="display: inline-block";'
+<h3> billfill  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            At this point I would recommend trying the steps here<br />
+<br />
+<br />
+<a href="http://social.answers.microsoft.com/Forums/en-US/msestart/thread/908fad3e-f9fc-4d8a-be83-ae7d3bc48db5" target="_blank" rel="noreferrer nofollow">http://social.answers.microsoft.com/Forums/en-US/msestart/thread/908fad3e-f9fc-4d8a-be83-ae7d3bc48db5</a><br />
+<br />
+<br />
+&nbsp;and if it is still not working submit a case to support<br />
+<br />
+Bill
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="BigChaps" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "BI"); this.style="display: inline-block";'
+<h3> bigchaps  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I updated the permissions on the keys to the same as&nbsp;the HKLM\Software\Classess\*&nbsp; and did the steps above just in case and rebooted. Install worked just dandy after that.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=microsoft_security_essentials">microsoft_security_essentials, </a> <br>
+<a href="/search?q=getting_started_and_upgrading">getting_started_and_upgrading, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Invert a text Line - Microsoft Community</title>
+<h3> turnerofwood  say:</h3>
+<h2>            Invert a text Line</h2>
+                    <p>I need to invert a line of text in Word 2013. I am sure it can be done but I can' find out how.</p>
+<p>TIA!</p>
+<p>Ben</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            A simple way is this: Select the line of text and copy it to the clipboard. On the Home tab, click the down arrow on the Paste button and choose Paste Special. In the dialog, choose Picture (Enhanced Metafile). On the inserted picture, use the circular-arrow
+ handle at the top center to rotate it 180 degrees.<br />
+<br />
+Unfortunately, the conversion to a picture tends to make the picture of the text a little fuzzy compared to the original text. A different approach can avoid this at the cost of being a little more complicated, and not suitable for complicated layouts: Change
+ the page orientation to Landscape. Insert a 1-row x 2-column table. Right-click in the left column and choose Text Direction, and select the button that makes the text read top-to-bottom. Click OK. Now right-click in the right column, choose Text Direction,
+ and select the button that makes the text read bottom-to-top. The text you write into each cell will be upside down with respect to the text in the other cell. When you print the page and hold it in portrait orientation, one of the cells will be inverted.<br />
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="TurnerOfWood" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "TU"); this.style="display: inline-block";'
+<h3> turnerofwood  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The solution above does not apply to the word 2013 version I have. Is there some way to invert the page and the second pass through the printer?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Suzanne S. Barnhill" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> suzanne s. barnhill  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>There are two solutions provided, both of which work in Word 2013 (Jay literally "wrote the book" on Word 2013, so he knows what he's talking about). Which part are you having difficulty with?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jay Freedman" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "JF"); this.style="display: inline-block";'
+<h3> jay freedman  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            An additional question, which I should have asked before: Exactly what do you mean by "invert", first with respect to a line (your original post) and now with respect to a page? Maybe we're talking about different operations.<br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to delete a user&#39;s blog posted under Office 365 Newsfeed&#63; - Microsoft Community</title>
+<h3> annuncisubitoit  say:</h3>
+<h2>            How to delete a user&#39;s blog posted under Office 365 Newsfeed&#63;</h2>
+                    
+<p><strong>Split from this thread.</strong></p>
+<p>Some problem...</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jamesyan_0708  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi AnnunciSubitoit,</p>
+<p>I know you may get some problems related to this thread 
+https://community.office365.com/en-us/f/148/t/405841 , could you share with us more details about the situation?</p>
+<p>Regards,<br />
+James</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jamesyan_0708  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi AnnunciSubitoit,</p>
+<p>Could you share more details about the issue?</p>
+<p>Regards,</p>
+<p>James</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=office_365_for_admins">office_365_for_admins, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to Read Cell &#38; Pull data - Microsoft Community</title>
+<h3> andcatiowa  say:</h3>
+<h2>            How to Read Cell &#38; Pull data</h2>
+                    <p>I have an excel sheet in which data is pulled from another excel file.&nbsp; I need to be able to pull the data per account number.</p>
+<p>Ex...Anema 1 tab I need a formula to lookup the account number 102027 on tab Sheet 3 and pull column 7 the 'Total $' for each row that contains that account number.&nbsp; Then later in the week when it is refreshed I need it to keep the previous data and go look
+ again on that tab per account number and return the total $ amount for each listed.&nbsp; Please help? Macro? Lookup would be preferred if possible?</p>
+<p>
+</p><p>Thanks in advance</p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/303ff70c-9c21-454b-b165-dfbc10f41316" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/303ff70c-9c21-454b-b165-dfbc10f41316" /></a><a href="https://filestore.community.support.microsoft.com/api/images/378964a6-2bc1-4eff-ae5a-46fe554f0616" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/378964a6-2bc1-4eff-ae5a-46fe554f0616" /></a></p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Could you please upload a sample workbook sans confidential data to Onedrive / Googledrive / Box / Dropbox or any other file host and share the link? It is recommended that you zip your file and upload.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andcatiowa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <a href="https://www.dropbox.com/s/xmhk50p7vv78d6e/Copy%20of%20Master%20Using.xlsx?dl=0" target="_blank" rel="noreferrer nofollow">https://www.dropbox.com/s/xmhk50p7vv78d6e/Copy%20of%20Master%20Using.xlsx?dl=0</a>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Is it possible for you to talk to me through Skype as I have few questions to ask? You can go to my website and pick up my Skype address.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andcatiowa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Sorry no I won't be able to talk through Skype
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            1. In which cells you want your output
+<br />2. What is meant by keeping previous data?
+<br />Need the answer for above 2 questions.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andcatiowa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>1. Anema 1 Tab, B92</p>
+<p>2. Meaning for ex...Account #102027 may have two enteries on tab Sheet 3 (3295.42 &amp; 3284.75).&nbsp; I need these two numbers to pull on their own line.&nbsp; Then tomorrow if this sheet updates (we get a new one) the new data will pull in to rows below and not replace
+ what was pulled in for the previous day.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            B92 in Anema 1 already has some entry. Could you please reconfirm?       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andcatiowa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Correct it was my sad attempt to try at a formula.&nbsp; It can be replaced or use the next available cell in B
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            1. You need to remove the entry in row no. 39 in sheet3?
+<br />2. Below is the formula. Let me know whether you get right result
+<br />
+<br />=SUMPRODUCT((MONTH(Sheet3!$B$3:$B$1000)=10)*(Sheet3!$G$3:$G$1000)) 
+<br />
+<br />Where 10 means October.       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andcatiowa  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you....So if I'm wanting the value to be returned as the numers in Column 7 per Account number?</p>
+<p>When I entered the formula it returned 100320.82 in Anema 1 sheet.&nbsp; I removed row no.39.</p>
+<p>Sorry if I did not explain right....I need Anema 1 cell to look up the Account number which on Anema 1 is listed as 102027, needs to go look at Sheet 3 column 4 find the number 102027 and return the value in Column7 for that Account number which would be
+ 3295.45 &amp; 3284.75.</p>
+<p>
+</p><p>Hope this is somewhat clear, thanks!</p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Selling unused Licenses - Microsoft Community</title>
+<h3> cameron w doe  say:</h3>
+<h2>            Selling unused Licenses</h2>
+                    I bought 3 licenses of Microsoft Office home and Student 2007 and i want to sell the 2 remaining licenses that i have no intention of using. Is this legal and or possible?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> sanwin2  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You bought ONE License which you are allowed to use on THREE computers in your household.&nbsp; You do NOT have three licenses
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Raju S Das" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "RS"); this.style="display: inline-block";'
+<h3> raju s das  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>You can refer the link below and check if it helps.</span></p>
+<p><span><a href="http://support.microsoft.com/kb/884202" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/884202</a></span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>.com vs .co.uk domain - Microsoft Community</title>
+<h3> jmgm106  say:</h3>
+<h2>            .com vs .co.uk domain</h2>
+                    <p>I accidentally registered an account to *******.co.uk instead of ********.com&nbsp;</p>
+<p>
+</p><p>Having done a bit of searching I logged into my .com email account and added an alias. The alias was the same ********* but instead of ending in .com it ended in .co.uk.</p>
+<p>
+</p><p>I had no problems doing this and it appears that my email has allowed for this to happen.</p>
+<p>
+</p><p>When I attempted earlier to create the .co.uk version of my email so I could just link the accounts it told me that the email was a registered or reserved domain, but also when i tried to sign in to the email it told me the email did not exist.&nbsp;</p>
+<p>
+</p><p>Although it all seems to be working I'm not quite sure if it's worked for good.</p>
+<p>
+</p><p>Could someone at Microsoft tell me if I've actually solved this problem or if my important emails&nbsp;are still being sent to nowhere?&nbsp;</p>
+<p>
+</p><p>Also, can microsoft&nbsp;make it so that we don't have these domain issues anymore. If you make an email say *** Email address is removed for privacy *** it should link *** Email address is removed for privacy *** and all other domain endings associated with the badsanta&nbsp;email? It seems to make the most
+ sense, and considering that microsoft changes it's domain endings every couple of years this would probably resolve some issues.&nbsp;</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="LordAlukard" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "LO"); this.style="display: inline-block";'
+<h3> lordalukard  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Dear jmgm106,
+<br />
+<br />I am an independent advisor, and I am trying to help other users in Community with my experience in Microsoft products. Please note that I am a user like you.
+<br />
+<br />When you are creating new Microsoft account <a href="https://support.microsoft.com/en-gb/help/4026324/microsoft-account-how-to-create" target="_blank" rel="noreferrer nofollow">https://support.microsoft.com/en-gb/help/402632...</a> you can only choose @outlook.com and @hotmail.com domains. When you want to add alias <a href="https://support.office.com/en-us/article/add-or-remove-an-email-alias-in-outlook-com-459b1989-356d-40fa-a689-8f285b13f1f2" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/add-or...</a> you will have only @outlook.com possibility.
+<br />
+<br />If you had previously created Microsoft account with @outlook.co.uk you will still be able to use it, however you will need to create @outlook.com alias to be sure that you are receiving emails.
+<br />
+<br />As for emails, please send a test email to your self and test if you will receive it or not. If you will than your account should also receive other emails.
+<br />
+<br />As for your suggestion, you can leave a feedback to developers here <a href="https://outlook.uservoice.com/" target="_blank" rel="noreferrer nofollow">https://outlook.uservoice.com/</a> On this forum we are dealing with problems and questions, feedback and ideas are collected at UserVoice
+<br />
+<br />Happy New Year       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=email">email, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Everytime I save a document, I have a OneDrive error saying it - Microsoft Community</title>
+<h3> thepurplelover  say:</h3>
+<h2>            Everytime I save a document, I have a OneDrive error saying it couldn&#39;t sync and Microsoft Upload Center error telling me it couldn&#39;t upload the file.</h2>
+                    <p>Ever since I upgraded to Windows 8 and 8.1, I've had this problem. Ever time I edit a document, the OneDrive throws a fit and refuses to sync it and the Microsoft Upload Center will also throw a fit. The Upload Center will ask me to sign in to fix the problem
+ which sometimes does nothing. Other times it tells me that there's two different versions of the documents, a server version and "my" version. I've lost past documents by saving what turns out to be the wrong version and I'm tired of having to do this every
+ time I edit a document. Help?</p>
+<p>I have a laptop that uses Windows 8.1 PC.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> mohan suryanarayan  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello There,</p>
+<p>
+</p><p>Thank you for posting on Microsoft Community. </p>
+<p>
+</p><p>In order to help us resolve this issue, please send us the following information.&nbsp;</p>
+<ol>
+<li>Please send us the complete error message/s that appears when trying to save/upload your documents to OneDrive.</li><li>You may also add screenshots of all the errors. </li><li><span style="color: rgba(0, 0, 0, 1)">To add screenshot, click on <strong>Add image &gt; Browse
+</strong>and select the screen shot<strong> &gt;</strong> and then click on<strong> Upload.</strong></span></li></ol>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/d35f7901-b255-4f84-b633-62bb47b4685f" /></p>
+<p>
+</p><p>Also, are you working on and saving documents locally and then uploading the documents, or are you working on the documents from OneDrive itself and saving documents on OneDrive?
+</p>
+<p>
+</p><p>Let us know the above. </p>
+<p>
+</p><p>Thank you.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> danielrbjo  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<p>Hello There,</p>
+<p>
+</p><p>Thank you for posting on Microsoft Community. </p>
+<p>
+</p><p>In order to help us resolve this issue, please send us the following information.&nbsp;</p>
+<ol>
+<li>Please send us the complete error message/s that appears when trying to save/upload your documents to OneDrive.</li><li>You may also add screenshots of all the errors. </li><li><span style="color: rgba(0, 0, 0, 1)">To add screenshot, click on <strong>Add image &gt; Browse
+</strong>and select the screen shot<strong> &gt;</strong> and then click on<strong> Upload.</strong></span></li></ol>
+<p><img src="https://filestore.community.support.microsoft.com/api/images/29096500-f7bb-4200-802a-10e3f04923df" /></p>
+<p>
+</p><p>Also, are you working on and saving documents locally and then uploading the documents, or are you working on the documents from OneDrive itself and saving documents on OneDrive?
+</p>
+<p>
+</p><p>Let us know the above. </p>
+<p>
+</p><p>Thank you.</p>
+</blockquote>
+<p>
+</p><p>I was relieved, somewhat, to find that someone else has exactly the same problem. OneDrive and Office Upload Center seemingly irreparably damaged. On not just one, but two computers. I tried some of the online forum remedies, to no avail. Even called Microsoft
+ support, who said I should remove and then re-install office on BOTH computers? Really? This is the only remedy? I've spent a lot of money on Microsoft products this year, and it seems to have gotten me ........... the same place that Microsoft products have
+ always led to, problems, frustration and no real solutions.</p>
+<p>
+</p><p>An extremely annoyed, Dan B.</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onedrive">onedrive, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+

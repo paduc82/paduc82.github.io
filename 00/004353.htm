@@ -1,0 +1,1995 @@
+    <title>ERROR &#58; Re&#58; Item cannot be found in the collection - Microsoft Community</title>
+<h3> missminchin  say:</h3>
+<h2>            ERROR &#58; Re&#58; Item cannot be found in the collection corresponding to the requested name or ordinal in Audit Trail Access 2010</h2>
+                    <p>Dear All,</p>
+<p>
+</p><p>I'm having good progress with my DBase for a month now. As a novice, I'm stuck on finding the simple audit log to use to track changes and deletions. I did try Allen Browne's code but always get an error of not finding tbl or syntax error despite copying
+ them step by step! At the end I gave up after too much migraine!</p>
+<p>
+</p><p>I came across the audit log by Martin Green in fontstuff which is quite easy to follow however I have 2 subforms and some main forms to audit&nbsp;in my DBase and find it not working. I found the code below&nbsp;in google which apparently&nbsp;has been&nbsp;tweaked to work
+ if you have Subforms. I did try it in my subforms but I kept having the message above and changes is not reflecting on my tblAuditTrail. If I do try to change my form without a subform it gives me this ERROR "You entered an expression that has an invalid reference
+ to the property of form/report". Each controls to be audited are bound and has Audit in tags. I also have these codes in Before update and After delete on each forms to be audited:</p>
+<p>
+</p><p>Private Sub Form_AfterDelConfirm(Status As Integer)<br />
+If Status = acDeleteOK Then Call AuditChanges("PatientID", "DELETE")<br />
+End Sub</p>
+<p>
+</p><p>Private Sub Form_BeforeUpdate(Cancel As Integer)<br />
+If Me.NewRecord Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Call AuditChanges("PatientID", "NEW")<br />
+&nbsp;&nbsp;&nbsp; Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Call AuditChanges("PatientID", "EDIT")<br />
+&nbsp;&nbsp;&nbsp; End If</p>
+<p>End Sub</p>
+<p>
+</p><p><em>All help would be greatly appreciated. I have been looking at this for weeks and couldn't figure out anything :(</em></p>
+<p>
+</p><p><em>Thank you very much in advance!!</em></p>
+<p>
+</p><p><em>MissM</em></p>
+<p>
+</p><p><em>Here is the AuditChanges code :</em></p>
+<p>
+</p><p>Sub AuditChanges(IDField As String, UserAction As String)<br />
+&nbsp;&nbsp;&nbsp; On Error GoTo AuditChanges_Err<br />
+&nbsp;&nbsp;&nbsp; Dim cnn As ADODB.Connection<br />
+&nbsp;&nbsp;&nbsp; Dim rst As ADODB.Recordset<br />
+&nbsp;&nbsp;&nbsp; Dim ctl As Control<br />
+&nbsp;&nbsp;&nbsp; Dim datTimeCheck As Date<br />
+&nbsp;&nbsp;&nbsp; Dim strUserID As String<br />
+&nbsp;&nbsp;&nbsp; Set cnn = CurrentProject.Connection<br />
+&nbsp;&nbsp;&nbsp; Set rst = New ADODB.Recordset<br />
+&nbsp;&nbsp;&nbsp; rst.Open "SELECT * FROM tblAuditTrail", cnn, adOpenDynamic, adLockOptimistic<br />
+&nbsp;&nbsp;&nbsp; datTimeCheck = Now()<br />
+&nbsp;&nbsp;&nbsp; strUserID = Environ("USERNAME")<br />
+&nbsp;&nbsp;&nbsp; Select Case UserAction<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case "EDIT"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; For Each ctl In Screen.ActiveForm.ActiveControl.Form<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If ctl.Tag = "Audit" Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If Nz(ctl.Value) &lt;&gt; Nz(ctl.OldValue) Then<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With rst<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AddNew<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![DateTime] = datTimeCheck<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![UserName] = strUserID<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![FormName] = Screen.ActiveForm.ActiveControl.Form.Name<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![Action] = UserAction<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![RecordID] = Screen.ActiveForm.ActiveControl.Form(IDField).Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![FieldName] = ctl.ControlSource<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![OldValue] = ctl.OldValue<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![NewValue] = ctl.Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Update<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End If<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Next ctl<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Case Else<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; With rst<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .AddNew<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![DateTime] = datTimeCheck<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![UserName] = strUserID<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![FormName] = Screen.ActiveForm.ActiveControl.Form.Name<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![Action] = UserAction<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![RecordID] = Screen.ActiveForm.ActiveControl.Form(IDField).Value<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; .Update<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; End With<br />
+&nbsp;&nbsp;&nbsp; End Select<br />
+AuditChanges_Exit:<br />
+&nbsp;&nbsp;&nbsp; On Error Resume Next<br />
+&nbsp;&nbsp;&nbsp; rst.Close<br />
+&nbsp;&nbsp;&nbsp; cnn.Close<br />
+&nbsp;&nbsp;&nbsp; Set rst = Nothing<br />
+&nbsp;&nbsp;&nbsp; Set cnn = Nothing<br />
+&nbsp;&nbsp;&nbsp; Exit Sub<br />
+AuditChanges_Err:<br />
+&nbsp;&nbsp;&nbsp; MsgBox Err.Description, vbCritical, "ERROR!"<br />
+&nbsp;&nbsp;&nbsp; Resume AuditChanges_Exit</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tom van Stiphout" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "TV"); this.style="display: inline-block";'
+<h3> tom van stiphout  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>&gt; &nbsp;I did try Allen Browne's code but always get an error of not finding tbl or syntax error despite copying them step by step! At the end I gave up after too much migraine!</p>
+<p>
+</p><p>Code samples are not provided to be copied verbatim; rather they are coding suggestions enticing the good guys to spend more time learning about VBA. The others, they are left asking questions like yours.</p>
+<p>
+</p><p>Take this the way it is intended: step up your game and learn as much as you can about VBA, and tinker as little as possible.</p>
+<p />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Scottgem" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-extrasmall"; this.setAttribute("alt", "SC"); this.style="display: inline-block";'
+<h3> scottgem  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>May I suggest you look at my Audit Trail article on my blog. That example uses data macros so the changes are tracked on the table level and you don't have to worry about Subforms. I think its a lot easier to follow and actually requires very little if any
+ customization.</p>
+<p>
+</p><p>But I agree with Tom, that sample code found on the Net is generally to be used as a guideline not to be used verbatim.</p>
+<p>
+</p><p>
+</p><p />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=access">access, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook and Spectrum Email Sending Compatibility - Microsoft Community</title>
+<h3> davidyoung0446  say:</h3>
+<h2>            Outlook and Spectrum Email Sending Compatibility</h2>
+                    <p>I use Spectrum (roadrunner old account) for email in and out of Outlook.&nbsp; Recently on 3 occasions I can only receive and not send email.&nbsp; Discussions with both MS and Spectrum results in a circular headache.</p>
+<p>All settings are correct and Spectrum Webmail works okay but very cumbersome.</p>
+<p>
+</p><p>Other RR friends have had the same issue.&nbsp; This is the third time at this site.&nbsp; However, this incident is the longest lasting.&nbsp; The issue cleared up after two to three times previously but this is now six days since we have been able to send from this location.&nbsp;
+ All four computers at this site have the same issue.</p>
+<p>
+</p><p>Anyone have similar issues or know of any resolution?</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pedro m  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi DavidYoung0446,
+<br />
+<br />My name is Pedro. I'm an Independent Advisor trying to help.
+<br />
+<br />What error do you get exactly when you send the emails?
+<br />
+<br />Do you receive a bounce-back email?
+<br />
+<br />In the meantime please check your public IP address here and make sure that is not on a blacklist.
+<br />
+<br /><a href="https://mxtoolbox.com/blacklists.aspx" target="_blank" rel="noreferrer nofollow">https://mxtoolbox.com/blacklists.aspx</a>
+<br />
+<br />Note: This is a non-Microsoft website. The page appears to be providing accurate, safe information. Watch out for ads on the site that may advertise products frequently classified as a PUP (Potentially Unwanted Products). Thoroughly research any product advertised on the site before you decide to download and install it.
+<br />
+<br />Regards.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi David,
+<br />Go to Send &amp; Receive settings - Ctrl+Alt+S - what is your 'check every nn minutes' time? It should be between 5 and 8 minutes. 
+<br />
+<br />What happens when you try to send? Any error messages?       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ro.ro  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello, 
+<br />I am Rob Independent Advisor, I am here to help you to solve your issue.
+<br />Thank you for contacting the community It is a pleasure for us to help you out.
+<br />-
+<br />1-First you need to check your connection from affected PC to SMTP server endpoint.
+<br />-Enable Telnet client.
+<br />If you are using Windows 10 follow:
+<br /><a href="https://social.technet.microsoft.com/wiki/contents/articles/38433.windows-10-enabling-telnet-client.aspx" target="_blank" rel="noreferrer nofollow">https://social.technet.microsoft.com/wiki/conte...</a>
+<br />Then open windows powershell and  type:
+<br />Yo9u need to know your smtp server and the por you are connecting to:Eg:
+<br />telnet  smtp.yoursmtpServer.com 587
+<br />-If the connection is stablished you going to receive the smtp server welcome Header. 
+<br />
+<br />2-Try to send an email from PowerShell from Affected PC where you have your account configured in Outlook Client. 
+<br />This is an example for Gmail Account, you need to know your server email provider configuration for smtp service.
+<br />Eg:  Gmail smtp server: smtp.gmail.com
+<br />Requires TLS: Yes (if available) 
+<br />Requires Authentication: Yes 
+<br />Port for TLS/STARTTLS: 587
+<br />---For previous Configuration this is the PowerShell script:
+<br />$username="*** Email address is removed for privacy ***"
+<br />$password=ConvertTo-SecureString "MyAccountPassword" -AsPlainText -Force
+<br />$mycredentials = New-Object System.Management.Automation.PSCredential ($username, $password)
+<br />Send-MailMessage -To *** Email address is removed for privacy *** -subject "Send from powershell-Submission" -body "test from powershell" -UseSsl -Port 587 -SmtpServer smtp.gmail.com -From $username -Credential $mycredentials 
+<br />
+<br />-Collect any errors received.
+<br />
+<br />3-If the issue persists
+<br />Configure a new Outlook profile
+<br /><a href="https://support.office.com/en-us/article/overview-of-outlook-e-mail-profiles-9073a8ac-c3d6-421d-b5b9-fcedff7642fc" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/overvi...</a>
+<br />
+<br />-
+<br />I hope this helps, 
+<br />Please let me know if you have further questions.
+<br />Remember, your rating will be very welcome.
+<br />Regards,
+<br />Rob       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Seeing OneDrive for the wrong user - Microsoft Community</title>
+<h3> matthewapplebaum  say:</h3>
+<h2>            Seeing OneDrive for the wrong user</h2>
+                    
+<p>Hello,</p>
+<p>We have an Office 365 E1 subscription, with E2 licenses (Not sure why that discrepancy).</p>
+<p>Problem:</p>
+<p>User 1 borrows User 2's computer without logging User 2 out. User 1 opens a browser (Google Chrome), logs into
+<a href="https://login.microsoftonline.com" target="_blank" rel="noreferrer nofollow">login.microsoftonline.com</a> to access their email/OneDrive/etc.</p>
+<p>User 1 later logs out, and closes the browser.</p>
+<p>User 2 comes back to her computer, opens a browser (still Chrome), logs into <a href="https://login.microsoftonline.com" target="_blank" rel="noreferrer nofollow">
+login.microsoftonline.com</a>. She sees her own email, BUT, when she navigates to OneDrive, she sees User 1's OneDrive!</p>
+<p>User 2 reboots her computer. Opens browser to log in, sees her own email, STILL see's User 1's OneDrive. &nbsp;Days have passed, she still can see User1.s OneDrive.</p>
+<p>Shouldn't this not be happening??</p>
+<p>Thank you!<br />
+Matthew</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> allanlu_msft  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Matthew,</p>
+<p>I’d like to confirm whether User 2 has cleared browsing data or reset settings in Chrome? If not, could you perform these and share us the result?</p>
+<p>If these has been done and the issue persists, please help clarify the following information for our further troubleshooting.<br />
+1. How about the result for the User 2 to use another browser or use the <strong>
+New incognito window</strong> for Chrome?<br />
+2. Could you capture the licenses status of these two users? To get these, please sign in the user’s account and go to this page
+<a href="https://portal.office.com/account/#subscriptions" target="_blank" rel="noreferrer nofollow">https://portal.office.com/account/#subscriptions</a>.&nbsp; To insert a screenshot, please click on
+<strong>Use rich formatting</strong> and select the <strong>Insert Image</strong> icon.</p>
+<p>In addition, please also provide these two user’s account and their OneDrive page’s URL for our reference. To protect your privacy, I have sent you a private message to collect it. You can check the PM via the link below:<br />
+https://community.office365.com/user/conversations.</p>
+<p>We will continue to assist you based on the update.</p>
+<p>Regards,<br />
+Allan</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=office_365_for_admins">office_365_for_admins, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>can not type Vietnamese language in IE browser - Microsoft Community</title>
+<h3> ngocdalat18  say:</h3>
+<h2>            can not type Vietnamese language in IE browser</h2>
+                    <p>I just downloaded IE 9 to replace the old version. At the moment I encounter a problem: I can not type Vietnamese language in the new IE9 browser ( even in Yahoo Mail, Hotmail and Gmail). But when I change to another browser such as Firefox or Google Chrome
+ I can do that in others. The problem only happens in my own computer.</p>
+<p>I go to another computers in my house the problem doesn 't happen. All of the computers and laptops in my house use Windows 7.</p>
+<p>Plese show me how to deal with the problem.</p>
+<p>NgocOregon</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Azam K" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "AK"); this.style="display: inline-block";'
+<h3> azam k  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>
+<span><span>Hi,</span></span></p>
+<p>
+<span><span>I would suggest you to refer this link and check if it helps:</span></span></p>
+<p>
+<a href="http://windows.microsoft.com/en-US/windows7/Change-your-Internet-Explorer-9-language-encoding-settings" target="_blank" rel="noreferrer nofollow"><span><span>http://windows.microsoft.com/en-US/windows7/Change-your-Internet-Explorer-9-language-encoding-settings</span></span></a></p>
+<p>
+<span><span>&nbsp;</span></span></p>
+<span>Hope it helps.</span>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Bug Fix - Right Clicking performs a Left Click periodically - Ver 1808 - Microsoft Community</title>
+<h3> rayray72  say:</h3>
+<h2>            Bug Fix  - Right Clicking performs a Left Click periodically - Ver 1808</h2>
+                    <p style="margin-left: 0"><span style="color: rgba(51, 51, 51, 1)">With Office 365 Business (2016) Subscription, Right Clicking in Office Products (Word &amp; Outlook tested) performs a Left Click periodically. It may take 12 clicks before it happens, or it may happen 5 times
+ in a row. Does not happen in any other program. (IE, Edge, Chrome, Adobe Reader, Notepad++) It is happening to multiple users on multiple computers with different hardware and mice. Also happens on my personal non domain laptop, using my Home O365 subscription.
+ I was at 2013 and it was fine. I upgraded to the newest version (O365 Ver 1808 Build 10730.20102) and it started doing it. Only thing common between all systems is Office 365 version 1808 - Builds 10730.20127 &amp; 10730.20102.</span></p>
+<p><span style="color: rgba(51, 51, 51, 1)">I have done 2 days of troubleshooting, everything from Online Office repairs, reinstalled Office, different mice and user profiles, and it even happen in safe mode. All Windows and Office updates are done and sfc /scannow ran
+ 3 times and the problem still persists, and nothing showing in the Event Viewer. Again, this is occurring on about 10 systems and the only thing in common is Office 365 Ver 1808.</span></p>
+<p style="margin-left: 0"><span style="color: rgba(51, 51, 51, 1)">I contacted O365 Support. They are pretty much useless and not listening to anything I tell them, so I trying this as an alternate method. I am not looking for troubleshooting help, and I don't expect this
+ to be fixed until the next version is released. I am hoping other users with the same version can duplicate the issue and a developer sees this.</span></p>
+<p style="margin-left: 0"><span><span style="color: rgba(0, 16, 0, 1)">T<span>he easiest way to test this is to open an email with a safe hyperlink and right click it a dozen times. For 10 out of 11 of my users a web browser opens the link.&nbsp;</span></span></span></p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wafflewizard1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hey ray<br />This probably isn't the correct place to report bugs as we are volunteer helpers. I would report that to Microsoft. Here's a guide to leaving feedback/bugs: <a href="https://support.office.com/en-us/article/how-do-i-give-feedback-on-microsoft-office-2b102d44-b43f-4dd2-9ff4-23cf144cfb11?ui=en-US&amp;rs=en-US&amp;ad=US#platform=Windows" target="_blank" rel="noreferrer nofollow">https://support.office.com/en-us/article/how-do...</a>       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rayray72  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for the quick reply and the info. I already left feedback like your link states, but I was reading somewhere else that said the MS Developers sometimes read things on here, so I thought I'd give it a shot.&nbsp;
+</p>
+<p>
+</p><p>Thanks again!</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> wafflewizard1  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            No problem       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Tina Zhou MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "TZ"); this.style="display: inline-block";'
+<h3> tina zhou msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi&nbsp;RayRay72,</p>
+<p>
+</p><p>Thanks for posting the question here. We are here to assist you to troubleshoot the issue if you would like to. For the Outlook issue, as it is different application, I'd like to suggest posting a new thread so that we can handle it separately.</p>
+<p>
+</p><p>Here is the test result I'd like to share with you. I test on the latest Office version 1809 Build 10827.20150) on Windows 7 and 10, and can not reproduce the issue. You may go to File &gt; Account &gt; Update Options to update your Office to check results.</p>
+<p>
+</p><p>Meanwhile, as&nbsp;Wafflewizard1 mentioned, you can share your feedback with the related Office team by 2 ways.</p>
+<p>1. Open Word or Outlook application, click File &gt; Feedback.</p>
+<p>2. Give feedback via <a href="https://word.uservoice.com/forums/304924-word-for-windows-desktop-application" target="_blank" rel="noreferrer nofollow">
+Word User Voice</a>and <a href="https://outlook.uservoice.com/forums/322590-outlook-2016-for-windows" target="_blank" rel="noreferrer nofollow">
+Outlook User Voice</a>.</p>
+<p>
+</p><p>Regards,</p>
+<p>Tina</p>
+<p>
+</p><p>
+</p>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Microsoft Lumia 640 LTE - Microsoft Community</title>
+<h3> jeff sumner  say:</h3>
+<h2>            Microsoft Lumia 640 LTE</h2>
+                    <p>A friend of mine just recently gave me his old windows phone (Microsoft Lumia 640 LTE.) and it won't let me download any apps because it says I'm a child and I need a parents permission. I'm 30 years old by the way. I reset the phone and created a Microsoft
+ account but nothing has worked. Can anyone help me?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dennis zac  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Jeff,</p>
+<p>
+</p><p>To isolate the concern, please answer the following questions:</p>
+<p>
+</p><ul>
+<li>Did you perform a <strong><a href="http://answers.microsoft.com/en-us/mobiledevices/wiki/mdlumia-mdsettings/how-to-soft-and-hard-reset-your-windows-phone/4ec36474-c21e-4aec-ad1b-30f3afaf824d">soft or hard reset</a></strong>?</li><li>Which version of operating system (OS) build is currently installed on your phone?</li></ul>
+<p>
+</p><p>We're looking forward to your reply.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jeff sumner  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi. Thank you for responding to my question. I performed a hard reset and the OS is 8.10.15148.160.
+        </p>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=microsoft_account">microsoft_account, </a> <br>
+<a href="/search?q=400-series">400-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>&#34;Reply,&#34; &#34;Reply All&#34; and &#34;Forward&#34; problems in - Microsoft Community</title>
+<h3> wmfostervla  say:</h3>
+<h2>            &#34;Reply,&#34; &#34;Reply All&#34; and &#34;Forward&#34; problems in Outlook 2010.</h2>
+                    
+<p><span><span>I recently bought a new laptop running Windows 7 with Microsoft Office 2010 installed. I am having a problem with replying and forwarding mail with Outlook 2010.
+ Creating new mail and sending works fine. However, whenever I try “reply,”<span>&nbsp;</span>“reply all,” or “forward” the message created just sits in the Outbox after I send it. I get the following error message.</span></span></p>
+<p><em><span><span>Task 'wmfoster@() - Sending' reported error (0x8004010F) : 'Outlook data file cannot be accessed.'</span></span></em></p>
+<p><span><span>The problem does not seem to lie with my email server because I can perform those operations normally from webmail. The problem only happens in Outlook.</span></span></p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Mukherjee Ashutosh" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "MA"); this.style="display: inline-block";'
+<h3> mukherjee ashutosh  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Refer the KB article mentioned below to open the old personal folder from other profile in outlook which contains all the data:</p>
+<p><a href="http://support.microsoft.com/kb/291636" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/291636</span></a></p>
+<p>&nbsp;</p>
+<p>Once the new profile is all set and running, you can delete the old profile referring the link below:</p>
+<p><a href="http://office.microsoft.com/en-us/outlook-help/remove-an-outlook-e-mail-profile-HP001230477.aspx" target="_blank" rel="noreferrer nofollow"><span>http://office.microsoft.com/en-us/outlook-help/remove-an-outlook-e-mail-profile-HP001230477.aspx</span></a></p>
+<p>&nbsp;</p>
+<p>Note: although the link applies to outlook 2007/windows vista the same steps can be applied for outlook 2010/windows 7.</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> surya prasad vemulapalli  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Try creating a new Outlook profile and check if it helps.</span></p>
+<p><span>To create a new profile refer:</span><span><a href="http://www.support.microsoft.com/kb/829918" target="_blank" rel="noreferrer nofollow"><span>www.support.microsoft.com/kb/829918</span></a></span></p>
+<p><span>&nbsp;Once you create a new profile, set up the accounts again and see if you are able to reply to messages.</span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>remove shortcut from shortcut icon label Word 2010 - Microsoft Community</title>
+<h3> chuckmg00  say:</h3>
+<h2>            remove shortcut from shortcut icon label Word 2010</h2>
+                    I create shortcuts on the desktop for all my important folders. &nbsp;For example, C-Drive, Program Files, Program Files(86), etc. &nbsp;In creating the shortcut in Win 7, the name of the shortcut is succeeded by " - shortcut". &nbsp; This is annoying to say the least.
+ &nbsp;For previous versions of Office there were apps such as Super Toys from Microsoft that offered relief. &nbsp;I can no linger find such apps for Word 2010. &nbsp;Any help would be greatly appreciated.
+<div><br />
+</div>
+<div>Chuck</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Doug Robbins - MVP Office Apps &#38; Services &#40;Word&#41;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "DR"); this.style="display: inline-block";'
+<h3> doug robbins - mvp office apps &#38; services &#40;word&#41;  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>I create shortcuts on the desktop for all my important folders. &nbsp;For example, C-Drive, Program Files, Program Files(86), etc. &nbsp;In creating the shortcut in Win 7, the name of the shortcut is succeeded by " - shortcut". &nbsp; This
+ is annoying to say the least. &nbsp;For previous versions of Office there were apps such as Super Toys from Microsoft that offered relief. &nbsp;I can no linger find such apps for Word 2010. &nbsp;Any help would be greatly appreciated.
+<div><br />
+<div>Chuck</div>
+</blockquote>
+<br />
+Right click on the shortcut and select Rename.&nbsp; Then edit the name of the shortcut to suit your fancy.
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Chuckmg00" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-extrasmall"; this.setAttribute("alt", "CH"); this.style="display: inline-block";'
+<h3> chuckmg00  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <blockquote>
+<blockquote>Right click on the shortcut and select Rename.&nbsp; Then edit the name of the shortcut to suit your fancy.</blockquote>
+</blockquote>
+Thanks Doug. &nbsp;I am familiar with that route, but that means I must rename every shortcut ... every time! &nbsp; &nbsp;In previous versions of Win, there was a folder option that if checked precluded the term "Shortcut" being assigned. &nbsp;There were also other apps that
+ provided the same function. &nbsp; I was looking for something that replicated that previous capability.
+<div><br />
+<div>Chuck<br />
+<div><br />
+<div><br />
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=word">word, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Outlook 2010 x64 error code &#58;0x80070057 - Microsoft Community</title>
+<h3> alvaro ceballos  say:</h3>
+<h2>            Outlook 2010 x64 error code &#58;0x80070057</h2>
+                    
+<p>Hi, I´m trying to configure my account of Microsoft Exchange 2003 with MS Office 2010 x64, but when i start Outlook send me the next error:</p>
+<p><br />
+Unknown error. Error code: 0x80070057</p>
+<p>I have W7 professional x64 in my laptop</p>
+<p>thanks for your help<br />
+Regards!.</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> surya prasad vemulapalli  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Refer the following article which talks about the same error message on Exchange server 2003 in Outlook 2010 and check if it helps.</span></p>
+<p><span><a href="http://support.microsoft.com/kb/2028193" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/2028193</span></a></span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> alvaro ceballos  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for your help, but i try with the XML file and don´t works for me. When i configure manually works, but my Office Communicator do not synchronizes correctly with my Outlook.</p>
+<p>&nbsp;</p>
+<p>Please need some help.</p>
+<p>Thanks</p>
+<p>Regards!.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>OneNote Feature Request&#58; Extend the ability to collapse indented - Microsoft Community</title>
+<h3> andrewadr  say:</h3>
+<h2>            OneNote Feature Request&#58; Extend the ability to collapse indented text to text within tables</h2>
+                    I love OneNote, and one feature that is excellent is the ability to create collapsible outlines.&nbsp; In an outline, if you double click next to one bullet, you can collapse all the bullets underneath.<br />
+<br />
+The problem is, if you have outlines / bullets inside of a table, this doesn't work.<br />
+<br />
+It would be awesome if this feature could work inside tables as well.<br />
+<br />
+Thank you for a great product!<br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Girish M" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GM"); this.style="display: inline-block";'
+<h3> girish m  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><font><font color="#000000"><font>Hi Andrew,</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Since we use the app, too, we want it to be as awesome as possible. We listen to all feedback and consider it for future releases. Your feedback
+ helps us know which features are most important to you. However, for a variety of reasons we cannot discuss planned features, their priorities, or the dates that we expect these features to be released.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>If you have any other questions related to Office products, get back to us and we’ll be happy to assist you.</font></font></font></p>
+<p><font color="#000000">&nbsp;</font></p>
+<p><font><font color="#000000"><font>Thank you
+</font></font></font></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Omer Atay&#144;" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "OA"); this.style="display: inline-block";'
+<h3> omer atay&#144;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>You can use this macro to collapse outlines/bullets inside of a table: <a href="http://omeratay.com/onetastic/?r=macroland&amp;id=E02015C855D743638E1E6E4176B93519" target="_blank" rel="noreferrer nofollow">
+http://omeratay.com/onetastic/?r=macroland&amp;id=E02015C855D743638E1E6E4176B93519</a></p>
+<p>&nbsp;</p>
+<p>Note that this collapses the parent outline, not the current one. If you really need the current one, let me know and I can add a macro that does that.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andrewadr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <div>
+<div>Hi Girish, thank you for the reply. &nbsp;Sorry for the late response, I did not have my email forwarding set up correctly, so I did not see your reply until now.</div>
+<div><br />
+<div>Your reply seems to suggest that I should be posting feature requests in a different venue? Is this the correct place for me to be posting this?</div>
+<div><br />
+<div>Actually, shortly after I posted my question, I figured out that you CAN collapse indented text and lists that are in tables. &nbsp;But, the implementation is buggy.</div>
+<div><br />
+<div>Normally, there is an icon next to the parent bullet in the list that lets you collapse all the bullets underneath. &nbsp;You simply double click the icon to collapse the list. &nbsp;But when the list is in a table, that icon does not show up. &nbsp;And no matter where
+ you double click, you can't collapse the list.</div>
+<div><br />
+<div>But you CAN collapse the list by using the keyboard shortcut (Alt+Shift+Minus Sign).</div>
+<div><br />
+<div>And once you collapse the list using the keyboard shortcut, NOW the aforementioned icon appears, and NOW you can expand and collapse the list in the typical method, via double clicking.</div>
+<div><br />
+<div>I've attached a picture to illustrate this. &nbsp;Given this inconsistency, this doesn't seem like an intentional omission, but rather a bug.</div>
+<div><br />
+<div>Could you please confirm that this inconsistency / bug has been noted by the appropriate individuals? &nbsp;Or, if this is not the right forum to be posting this, could you please let me know who I should contact?</div>
+<div><br />
+<div>Thank you very much. &nbsp;Have a great week!</div>
+<div><br />
+<div><img src="https://filestore.community.support.microsoft.com/api/images/343a1a14-3dec-48fb-82a2-7a8a96be8cd4" /></div>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> andrewadr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for the helpful suggestion Omer! &nbsp;
+<div><br />
+<div>It's funny, I already had Onetastic, because I'd independently come across your work &nbsp;a while back. &nbsp;I'm a longtime fan of OneNote and was looking for ways to make it even more helpful, which of course led me to your great work.&nbsp;</div>
+<div><br />
+<div>I downloaded the Macro and it works, but as you can see from my comment above, the built-in keyboard shortcut also works. &nbsp;Since the keyboard shortcut seems to work more quickly, I will stick with that. &nbsp;Thank you though!</div>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> richardfaasen  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I've been using the collapse shortcut for some time now. It sort of works, but as mentioned it behaves erratic and it is not optimal. The problem was reported 4 years ago. Could this bug get a higher priority on the list? Thanks for this great product!
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=onenote">onenote, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Test Bing Conversion - Microsoft Community</title>
+<h3> alevo  say:</h3>
+<h2>            Test Bing Conversion</h2>
+                    <p>Hello, we ran our ad last week, created a Goal with Universal Event Tracking and added a code to the body of our website. Is it possible to test that we set everything right way and it works properly? Because we get clicks and expect conversions also. Thank
+ you in advance!&nbsp;</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Alevo, </p>
+<p>
+</p><p>
+</p><p>&nbsp;Thank you for contacting Bing Ads Support. We recommend that you reach our support team via chat or call 1-800-518-5689 to assure the settings are set correctly to capture the conversion desired. If it's a purchase we recommend the customer test the purchase.
+</p>
+<p>
+</p><p><a href="http://advertise.bingads.microsoft.com/en-us/universal-event-tracking" target="_blank" rel="noreferrer nofollow">UET Tracking
+</a></p>
+<p>
+</p><p>Regards </p>
+<p>Priscilla </p>
+<p>Bing Ads Egineer </p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=microsoft_advertising">microsoft_advertising, </a> <br>
+<a href="/search?q=reporting,_universal_event_tracking_&#40;uet&#41;,_conversions">reporting,_universal_event_tracking_&#40;uet&#41;,_conversions, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>instagram require attention... - Microsoft Community</title>
+<h3> kennedymdoe  say:</h3>
+<h2>            instagram require attention...</h2>
+                    when ever i try to install instagram on my lumia 535 it says "attention required" and stops installing i tried restarting i enabled location but still stack there what should i do?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="no-replies-section">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=mobile_devices">mobile_devices, </a> <br>
+<a href="/search?q=microsoft_lumia_and_nokia_lumia">microsoft_lumia_and_nokia_lumia, </a> <br>
+<a href="/search?q=apps_&#43;_store">apps_&#43;_store, </a> <br>
+<a href="/search?q=500-series">500-series, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>2010 Excel navigation slider visibility - Microsoft Community</title>
+<h3> winq_1000  say:</h3>
+<h2>            2010 Excel navigation slider visibility</h2>
+                    Can the color or transparency of slider navigation tool be changed?&nbsp;&nbsp; Large data spreadsheets with many rows make the slider tool very small and difficult to find Changing the color Theme does not solve this issue...just as difficult to find the slider
+ location in any of the 3 theme colors..contrast issue
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michelle vil  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi, </p>
+<p>
+</p><p>Allow us to assist you with this. Kindly answer the following questions:</p>
+<p>
+</p><ul>
+<li>Are you referring to the display scroll bars?</li><li>Is it possible to send us a screenshot of the exact scenario you're experiencing? Just make sure to hide any personal information.</li></ul>
+<p>
+</p><p>Looking forward to your reply.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> winq_1000  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>The scroll tool is almost indistinct for only 650+ rows of this sample spreadsheet...would love to see an option to make slider tool very dark on light background or very light on dark background...the Silver/Black/Blue color options MS provides do not provide
+ any contrast between the scroll tool and the scrolling region on right side of display of spreadsheets.</p>
+<p>Sample below</p>
+<p><br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> winq_1000  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Screenshot</p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/df33c2ee-630f-4f75-b593-76a4f35d4cd2" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/df33c2ee-630f-4f75-b593-76a4f35d4cd2" /></a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> winq_1000  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>My screenshot came out as a reply to my post instead of reply to your request for screenshot...hope you get an opportunity to look at my issue of little contrast for the scroll navigation bar.</p>
+<p>Thanks.</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michelle vil  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thank you for the screenshot.<span> </span><span><span>We understand that you want to change or adjust the scroll bar
+</span></span><span><span>color. However, it is already set by default. We suggest posting your suggestions or feedback
+<strong><a href="https://excel.uservoice.com/" target="_blank" rel="noreferrer nofollow">here</a></strong>. We all hope for the best.</span></span>
+        </p>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>je n ais pas mon msn en francais mais en allemand le reste est en - Microsoft Community</title>
+<h3> fernandvitoux  say:</h3>
+<h2>            je n ais pas mon msn en francais mais en allemand le reste est en francais</h2>
+                    <strong>bonjour</strong>&nbsp; je n'ais pas mon msn en francais mais en allemand&nbsp; je ne sait que faire pour l'avoir en francais je vous remercie
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="JMH3143" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-small"; this.setAttribute("alt", "JM"); this.style="display: inline-block";'
+<h3> jmh3143  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Please select your language from the drop down list at the bottom of the page to post your question in the language of your choice. The forum you posted in is for English only. If you do not find the desired language , support options for additional international
+ locations can be found by following the link below:<br />
+<br />
+<br />
+Bonjour,<br />
+S'il vous plaît sélectionnez votre langue dans la liste déroulante ci-dessus pour poster votre question dans la langue de votre choix. Le forum où vous avez posté est en anglais uniquement. Si vous ne trouvez pas la langue de votre choix ci-dessus, en charge
+ des options pour d'autres destinations internationales peuvent être trouvées en suivant le lien ci-dessous:(fr)<br />
+<br />
+<br />
+http://support.microsoft.com/common/international.aspx
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=internet_explorer">internet_explorer, </a> <br>
+<a href="/search?q=internet_explorer_9">internet_explorer_9, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=">, </a> <br>
+<a href="/search?q=microsoft_edge">microsoft_edge, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Accidentally deleted my primary alias - Microsoft Community</title>
+<h3> nilsilva1  say:</h3>
+<h2>            Accidentally deleted my primary alias</h2>
+                    Accidentally deleted my primary alias and now i cant login to my account with my actual email adress. I was able to create a new alias but it is different and all my accounts are with the old email adress.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Diane Poremsky MVP" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> diane poremsky mvp  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You'll need to create a new outlook.com account using it - you can't add it as an alias to an existing account. :(       
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Changing the Colors of the Comments in Excel 2016, MAC version - Microsoft Community</title>
+<h3> kristyg1211  say:</h3>
+<h2>            Changing the Colors of the Comments in Excel 2016, MAC version</h2>
+                    <p>Hi All,</p>
+<p>&nbsp; I am trying to change the colors of the comments in my Excel spreadsheet. When I choose to format the comment there is not an option to change the background, or fill color. I have 4 tabs available; Font, Alignment, Protection and Properties. If anyone
+ can help, I would greatly appreciate it. It is an important part of the color coding of my spreadsheet. Thanks!</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Yes, it appears they have removed several Formatting options for Comments;</p>
+<ul>
+<li>Colors &amp; Lines</li><li>Size</li><li>Margins</li></ul>
+<p>I've found no way to invoke any of those settings. Please use the Smiley @ the right end of the Ribbon to register your dissatisfaction... They used to be there &amp; are still in the Windows product. Why they were excluded I have no idea -- Just another '<em>enhancement</em>'
+ I guess.</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=mac">mac, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Email received with subject &#34;Closure of your mailbox is being - Microsoft Community</title>
+<h3> iswtvr  say:</h3>
+<h2>            Email received with subject &#34;Closure of your mailbox is being processed&#34;</h2>
+                    <p>I have received an email to one of my outlook accounts which is telling me my account has been put on a blacklist and marked as a automatic spam sender and that I need to update and verify my email by pressing the link given in the email.</p>
+<p>
+</p><p>The email is from Microsoft.com Account Team (email is *** Email address is removed for privacy ***), the text font size varies throughout the email which leads me to believe this is a spam email, have other's received these emails ?</p>
+<p>
+</p><p>I do not get any messages when I login to my microsoft account.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi  iswtvr 
+<br />
+<br />Most likely, this is a scam, there is a lot of that about at the moment . . .
+<br />
+<br />In the middle of that Email, should be a link, without clicking that, please copy that into your next post and we can make a better judgement on the legitimacy of that Email . . .       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> iswtvr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>the link is&nbsp;</p>
+<p>
+</p><p>"http://alleviateerectiledysfunction.com/Ai/verifynew/verify/Sign%20in%20to%20your%20Microsoft%20account.html"</p>
+<p>
+</p><p>Looks even more likely to be spam when looking at this.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi iswtvr
+<br />
+<br />Well done for being suspicious, you would be amazed how many users fall for this! 
+<br />
+<br />This is definitely a scam,  thank you for reporting this, you should just bin that Email!       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> iswtvr  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks.</p>
+<p>
+</p><p>It helped only recently having to complete a course at work on Internet security which included things to lookout for on suspicious emails.</p>
+<p>
+</p><p>
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi iswtvr, that must have been a good course, perhaps more users should take note and take course like that !       
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>t&#244;i bị virus hacktool&#58;win64&#47;autokms l&#224;m thế n&#224;o - Microsoft Community</title>
+<h3> t&#249;ngroka vn  say:</h3>
+<h2>            t&#244;i bị virus hacktool&#58;win64&#47;autokms l&#224;m thế n&#224;o để t&#244;i loại bỏ n&#243; với cả SECOH-QAD.EXE - SECOH-QAD.DLL</h2>
+                    <span><span>ai đó có thể giúp tôi loại bỏ virus này không nó khá là khó tiêu diệt và nó làm cho máy tôi không thể update windows!</span></span>
+                    <span><span>ai đó có thể giúp tôi loại bỏ virus này không nó khá là khó tiêu diệt và nó làm cho máy tôi không thể update windows!</span></span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>&gt; <a href="https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?Name=HackTool:Win64/AutoKMS" target="_blank" rel="noreferrer nofollow">
+https://www.microsoft.com/en-us/wdsi/threats/malware-encyclopedia-description?Name=HackTool:Win64/AutoKMS</a></p>
+<p>
+</p><p>You probably have some kind of pirated software on your computer. Does not even have to be installed. Can also be a pirated .iso file which you downloaded and stored on your computer for later use... Or something similar.</p>
+<p>Suggest uninstalling/deleting whatever pirated/cracked programs you have. </p>
+<p>
+</p><p>And, suggest reading: <a href="https://www.bleepingcomputer.com/forums/t/407147/answers-to-common-security-questions-best-practices/" target="_blank" rel="noreferrer nofollow">
+Best Practices for Safe Computing - Prevention of Malware Infection&nbsp;</a></p>
+<p>Especially: <strong><a href="https://www.bleepingcomputer.com/forums/t/407147/answers-to-common-security-questions-best-practices/?p=3297086" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 0, 255, 1)">File Sharing (P2P), Torrents, Keygens, Cracks, Warez, and
+ Pirated Software are a Security Risk</span></a></strong></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>PS</p>
+<p>To be on the safe side, you might also want to run some scans...</p>
+<p>See: <a href="https://malwaretips.com/blogs/malware-removal-guide-for-windows/" target="_blank" rel="noreferrer nofollow">
+https://malwaretips.com/blogs/malware-removal-guide-for-windows/</a></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> t&#249;ngroka vn  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<div>
+<div style="margin-left: -3px">
+<div>
+<div style="color: rgba(33, 33, 33, 1)">
+<div>
+<div>
+<div>
+<div>
+<pre><span><span><span>cảm ơn bạn</span></span></span></pre>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<div>
+<div><span><span>Không có gì</span></span></div>
+        </p>
+<a href="/search?q=virus_and_malware">virus_and_malware, </a> <br>
+<a href="/search?q=other">other, </a> <br>
+<a href="/search?q=updating_virus_and_spyware_definitions">updating_virus_and_spyware_definitions, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t proceed with call - Microsoft Community</title>
+<h3> william_d_d  say:</h3>
+<h2>            Can&#39;t proceed with call</h2>
+                    <p>Not needed to use Skype for some time, but, travelling, needed to make 2 calls to UK, which were successful. Noticed my balance low, so added £10 credit. Now - make a call, all works perfectly - then after dialing, call immediately ends! All calls made from
+ MacBook Air, 10.10.5 on Firefox. I did have this problem years ago, cannot remember what fixed it. Used Skype in it's original form for years with no problems, before it was "improved" Help!</p>
+<p>
+</p><p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> marites_p  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span><span>Hi william_d_d,
+</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>I’m glad to hear that your issue has already been resolved.
+</span></span></p>
+<p><span><span>Just a reminder, to have a good call quality in using Skype for Mac, make sure that you and the person you are
+ calling are using the latest version.</span></span></p>
+<p>
+</p><p><span><span>If you’re audio call is delayed or with poor quality please check your connection. It might be your internet
+ connection (or your friend's) causing the problem.</span><span>If Skype detects a weak connection, it will reduce the quality to
+ try and stop the call from dropping altogether.&nbsp;</span></span></p>
+<p>
+</p><p><span><span>Close any applications that could be interfering with your call. File sharing applications, streaming audio
+ or video, or even just having a web browser open are all things that can eat up bandwidth.&nbsp;</span></span></p>
+<p>
+</p><p><span><span>If the issue still persist you can try to uninstall, then reinstall the Skype application. Make test call after
+ a successful reinstall. </span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Thank you!
+</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Marites P</span></span></p>
+<p><span><span>&nbsp;</span></span></p>
+<p><span><span>Skype Community Moderator</span></span></p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=skype_for_ios">skype_for_ios, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=audio_and_video">audio_and_video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>excel how delete a picture&#63; - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            excel how delete a picture&#63;</h2>
+                    I have a picture, nothing will delete it -- edit clear all, clear format, cut. nothing works. thanks!
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Bob Jones AKA&#58; CyberTaz" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "BJ"); this.style="display: inline-block";'
+<h3> bob jones aka&#58; cybertaz  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Since you haven't specifically mentioned it I just have to ask... Once you select the picture, what happens when you press the delete key on your keyboard :-?<br />
+<br />
+What happens if you drag the picture to a different part of the sheet?<br />
+<br />
+Are you able to make other types of changes in the sheet?<br />
+<br />
+Have you tried restarting your computer &amp; trying again to delete the image?<br />
+<br />
+<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>AADC syncing disabled user flags - Microsoft Community</title>
+<h3> jackfisher- &#91;o365&#93;  say:</h3>
+<h2>            AADC syncing disabled user flags</h2>
+                    <p>Hi&nbsp;</p>
+<p>
+</p><p>If we disable a user in active directory on prem should this then change the user to blocked sign in within office 365 portal. I manage multiple clients and this works however one of our clients (I didnt install the AADC) this is not working. Could they
+ have created some starneg rule to not sync this flag?</p>
+<p>
+</p><p>Thanks</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+        <div id="pagerTop" class="pager-container clearBoth">
+            <div id="pagerTopDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Barry Xie MSFT" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "BX"); this.style="display: inline-block";'
+<h3> barry xie msft  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi JackFisher,</p>
+<p>&nbsp;</p>
+<p>What do you mean about “I didn’t install the AADC”? Do you mean that this affected user account suffix doesn’t match to one of the verified customer domains in Azure AD? Here is an article about Azure AD Connect for your reference:
+<a href="https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory-aadconnect-design-concepts" target="_blank" rel="noreferrer nofollow">
+https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory-aadconnect-design-concepts</a></p>
+<p>&nbsp;</p>
+<p>Meanwhile, please give us some screenshots about “one of our clients is not working” for a better understanding. Your cooperation is highly appreciated.</p>
+<p>&nbsp;</p>
+<p>Thanks,</p>
+<p>Barry</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jackfisher- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Barry</p>
+<p>
+</p><p>Thanks for the reply.</p>
+<p>
+</p><p>I meant a previous IT technician installed AADC before I took over support. Anyway perhaps I'm not explaining it very well. I'll try again below:-</p>
+<p>Imagine I have a user on premise for example *** Email address is removed for privacy *** - This user is synced to 365, they leave the company and I disable the on premise AD account. I then force or wait for a sync cycle to run. I would then expect the office 365 account to
+ be blocked from sign in as the on premise account has been disabled. However this is not happening we can still sign in to office 365.&nbsp;</p>
+<p>
+</p><p>Hopefully that helps explain what I mean but let me know if not and I can share more info.&nbsp;</p>
+<p>
+</p><p>Thanks&nbsp;</p>
+<p>Jack</p>
+<p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ynnhoj gnahz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Jack,</p>
+<p>
+</p><p>If you don't want the disabled users to sign into Office 365, you can block them from syncing to Office 365.</p>
+<p>Here are the detailed steps to do it:</p>
+<p><a href="https://blogs.msdn.microsoft.com/vilath/2016/03/02/how-to-block-disabled-user-accounts-from-syncing-with-azure-ad-connect/" target="_blank" rel="noreferrer nofollow">https://blogs.msdn.microsoft.com/vilath/2016/03/02/how-to-block-disabled-user-accounts-from-syncing-with-azure-ad-connect/</a></p>
+<p>
+</p><p>Regards,</p>
+<p>Robert</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jackfisher- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Thanks Robert I'm aware of this one but was looking to see if when disabling a user, that it syncs the disabled state without the need to remove the user.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ynnhoj gnahz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Jack,</span></p>
+<p>
+</p><p><span>Thanks for the updates.</span></p>
+<p><span>Please re-enable the affected user in AD and the disable it to test the issue. If the issue persists after forcing the sync, please confirm the following information:</span></p>
+<p><span>After you force the sync, go to Synchronization Service -- Connector, click Windows Aure Active Directory domain -- Updates, double click the string and send us a screenshot like below:</span></p>
+<p><a href="https://filestore.community.support.microsoft.com/api/images/8d38164e-9953-4f85-8454-c1e9b6e5fe48" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/8d38164e-9953-4f85-8454-c1e9b6e5fe48" /></a></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Robert</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jackfisher- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks Robert&nbsp;</p>
+<p>
+</p><p>I've already tried disable and re-enable with forcing sync in between with no luck.&nbsp;</p>
+<p>
+</p><p>It doesn't even show that there has been an update when changing so it's almost as if that attribute has been excluded from the sync service to look at?</p>
+<p>
+</p><p>Thanks&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ynnhoj gnahz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Jack,</span></p>
+<p>
+</p><p><span>Thanks for the updates.</span></p>
+<p><span>Please go to your AD users and computers, click View -- Advanced Features. Click the properties of the affected user, then select userAccountControl under Attribute Editor. Clear the value and type
+ 514, the click Aplly to save the change. Then force the sync to check the issue.</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Robert</span></p>
+<p>
+</p><p>
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="7" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> jackfisher- &#91;o365&#93;  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks Robert.&nbsp;</p>
+<p>
+</p><p>It's not actually possible to clear the value however I can change it to 512 which would be enabled. I have done this and forced a sync and still the same.&nbsp;</p>
+<p>
+</p><p>Is there somewhere in the metaverse designer this may have been changed at some point? I have had a dig in there but can't seemt o find anything.&nbsp;</p>
+<p>
+</p><p>Thanks&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="8" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ynnhoj gnahz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Jack,</span></p>
+<p>
+</p><p><span>Thanks for the updates.</span></p>
+<p><span>Have you made any attribute filtering for your AAD Connect? Refer to<a href="https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory-aadconnectsync-configure-filtering" target="_blank" rel="noreferrer nofollow">
+ this article </a>to check it.&nbsp;</span></p>
+<p><span>Meanwhile, what do you mean by "</span><span>It's not actually possible to clear the value&nbsp;</span><span>"?</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Robert</span></p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="9" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ynnhoj gnahz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span>Hi Jack,</span></p>
+<p>
+</p><p><span>Can you please confirm the information above when you have time?</span></p>
+<p>
+</p><p><span>Regards,</span></p>
+<p><span>Robert</span></p>
+        </p>
+    <div id="pagerBottom" class="pager-container clearBoth">
+        <div id="pagerBottomDesktop">
+<meta name="awa-prevPage" content="1" />
+<div>
+            </span>
+                        <span>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=subscription,_account,_billing">subscription,_account,_billing, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I add&#47;copy worksheets with prefilled formulas in excel&#63; - Microsoft Community</title>
+<h3> bopoland  say:</h3>
+<h2>            How do I add&#47;copy worksheets with prefilled formulas in excel&#63;</h2>
+                    <p>I want to create a budget worksheet with 12 monthly tabs 1-12.&nbsp; I want to fill in Jan info and have&nbsp;sheet 2&nbsp;pull info from sheet 1, sheet 3 pull from&nbsp;sheet 2&nbsp;etc. Is there a way to create sheet 2&nbsp;with the cells I want drawing from sheet 1 and then duplicate
+ that&nbsp;sheet with the cells in sheet 3 automatically drawing&nbsp;info from sheet 2 and not from sheet 1?</p>
+<p>
+</p><p>Example:</p>
+<p>Jan- end balance (Sheet 1, cell P4)&nbsp;= Feb Beginning balance.&nbsp;&nbsp;Formula in cell: ='1'!P4</p>
+<p>
+</p><p>I want to create a March (sheet 3) where the March beginning balance formula (='2'!P4) is already there.
+</p>
+<p>Is that possible?</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Gord Dibben" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-small"; this.setAttribute("alt", "GD"); this.style="display: inline-block";'
+<h3> gord dibben  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>With your workbook open.</p>
+<p>Alt + F11 to open Visual Basis Editor</p>
+<p>CTRL + r to open Project Explorer</p>
+<p>Select your workbook/project and Right-click&gt;Insert&gt;Module</p>
+<p>Paste the UDF(User Defined Function) into that module.</p>
+<p>Alt + q to return to the Excel window.</p>
+<p>
+</p><p>Follow steps in example of usage. . . . .assuming each sheet's P4 is value like&nbsp; =SUM(O10:P23) or similar</p>
+<p>
+</p><p>=PrevSheet(P4)&nbsp; &nbsp; &nbsp; entered in A1 </p>
+<p>
+</p><p>Gord</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=excel">excel, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to make start menu and taskbar transparent &#63; - Microsoft Community</title>
+<h3> a. user  say:</h3>
+<h2>            How to make start menu and taskbar transparent &#63;</h2>
+                    <p>Like Windows7 which had&nbsp; transparent start menu and taskbar, can i do this in Windows10 too, how to change color of taskbar and start menu?</p>
+<p>Thank you</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="BCF1968" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "BC"); this.style="display: inline-block";'
+<h3> bcf1968  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Go to SETTINGS - PERSONALISATION - COLORS scroll&nbsp;to the bottom you'll see 2 options "Show color and taskbar and Start menu" and "Make Start menu transparent"
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows_insider_program">windows_insider_program, </a> <br>
+<a href="/search?q=windows_insider_preview">windows_insider_preview, </a> <br>
+<a href="/search?q=desktop_and_start">desktop_and_start, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>forgotten password &#38; number change - Microsoft Community</title>
+<h3> shaunbridger  say:</h3>
+<h2>            forgotten password &#38; number change</h2>
+                    I have forgotten my password for my old email account &amp; have also changed my mobile number recently so I am unable to verify my account by txt. I tried my best to complete the verification form but the account has been inactive for so long I also can't
+ remember my most recent email contacts let alone subjects. I tried calling Microsoft but was told I was able to do this myself online? I can't because my details have since changed! The email address is connected to my social media accounts and I need to acess
+ it. Does anybody know how to help or who I can contact that will be helpful??
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> maria fab  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Shaun,</p>
+<p>
+</p><p>To help resolve your concern, you may check this <a href="https://support.microsoft.com/en-ph/help/12429/microsoft-account-sign-in-cant" target="_blank" rel="noreferrer nofollow">
+article</a>. It includes suggestions to help you get back into your account.</p>
+<p>
+</p><p>If you are still unable to recover your account, our last option is the account recovery form. It works by asking questions about your account that only you could answer, and then your answers will be reviewed within 24 hours. Click
+<a href="https://support.microsoft.com/en-us/help/17875/microsoft-account-recover" target="_blank" rel="noreferrer nofollow">
+here</a>.</p>
+<p>
+</p><p>Let us know how it goes.</p>
+        </p>
+<a href="/search?q=outlook">outlook, </a> <br>
+<a href="/search?q=outlook.com">outlook.com, </a> <br>
+<a href="/search?q=account_management,_security,_and_privacy">account_management,_security,_and_privacy, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Access 2010&#58; &#34;Microsoft Access can&#39;t start because there - Microsoft Community</title>
+<h3> timmitchell  say:</h3>
+<h2>            Access 2010&#58; &#34;Microsoft Access can&#39;t start because there is no license for it on this machine.&#34; </h2>
+                    
+<p>I did a full install of Microsoft Office 2010 Professional Plus (which my employer provides through the<a href="http://microsofthup.com/" target="_blank" rel="noreferrer nofollow">Home Use Program</a> ).</p>
+<p>Word and PowerPoint 2010 start successfully. Access 2010 goes through the "gathering information" configuration and announces "<strong>Microsoft Access can't start because there is no license for it on this machine</strong> ."</p>
+<p>I've confirmed Access comes with this version and, of course, the option to install it was there as part of setup, so I don't think this is a real licensing issue.</p>
+<p>Before installing, I uninstalled the 2007 version and cleaned my system thoroughly<a href="http://support.microsoft.com/kb/971179/en-us" target="_blank" rel="noreferrer nofollow">using these instructions</a> . I even renamed the Hatten.TTF file, which can apparently cause problems. I never installed
+ the Office 2010 beta.</p>
+<p>I've uninstalled, reinstalled, repaired, all as an administrator.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> timmitchell  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I was able to resolve this problem and the "going through the configuration process every time" problem by using a registry cleaner.&nbsp; I uninstalled Office 2010, removed all references to Office and unused file types in my registry, rebooted, reinstalled,
+ rebooted, and it works now.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=microsoft_365_and_office">microsoft_365_and_office, </a> <br>
+<a href="/search?q=install,_redeem,_activate">install,_redeem,_activate, </a> <br>
+<a href="/search?q=for_home">for_home, </a> <br>
+<a href="/search?q=windows">windows, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+
