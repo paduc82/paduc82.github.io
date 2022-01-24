@@ -1,0 +1,2391 @@
+    <title>netsh portproxy bug&#59; allows connection from wrong interface - Microsoft Community</title>
+<h3> d3x0r  say:</h3>
+<h2>            netsh portproxy bug&#59; allows connection from wrong interface</h2>
+                    <p>I have a network setup with a primary network adapter with&nbsp; 192.168.173.X/24 which is the internal network.</p>
+<p>
+</p><p>I also have a Microsoft KM-TEST Loopback Adapter with (PUBLICIP)/24 on it.&nbsp; So the only way I can connect to PUBLICIP is by connecting from the interface that is PUBLICIP (unless of course 192.168.173.X tries to route it to the public world).&nbsp; But; the PUBLICIP
+ I'm using is within the subnet of the address I'm given by my ISP (I have no care to connect to my neighbors, so I can use internally one of those, which would then shouldn't route anywhere).</p>
+<p>
+</p><p>And this is true, using a webbrowser, I connect to PUBLICIP, where I have a copy of the system I'm developing.&nbsp; This system then sends a redirect to another port.&nbsp; &nbsp;</p>
+<p>
+</p><p>H:\dev2&gt;netsh interface portproxy show all</p>
+<p><br />
+Listen on ipv4:&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Connect to ipv4:<br />
+</p>
+<p>Address&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Port&nbsp; &nbsp; &nbsp; &nbsp; Address&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Port</p>
+<p>--------------- ----------&nbsp; --------------- ----------</p>
+<p>PUBLICIP&nbsp; 18770&nbsp; &nbsp; &nbsp; &nbsp;192.168.173.X&nbsp; 8101</p>
+<p>PUBLICIP&nbsp; 18142&nbsp; &nbsp; &nbsp; &nbsp;192.168.173.X&nbsp; 8106</p>
+<div>
+<p>
+</p><p>
+</p><p>netstat then shows when I connect to the above port, when connecting to&nbsp; wss://PUBLICIP:18142/</p>
+<p>
+</p><p>&nbsp; TCP&nbsp; &nbsp; 192.168.173.X:57752&nbsp; &nbsp;192.168.173.X:8106&nbsp; &nbsp; ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;</p>
+</div>
+<div>
+<p>
+</p><p>So the server receives&nbsp; &nbsp;'ws Connected from: 192.168.173.X '</p>
+<p>
+</p><p>
+</p><p>The connection was made as a response to this message.</p>
+<p>
+</p><p>Send: {op:"redirect", id:"BM7Wan$8Cq41jEp0Q0uQG_Ay$0TVKQnTHo$ngv0Lrjo=", port:18142, address:"PUBLICIP"&nbsp;</p>
+<p>
+</p><p>
+</p><p>WHich the above wss:// address is constructed correctly, so the source address should be PUBLICIP&nbsp;not 192.168.173.X</p>
+<p>
+</p><p>----</p>
+<p>
+</p><p>Glossary</p>
+<p>
+</p><p>PUBLICIP&nbsp; is technically any IP which is not a local network (10.0.0.0/8, 172.16.0.0/18, 192.168.0.0/16, 127.0.0.1/32) ... so I need to connect to the 'public side' using the 'public side' and the 'internal side' using the 'internal side' and going through
+ the port proxy should not change the source IP,&nbsp; &nbsp;</p>
+<p>
+</p><p>Yes, arguably, this is a non standard configuration, however linux has never given me this issue; and this is the first experience I have with netsh portproxy.&nbsp;&nbsp;</p>
+<p>
+</p></div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> d3x0r  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I did consider</p>
+<p>
+</p><p>&nbsp; TCP&nbsp; &nbsp; PUBLICIP:57751&nbsp; &nbsp;PUBLICIP:18142&nbsp; &nbsp;ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;</p>
+<p>does also exist in netstat</p>
+<p>
+</p><p>&nbsp; TCP&nbsp; &nbsp; PUBLICIP:18142&nbsp; &nbsp;0.0.0.0:0&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; LISTENING&nbsp; &nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;</p>
+<p>&nbsp; TCP&nbsp; &nbsp; PUBLICIP:18142&nbsp; &nbsp;PUBLICIP:57751&nbsp; &nbsp;ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;<br />
+&nbsp; TCP&nbsp; &nbsp; PUBLICIP:57751&nbsp; &nbsp;PUBLICIP18142&nbsp; &nbsp;ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;<br />
+</p>
+<p>so that's itnersting; there is a listener automatically created...</p>
+<p>&nbsp; TCP&nbsp; &nbsp; 192.168.173.X:8106&nbsp; &nbsp; 192.168.173.X:57752&nbsp; &nbsp;ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;</p>
+<p>&nbsp; TCP&nbsp; &nbsp; 192.168.173.X:57752&nbsp; &nbsp;192.168.173.X:8106&nbsp; &nbsp; ESTABLISHED&nbsp; &nbsp; &nbsp;InHost&nbsp; &nbsp; &nbsp;&nbsp;</p>
+<p><br />
+</p>
+<p>I didn't log the connecting port...&nbsp;</p>
+<p>I guess this ... (momentary duh moment)... works more like a proxy, .. hence 'portproxy' huh?</p>
+<p>
+</p><p>So this can't work; since browsers aren't allowed to send thier own IP their connecting from, or able to set them.</p>
+<p>
+</p><p>
+</p><p>Is there another thing for firewall port forwarding that will work?</p>
+<p>
+</p><p><br />
+</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi d3x0r
+<br />Greetings! I am Vijay, an Independent Advisor. I am here to work with you on this problem.
+<br />
+<br />I would suggest that you should post simultaneously (i.e. cross-post) to Technet forum also as this will increase chances of getting the fast answer to this query. So, your question will be on two forums - This and Technet. Experts on both forums will assist you giving you wider reach.
+<br />
+<br />Windows IT Pro Technet Forum - <a href="https://social.technet.microsoft.com/Forums/office/en-US/home?forum=win10itprogeneral" target="_blank" rel="noreferrer nofollow">https://social.technet.microsoft.com/Forums/off...</a>
+<br />
+<br />Do let me know if you require any further help on this. Will be glad to help you.       
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=network_and_internet">network_and_internet, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can&#39;t arrange icons on my desktop - Microsoft Community</title>
+<h3> wesleyhamilton  say:</h3>
+<h2>            Can&#39;t arrange icons on my desktop</h2>
+                    SOLVED!! (solution in reply)<br />
+<br />
+My desktop icons positions don't get saved when I "refresh" or reboot. Also, when I change a folder's sort, group by, and view options those settings are reset when I reopen the folder (not as big an issue as organizing my desktop but may be related).<br />
+<br />
+<a href="http://www.youtube.com/watch?v=GppdPrWybWI" target="_blank" rel="noreferrer nofollow">Video of my problem</a><div class="AnswersExternalContent"><div class="video-container"><object aria-label="video player"><param name="movie" value="https://www.youtube.com/v/GppdPrWybWI?fs=1"></param><param name="allowFullScreen" value="true"></param><param name="allowscriptaccess" value="sameDomain"></param><embed src="https://www.youtube.com/v/GppdPrWybWI?fs=1" type="application/x-shockwave-flash" allowscriptaccess="sameDomain" allowfullscreen="true"></embed></object></div></div> (Sorry for poor quality of upload)<br />
+<br />
+Windows 7 Professional SP1 (64 bit)<br />
+<br />
+The problem occurred about a week ago. I've had a couple viruses/malware I've removed since this problem started. I had an issue with Windows Update where it wouldn't run, and I fixed that with Microsoft Fix It. At about the same time I noticed this issue.<br />
+<b><u><br />
+Things I've Tried</u></b><br />
+1. <span style="font-weight: bold">Right Click Desktop &gt; View &gt; Auto Arrange</span><br />
+Was already unchecked. I checked it, rebooted, unchecked it but it did not fix it.<br />
+<span style="font-weight: bold">2. Update Windows </span><br />
+I installed all of the latest patches.<br />
+<span style="font-weight: bold">3. </span><span style="font-weight: bold">Safe Mode</span><br />
+The problem still occurs in safe mode.<br />
+<span style="font-weight: bold">4. Antivirus</span><br />
+I ran a quickscan with Malware Bytes and a fullscan with AVG and found a couple threats but removing them didn't fix it.<br />
+<span style="font-weight: bold">5. Right Click Desktop &gt; Personalize &gt; Change Desktop icons &gt; Allow themes to change desktop icons.
+</span><br />
+This was already checked.<br />
+<span style="font-weight: bold">6. Clean Boot [1]</span><br />
+I disabled some useless startup applications. I've also ran CCleaner and deleted some scheduled tasks and disabled some useless services.<br />
+<span style="font-weight: bold">7. sfc /scannow [2]</span><br />
+No issues found.<br />
+<span style="font-weight: bold">8. Microsoft Fix It [3] </span><br />
+This may have fixed the problem for 10 minutes until it forced me reboot. The problem came back and this tool doesn't detect the problem anymore.<br />
+<span style="font-weight: bold">9. Delete Desktop.ini </span><br />
+The file doesn't seem to get recreated, even on reboot.<br />
+<span style="font-weight: bold">10. Update drivers</span><br />
+I haven't updated the BIOS, but I updated my graphics/motherboard drivers including some NVIDIA tools.<br />
+<span style="font-weight: bold">11. Modify the registry [c] </span><br />
+I've attempted some of these fixes, but not all.<br />
+<span style="font-weight: bold">12. Disable the</span><span style="font-weight: bold"> sidebar [5]</span><br />
+Doesn't help.<br />
+<span style="font-weight: bold">13. Command Prompt &gt; regsvr32 ole32.dll &gt; regsvr32 /i shell32.dll</span><span style="font-weight: bold">
+</span><br />
+Both succeeded.<br />
+<span style="font-weight: bold">14. ESC 3x (g)</span><br />
+<span style="font-weight: bold">15. Hold shift when rebooting</span><br />
+<span style="font-weight: bold">16. Registry Edit [6]</span><br />
+Start &gt; Run &gt; regedit.exe<br />
+[HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies<br />
+Created Key "Explorer"<br />
+Added new DWORD value "NoSaveSettings" and set to 0 (tried 1 as well)<br />
+<br />
+<b><u>What I Haven't Tried</u></b><br />
+<span style="font-weight: bold">17. Restore Point</span><br />
+It has been about a week, so the latest restore point is after the problem.<br />
+<span style="font-weight: bold">18. Restore from Backup</span><br />
+I don't have a backup.<br />
+<span style="font-weight: bold">19. Reinstall Windows</span><br />
+Overkill, and would waste hours of my life.<br />
+<span style="font-weight: bold">20. 3rd Party Programs (links below)</span><br />
+Bloatware, but it may be the only solution.<br />
+<span style="font-weight: bold">21. Lock Web Items on Desktop </span><br />
+WinXP only?<br />
+<span style="font-weight: bold">22. Remove User Access Control (UAC)</span><br />
+<br />
+<b><u>Related Forum Posts</u></b><br />
+(a) <a href="http://social.technet.microsoft.com/Forums/en/w7itproui/thread/f20210cc-ba8e-44e1-a94c-4f7262e90c06" target="_blank" rel="noreferrer nofollow">
+http://social.technet.microsoft.com/...c-4f7262e90c06</a><br />
+(b) <a href="http://forums.techguy.org/windows-7/1059912-solved-desktop-icons-keep-rearranging.html" target="_blank" rel="noreferrer nofollow">
+http://forums.techguy.org/windows-7/...arranging.html</a><br />
+(c) <a href="http://techattitude.com/windows-tips-and-tricks/how-to-keep-the-desktop-icons-from-rearranging-themselves-on-windows/" target="_blank" rel="noreferrer nofollow">
+http://techattitude.com/windows-tips...es-on-windows/</a><br />
+(d) <a href="http://answers.microsoft.com/en-us/windows/forum/windows_7-desktop/windows-7-desktop-icons-keep-rearranging/a7e8f091-1f2b-44fc-90ba-8d873b5d872d">
+http://answers.microsoft.com/en-us/w...a-8d873b5d872d</a><br />
+(e) <a href="http://pressf1.pcworld.co.nz/showthread.php?115923-Desktop-Icons-Rearranging-by-themselves" target="_blank" rel="noreferrer nofollow">
+http://pressf1.pcworld.co.nz/showthr...-by-themselves</a><br />
+(f) <a href="http://forums.cnet.com/7723-6142_102-328230/desktop-icons-rearrange-themselves/" target="_blank" rel="noreferrer nofollow">
+http://forums.cnet.com/7723-6142_102...ge-themselves/</a><br />
+(g) <a href="http://answers.microsoft.com/en-us/windows/forum/windows_7-desktop/cant-move-shortcut-icons-on-my-desktop-to/7200ee9c-1b39-4d71-8c27-14350c75b5bd">
+http://answers.microsoft.com/en-us/w...27-14350c75b5bd</a><br />
+<br />
+<b><u>Resources</u></b> <br />
+[1] <a href="http://support.microsoft.com/kb/331796/en-us" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/kb/331796/en-us</a><br />
+[2] <a href="http://pcsupport.about.com/od/toolsofthetrade/ht/sfc-scannow.htm" target="_blank" rel="noreferrer nofollow">
+http://pcsupport.about.com/od/toolso...fc-scannow.htm</a><br />
+[3] <a href="http://support.microsoft.com/fixit/" target="_blank" rel="noreferrer nofollow">http://support.microsoft.com/fixit/</a><br />
+[4] <a href="http://www.kellys-korner-xp.com/xp_tweaks.htm" target="_blank" rel="noreferrer nofollow">http://www.kellys-korner-xp.com/xp_tweaks.htm</a><br />
+[5] <a href="http://www.howtogeek.com/howto/3255/disable-sidebar-desktop-gadgets-on-windows-7/" target="_blank" rel="noreferrer nofollow">
+http://www.howtogeek.com/howto/3255/...-on-windows-7/</a><br />
+[6] <a href="http://www.winhelponline.com/blog/fix-desktop-icons-layout-not-saved-restart/" target="_blank" rel="noreferrer nofollow">
+http://www.winhelponline.com/blog/fix-desktop-icons-layout-not-saved-restart/</a><br />
+<br />
+<u><b>3rd Party Solutions</b></u><br />
+(1) <a href="http://www.howtogeek.com/howto/windows-vista/save-and-restore-desktop-icon-layout-in-windows-vista/" target="_blank" rel="noreferrer nofollow">
+http://www.howtogeek.com/howto/windo...windows-vista/</a><br />
+(2) <a href="http://fsl.sytes.net/iconrestorer.html" target="_blank" rel="noreferrer nofollow">http://fsl.sytes.net/iconrestorer.html</a><br />
+(3) <a href="http://www.sillysot.com/" target="_blank" rel="noreferrer nofollow">http://www.sillysot.com/</a><br />
+(4) <a href="http://www.blogsdna.com/3524/backup-restore-desktop-icons-position-on-windows-7-vista-xp.htm" target="_blank" rel="noreferrer nofollow">
+http://www.blogsdna.com/3524/backup-restore-desktop-icons-position-on-windows-7-vista-xp.htm</a><br />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-small" role="img"
+<h3> wesleyhamilton  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Figured it out. I created a new user account and logged into that one. Both issues don not occur on that account.<br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=ease_of_access">ease_of_access, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Results in Windows - Microsoft Community</title>
+                        <span><a id="toggleFilterVisibility" role="button" class="c-hyperlink" tabindex="0">Show filters</a></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+<br><br>------------------------------------<br>
+    <title>0x800423f4 inhibits recovery drive creation - Microsoft Community</title>
+<h3> christianv&#246;lkers  say:</h3>
+<h2>            0x800423f4 inhibits recovery drive creation</h2>
+                    <span>
+                    <span>
+<p class="contentStandard">Hello! I am unable to create a recovery drive. My system is in german (sorry for that).</p>
+<p class="contentStandard">This is what I found in the protocol. </p>
+<p class="contentStandard">
+</p><p class="contentStandard">Von einem VSS Writer wurde ein Ereignis mit dem Fehler "0x800423f4, Für den Generator wurde ein nicht vorübergehender Fehler festgestellt. Wenn der Sicherungsvorgang wiederholt wird,
+</p>
+<p class="contentStandard">tritt der Fehler höchstwahrscheinlich erneut auf.</p>
+<p class="contentStandard">" zurückgewiesen. Änderungen, die während der Verarbeitung des Ereignisses an den Writerkomponenten vorgenommen wurden, sind für den Anforderer nicht verfügbar. Zugehörige Ereignisse der Hostanwendung des VSS Writer finden Sie im
+ Ereignisprotokoll. </p>
+<p class="contentStandard">Vorgang: </p>
+<p class="contentStandard">PrepareForBackup-Ereignis</p>
+<p class="contentStandard">Kontext:</p>
+<p class="contentStandard">Ausführungskontext: Writer </p>
+<p class="contentStandard">Generatorklassen-ID: {9cd63585-aa61-4c1a-82db-8c04d8c273ce}
+</p>
+<p class="contentStandard">Generatorname: WimCap Vss Writer</p>
+<p class="contentStandard">Generatorinstanz-ID: {a1b52862-a113-477e-ac51-3c257141d127}
+</p>
+<p class="contentStandard">Befehlszeile: "C:\WINDOWS\system32\recoverydrive.exe"
+</p>
+<p class="contentStandard">Prozess-ID: 12092</p>
+<p class="contentStandard">
+</p><p class="contentStandard">Any ideas?</p>
+<p class="contentStandard">Thanks a lot</p>
+<p class="contentStandard">Chris</p>
+</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi Christian,</p>
+<p>&nbsp;</p>
+<p>Thank you for keeping us updated on this query. We will assist you in resolving your issue.</p>
+<p>&nbsp;</p>
+<p>Before assisting further, I would like to ask you few questions regarding the query:</p>
+<ol>
+<li>How are you creating recover drive (USB or DVD)?</li><li>When exactly do you get this error message?</li></ol>
+<p>&nbsp;</p>
+<p>This may be due to the reason that the <strong>Volume Shadow Copy</strong> service is either stopped or set to manual in the services settings.</p>
+<p>&nbsp;</p>
+<p>Follow the steps below and check if the issue is resolved.&nbsp;</p>
+<ol>
+<li>Press <strong>Windows key + R</strong> on the keyboard, type <strong>services.msc</strong> and press
+<strong>Enter</strong>.</li><li>Search for <strong>Volume Shadow Copy </strong><span>service</span> in the window and double click on it.</li><li>Check whether the <strong>Startup type</strong> is set to <strong>Automatic</strong>. If it is not, set it to Automatic and
+<strong>restart</strong> your PC.</li><li>Check if&nbsp;the <strong>Volume Shadow Copy </strong><span>service </span>restarts automatically on reboot (since the Startup type is set to Automatic).</li><li>Also check if the status shows <strong>Running </strong>under <strong>Status</strong> column in the
+<strong>Volume Shadow Copy </strong>service.</li></ol>
+<p>&nbsp;</p>
+<p>Refer to the link below on <strong>How to: Create a Recovery Drive for reinstalling Windows 10:</strong></p>
+<p><a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-win_upgrade/how-to-create-a-recovery-drive-for-reinstalling/58df9c7d-84de-4652-9952-8bac34abc6c5"><strong>http://answers.microsoft.com/en-us/windows/wiki/windows_10-win_upgrade/how-to-create-a-recovery-drive-for-reinstalling/58df9c7d-84de-4652-9952-8bac34abc6c5</strong></a></p>
+<p>&nbsp;</p>
+<p>Get back to us with the answers to the above questions to assist you further regarding the query. Your reply is most important for us to ensure we assist you accordingly.</p>
+<p>&nbsp;</p>
+<p>Thank you.</p>
+<p>&nbsp;</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=windows_update,_recovery,_&#38;_backup">windows_update,_recovery,_&#38;_backup, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I have medion computer, I shut it down and now the Mbr says it is - Microsoft Community</title>
+<h3> megan61  say:</h3>
+<h2>             I have medion computer, I shut it down and now the Mbr says it is corrupt. I have items on desk top i.e.pictures and want to retrieve them but I cannt start the computer up in safe mode. can anybody help&#63; </h2>
+                    I have medion computer, I shut it down and now the Mbr says it is corrupt. I have items on desk top i.e.pictures and want to retrieve them but I cannt start the computer up in safe mode. can anybody help?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="SpiritX" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red185 avatar-size-small"; this.setAttribute("alt", "SP"); this.style="display: inline-block";'
+<h3> spiritx  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,<br />
+<br />
+If needed the hard drive might work as 2nd in another computer or in an external drive case so either way
+<br />
+the data might be recoverable even if you can't fix it using the troubleshooter below.<br />
+<br />
+Try Startup Repair -</p>
+<p>This tells you how to access the System Recovery Options and/or use a Vista Disk<br />
+<a href="http://windowshelp.microsoft.com/Windows/en-US/Help/326b756b-1601-435e-99d0-1585439470351033.mspx" target="_blank" rel="noreferrer nofollow"><span>http://windowshelp.microsoft.com/Windows/en-US/Help/326b756b-1601-435e-99d0-1585439470351033.mspx</span></a></p>
+<p>Try StartUp Repair from Recovery Options or Vista disk.</p>
+<p>How to do a Startup Repair<br />
+<a href="http://www.vistax64.com/tutorials/91467-startup-repair.html" target="_blank" rel="noreferrer nofollow"><span>http://www.vistax64.com/tutorials/91467-startup-repair.html</span></a></p>
+<p>Unable to boot in windows vista- windows boot configuration data file is missing required information -<br />
+Repair Corrupt Boot Manager<br />
+<a href="http://www.troublefixers.com/unable-to-boot-in-windows-vista-windows-boot-configuration-data-file-is-missing-required-information/" target="_blank" rel="noreferrer nofollow"><span>http://www.troublefixers.com/unable-to-boot-in-windows-vista-windows-boot-configuration-data-file-is-missing-required-information/</span></a></p>
+<p>How to use the Bootrec.exe tool in the Windows Recovery Environment to troubleshoot and repair<br />
+startup issues in Windows Vista<br />
+<a href="http://support.microsoft.com/kb/927392" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/927392</span></a></p>
+<p>How to fix "BOOTMGR is missing" in Windows Vista <br />
+<a href="http://cyberst0rm.blogspot.com/2007/04/how-to-fix-bootmgr-is-missing-in.html" target="_blank" rel="noreferrer nofollow"><span>http://cyberst0rm.blogspot.com/2007/04/how-to-fix-bootmgr-is-missing-in.html</span></a></p>
+<p>Error message when you start Windows Vista: "The Windows Boot Configuration Data file is missing
+<br />
+required information" <br />
+<a href="http://support.microsoft.com/kb/927391" target="_blank" rel="noreferrer nofollow"><span>http://support.microsoft.com/kb/927391</span></a></p>
+<p>Vista Tip: Repair "BOOTMGR is missing" error - a quick how to<br />
+<a href="http://lifehacker.com/251733/vista-tip--repair-bootmgr-is-missing-error" target="_blank" rel="noreferrer nofollow"><span>http://lifehacker.com/251733/vista-tip--repair-bootmgr-is-missing-error</span></a></p>
+<p>See this section here - To repair/rebuild the Boot Config Data Use the Bootrec.exe Tool<br />
+<a href="http://www.vistax64.com/tutorials/163304-dual-boot-using-free-partitioning-software.html" target="_blank" rel="noreferrer nofollow"><span>http://www.vistax64.com/tutorials/163304-dual-boot-using-free-partitioning-software.html</span></a><br />
+<br />
+=========================================<br />
+<br />
+If you do not have a Vista disk you can borrow a friends as they are not copy protected. Your System maker<br />
+will also sell the physical DVD cheap since you already own Windows. Also you can make a repair disk on
+<br />
+another computer.<br />
+<br />
+If you need to make repair disks - these help repair Windows not re-install.<br />
+<br />
+How to Make a Bootable Disk in Vista<br />
+<a href="http://www.brighthub.com/computing/windows-platform/articles/7050.aspx" target="_blank" rel="noreferrer nofollow"><span>http://www.brighthub.com/computing/windows-platform/articles/7050.aspx</span></a><br />
+<br />
+Download: Windows Vista x64 Recovery Disc<br />
+<a href="http://neosmart.net/blog/2008/download-windows-vista-x64-recovery-disc/" target="_blank" rel="noreferrer nofollow"><span>http://neosmart.net/blog/2008/download-windows-vista-x64-recovery-disc/</span></a><br />
+<br />
+Download: Windows Vista x64 Recovery Disc<br />
+<a href="http://neosmart.net/blog/2008/download-windows-vista-x64-recovery-disc/" target="_blank" rel="noreferrer nofollow"><span>http://neosmart.net/blog/2008/download-windows-vista-x64-recovery-disc/</span></a><br />
+<br />
+How to Make a Windows Vista Repair Disk If You Don’t Have One<br />
+<a href="http://www.howtogeek.com/howto/windows-vista/how-to-make-a-windows-vista-repair-disk-if-you-dont-have-one/" target="_blank" rel="noreferrer nofollow"><span>http://www.howtogeek.com/howto/windows-vista/how-to-make-a-windows-vista-repair-disk-if-you-dont-have-one/</span></a><br />
+<br />
+Hope this helps.</p>
+<hr />
+Rob - Bicycle - Mark Twain said it right.
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_vista">windows_vista, </a> <br>
+<a href="/search?q=devices_&#38;_drivers">devices_&#38;_drivers, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Skype access - Microsoft Community</title>
+<h3> jeniferelton-wilson  say:</h3>
+<h2>            Skype access</h2>
+                    I have had access to Skype for at least seven years. I have a user name. I have never used a password. I just click in. Now, since I updated I have been asked for a password, put in a new one, had it refused and am unable to get into my Skype records.
+ Please help
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> manuela.a  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello,
+<br />
+<br />Please open this article and follow the instructions: <a href="https://support.skype.com/en/faq/FA109/i-ve-forgotten-my-skype-user-name-or-password" target="_blank" rel="noreferrer nofollow">https://support.skype.com/en/faq/FA109/i-ve-for...</a>.
+<br />There are 2 scenarios, choose the one, which is applicable for you.
+<br />
+<br />Regards,
+<br />
+<br />Manuela       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Go to the passwordr recovery page and reset your password
+<br />
+<br /><a href="https://go.skype.com/reset.password.skype" target="_blank" rel="noreferrer nofollow">https://go.skype.com/reset.password.skype</a>       
+        </p>
+<a href="/search?q=skype">skype, </a> <br>
+<a href="/search?q=&#40;archived&#41;_skype_for_mac">&#40;archived&#41;_skype_for_mac, </a> <br>
+<a href="/search?q=calling">calling, </a> <br>
+<a href="/search?q=audio_and_video">audio_and_video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Surface Pro 4 Pen - Broken Lines - Microsoft Community</title>
+<h3> sp4001  say:</h3>
+<h2>            Surface Pro 4 Pen - Broken Lines</h2>
+                    <p>I've had my Surface Pro 4 for approximately 8 Months and I have barely used the Pen.</p>
+<p>Recently, I started using the pen and I've noticed that the lines that i draw are broken and not smooth. The battery on the pen is at 75%.</p>
+<p>Any suggestion to resolve this issue?&nbsp;</p>
+&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hello,<br />
+<br />
+Thanks for reaching out. Please check this <a href="https://www.microsoft.com/surface/en-us/support/touch-mouse-and-search/troubleshoot-surface-pen?os=windows-10&amp;=undefined#inaccurateW10" target="_blank" rel="noreferrer nofollow">
+link</a> for the troubleshooting steps that will help you resolve your issue regarding with inaccurate and jagged writes of your Surface Pen. Let us know how it works.<br />
+<br />
+Regards,
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carolinepd91  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>I have the same problem. Following the link it tells me to change my battery, but my battery is full so this is not the problem.&nbsp;</p>
+<p>
+</p><p>Every diagonal line is not straight. It comes out uneven and bumpy. How do I solve this? Please help, I need this for work.&nbsp;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi,</p>
+<p>
+</p><p>
+</p><p>We need to gather some information to assist you better: </p>
+<p>
+</p><ul>
+<li>Has the pen button ever worked? </li><li>Have you ever dropped the pen? </li><li>Have you ever opened the pen prior to contacting support? </li><li>Have you tried to test Inking in a known good app?<br />
+</li><li>Have you tried to test if there is a cursor when the pen tip is near the screen?</li></ul>
+<p>
+</p><p>Let us know so we can get started. </p>
+<p>
+</p><p>
+</p><p>Regards.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> carolinepd91  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Sure :-)</p>
+<p>
+</p><p>I have only had the surface pro 4 and pen for about 2 weeks.</p>
+<p>
+</p><p>- The pen button is working and has been the whole time.</p>
+<p>- I have not dropped the pen</p>
+<p>- I tried opening the pen and checking the battery as I was experiencing this problem.</p>
+<p>- I have tested the pen in several apps and it works perfect only it can't do diagonal lines. Vertical lines are fine which suggests it's not a problem with the tip or pen in itself. It is only diagonal lines that turn out uneven. If I turn the canvass,
+ it can be tricked into thinking it's a vertical line and they come out straight.</p>
+<p>- There is a cursor when the tip is near the screen.</p>
+<p>
+</p><p>It seems to be a software problem or so?</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>We'll check it first if it's a software issue or not. For now, let's try to recalibrate your screen and customize your pen settings. By recalibrating your screen, you can ensure that the tip of the pen truly matches up to where you expect it to be on the
+ screen. Here is what we should do: </p>
+<p>
+</p><p>1. Go to the <strong>Control Panel</strong><br />
+2. Open the <strong>Tablet PC Settings</strong><br />
+3. Select <strong>Calibrate</strong><br />
+4. Choose between <strong>Pen Input</strong> and <strong>Touch Input.</strong></p>
+<p>
+</p><p>It looks something like this: </p>
+<p>
+</p><p><a href="https://filestore.community.support.microsoft.com/api/images/61135f03-9549-403f-b66f-76d778d8573c" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/61135f03-9549-403f-b66f-76d778d8573c" /></a></p>
+<p>
+</p><p>If everything fails, we suggest that you contact our <strong><a href="https://www.microsoft.com/surface/en-gb/support/contact-us" target="_blank" rel="noreferrer nofollow">assisted support team</a></strong>. Or if you're in the U.S., you may look for a nearest
+<strong><a href="https://www.microsoft.com/en-us/store/locations/find-a-store" target="_blank" rel="noreferrer nofollow">Microsoft Store</a></strong>. They'll assist you with either a replacement or a repair.
+<br />
+</p>
+<p>
+</p><p>Regards. </p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> sp4001  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi All,</p>
+<p>
+</p><p>I was able to resolve the issue with the Surface Pen. I bought a new set of tips and changed the existing tip. The problem was solved and the pen works fine.&nbsp;</p>
+<p>
+</p><p>Thanks</p>
+        </p>
+<a href="/search?q=surface">surface, </a> <br>
+<a href="/search?q=surface_pro">surface_pro, </a> <br>
+<a href="/search?q=surface_pro_4">surface_pro_4, </a> <br>
+<a href="/search?q=display_and_screen">display_and_screen, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Get message as to insert status disk at startup in windows 7 - Microsoft Community</title>
+<h3> adrian15  say:</h3>
+<h2>            Get message as to insert status disk at startup in windows 7</h2>
+                    <p>Original title: How do I remove status.msi from windows 7</p>
+<p>&nbsp;</p>
+<p>Each time I boot up I get the following message: Please insert the 'Status' disk and click OK. The Use source is 1. I use the task manager to cancel it but it getting annoying. Any help to remove it would be appreciated.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="gravityforce" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "GR"); this.style="display: inline-block";'
+<h3> gravityforce  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hello.</p>
+<p>Click on this link: <a href="http://www.scanwith.com/Autoruns_download.htm" target="_blank" rel="noreferrer nofollow">
+http://www.scanwith.com/Autoruns_download.htm</a> Download &amp; install it. (This is a safe reliable software). You can keep it for future use if you choose to.<br />
+1.after download completed, select <b>autoruns</b> &amp; right click on it<br />
+2.click on "<b>extract here</b>"<br />
+3.on the extracted files, click on "<b>autoruns</b>" application select it &amp; right click, and click on "<b>open
+</b>or <b>run</b>" &amp; click <b>OK </b>or yes if ptompted by an administrator to finish the installation process.<br />
+4.when that is completed, <b>open </b>or<b> run</b> "<b>autoruns</b>"<br />
+5.on the open window click on "<b>Everything</b>" <br />
+6.on all the programs which said "<b>File not Found</b>" select each &amp; every one of them, click one at a time...<br />
+7.right click, &amp; click <b>delete</b> &amp; <b>ok</b><br />
+</p>
+<p>It helped?</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="gravityforce" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-small"; this.setAttribute("alt", "GR"); this.style="display: inline-block";'
+<h3> gravityforce  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Try this link:<a href="http://www.geekpolice.net/t21995-help-it-keeps-saying-insert-the-status-disk-and-click-ok" target="_blank" rel="noreferrer nofollow">http://www.geekpolice.net/t21995-help-it-keeps-saying-insert-the-status-disk-and-click-ok</a></p>
+<p>Helped?</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=performance_&#38;_system_failures">performance_&#38;_system_failures, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Results in Windows - Microsoft Community</title>
+                        <span><a id="toggleFilterVisibility" role="button" class="c-hyperlink" tabindex="0">Show filters</a></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                                <span></span>
+<br><br>------------------------------------<br>
+    <title>confused and fustrated... - Microsoft Community</title>
+<h3> yeabunna  say:</h3>
+<h2>            confused and fustrated...</h2>
+                    
+<p>I have Red Dead Redemption Since release.. I downloaded All DLC's including Undead Nightmare. I've played everything to the credits, and multiplayer. And I put it away. months later I'm playing single campaign&nbsp; again with no problem, till I get to Undead
+ Nightmare I play for a few, then it Kicks me back to xbox dashboard. There are 3 xboxes&nbsp; at my house,My wife's,daughter's, and mine. I cleared my cache, still get kicked. i tried in every xbox in the house, same thing. I installed into my xbox, same thing.
+ and this is with single player, not multy,which I know can be a number of problems in itself...&nbsp;&nbsp; any body have the same problem, or has solved this? thnks in advance..</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+    0 people found this helpful
+</button>
+</span>
+        </p>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> pcunrecognized cosmic  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>do you log in on each of the xboxes? and did you download the DLC on a different one? ... check your content licences</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> yeabunna  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi, when I tried on the other boxes, I just took my Hdd ,put it in the other boxes,and signed in as Myself (yeabunna) ,as I didnt want to buy another dlc for different box. The content licenses situation never crossed my mind...Since the trouble started
+ with my original profile, do you think that would&nbsp; help or hinder? Also, I failed to mention that I have the dlc on my hdd, and not the stand-alone, if that helps..<img src="https://filestore.community.support.microsoft.com/api/images/ext?url=http%3a%2f%2fforums.xbox.com%2femoticons%2femotion-1.gif" /></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> dupdaec421d-29ff-4d85-8e5c-6b74f9473ac1  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>I downloaded the Undead collection last night, first time playing undead horde I also got kicked back to the dashboard. Hope this isn't a common problem?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> p pierce34  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You might try recovering your gamertag to your wife or daughter's HDD by going to Switch Profile, Recover Gamertag. You won't have to buy any content again, you just go to Manage Account, Download History and everything you've ever bought is there to be
+ downloaded again to the HDD your GT has been transferred to.</p>
+        </p>
+<a href="/search?q=gaming_and_xbox">gaming_and_xbox, </a> <br>
+<a href="/search?q=games_and_gaming">games_and_gaming, </a> <br>
+<a href="/search?q=xbox_series_x&#124;s_and_xbox_one">xbox_series_x&#124;s_and_xbox_one, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>node.dll file missing - Microsoft Community</title>
+<h3> manojpandey23992  say:</h3>
+<h2>            node.dll file missing</h2>
+                    as since i have updated to windows 10 I use to get a error message for node.dll file missing, please help me with this as i have tried downloading the latest node.dll file and pasting it in windows system32 but it's still showing the error.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>try to downoad it from one of these sites:</p>
+<p>www.dll-files.com</p>
+<p>www.dll-found.com</p>
+<p>Hope this helpful.<br />
+</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_vista">windows_vista, </a> <br>
+<a href="/search?q=music,_photos,_&#38;_video">music,_photos,_&#38;_video, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Typing special characters using the Surface keyboard - Microsoft Community</title>
+<h3> nathan sokalski  say:</h3>
+<h2>            Typing special characters using the Surface keyboard</h2>
+                    As most people know, tablets &amp; laptops do not have a numeric keypad. And as any advanced Windows user knows, the numeric keypad is what is used to type special characters using the keyboard (using ALT+keycode). I am completely aware that I can copy &amp; paste
+ special characters from Character Map, and I have read some things that try to give ways to type foreign language characters using the onscreen keyboard, but neither of these are what I want. First of all, I need special characters that are not foreign language,
+ just special (such as ellipsis, degrees, and other symbols that are not really part of any language). Second, if possible I do not want to use the onscreen keyboard. If there was a way to make the number keys temporarily act like the numeric keypad it would
+ allow me to use the ALT+keycode method. Or if there is some other way to easily enter special characters using only the keyboard that would be fine. I would also be fine if there was a
+<strong>VERY</strong> small window in which to enter the code that could be quickly opened &amp; closed automatically or using only the keyboard (no mouse or clicking involved). But I do
+<strong>NOT</strong> want any mouse or clicking to be involved. Is there any way to do any of these things? Thanks.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Jasmine Car" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-extrasmall"; this.setAttribute("alt", "JC"); this.style="display: inline-block";'
+<h3> jasmine car  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Nathan,</p>
+<p>
+</p><p>
+</p><p>We appreciate your appreciation with our devices. Having a special characters on the Surface keyboard is a great idea. However, those things/features you've mentioned are not yet available on Surface.</p>
+<p>
+</p><p>You may reach out to our engineers using our Feedback Hub. This would allow engineers to conduct their own experiment, to check if there are things that needs to be upgraded.</p>
+<p>
+</p><p>In order to submit new feedback, please follow these steps:<br />
+<br />
+1. On a Windows 10 device, search for “Feedback Hub” in Cortana search, then launch the app.<br />
+2. Navigate to Feedback in the left menu, then press + Add new feedback.<br />
+3. Select the Suggestion, and share any details you think are relevant, and choose an appropriate category and subcategory.<br />
+4. Once you’ve completed the form and monitoring, click Submit.</p>
+<p>
+</p><p>Should you have any further questions, feel free to post back.</p>
+<p>
+</p><p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=surface">surface, </a> <br>
+<a href="/search?q=surface_book">surface_book, </a> <br>
+<a href="/search?q=surface_book_2">surface_book_2, </a> <br>
+<a href="/search?q=display_and_screen">display_and_screen, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Something happened 0x80070490 - 0x20016 - Microsoft Community</title>
+<h3> ryan knutson  say:</h3>
+<h2>            Something happened 0x80070490 - 0x20016</h2>
+                    <p><img src="https://filestore.community.support.microsoft.com/api/images/61343918-2e60-4b58-b9fa-80c3ff7278da" /></p>
+<p>
+</p><p>Hello,</p>
+<p>Trying to update to Windows 10 gives me the "Something happened 0x80070490 - 0x20016" error as shown in the screenshot. It is different from the "Something happened" that others are getting. Any help would be much appreciated!</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            1. Browse to "C:\Windows\SoftwareDistribution\Download" and delete the contents of the folder.<br />
+2. Press Windows key + X &gt; Click Command Prompt (Admin) then type&nbsp;"<strong>wuauclt.exe /updatenow</strong>".
+<p>Hit <strong>Enter</strong></p>
+<p>3. Open&nbsp;Control Panel &gt; Windows Update and Windows 10 should begin downloading..</p>
+<p>
+</p><p>Press Windows key + X</p>
+<p>Click Command Prompt (Admin)</p>
+<p>
+</p><p>Type in at the prompt OR Copy and Paste these one at a time : (Hit enter after each)<br />
+<br />
+<strong>Dism /Online /Cleanup-Image /CheckHealth<br />
+<br />
+Dism /Online /Cleanup-Image /ScanHealth<br />
+<br />
+Dism /Online /Cleanup-Image /RestoreHealth</strong></p>
+<p>
+</p><p><span>Please be aware even if you do not get the Windows 10 app, you can still download Windows 10 as a .ISO file, create a bootable copy and upgrade your system.</span></p>
+<p>
+</p><p><a href="http://answers.microsoft.com/en-us/insider/wiki/insider_wintp-insider_install/how-to-upgrade-from-previous-versions-of-windows/31722b30-1da9-42bb-b331-0edc4649bf43" title="As we approach the launch of Windows 10 this summer, hundreds of millions of existing Windows users will be taking advantage the opportunity to upgrade their current version to Windows 10 for free. This represents an unprecedented change in Microsoft's bu"><span style="color: rgba(0, 114, 198, 1)">How
+ to: upgrade from previous versions of Windows using Windows 10 ISO file</span></a><span>
+</span></p>
+<p>
+</p><p><strong>See instructions: </strong><a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-windows_install/how-to-download-official-windows-10-iso-files/35cde7ec-5b6f-481c-a02d-dadf465df326" title="Microsoft has provided instructions how to download the official .ISO files for Windows 10 32 and 64 bit. Read on for instructions."><span style="color: rgba(0, 108, 216, 1)">How
+ to download official Windows 10 ISO files</span></a> </p>
+<p>
+</p><p><strong><br />
+</strong></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> or assayag  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>Hi</p>
+<p>I get this error too, and i did all these steps and i still get this error...</p>
+<p>What to do!?!?!? :(<br />
+</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> woodlims  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Check your Window version. Enterprise version is not included.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> thetelescope  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>None of this worked. &nbsp;I have Windows 7 Professional. &nbsp;</p>
+<p>
+</p><p>When running "<strong>Dism /Online /Cleanup-Image /CheckHealth",&nbsp;</strong>I get an error: 87</p>
+<p>
+</p><p>Full error:</p>
+<p>Deployment Image Servicing and Management tool</p>
+<p>Version: 6.1.7601.18489</p>
+<p>
+</p><p>Error: 87</p>
+<p>
+</p><p>The checkhealth option is not recognized in this context.</p>
+<p>For more information, refer to help.</p>
+<p>
+</p><p>The DISM log file can be found at C:\Windows\Logs\DISM\dism.log</p>
+<p>
+</p><p>C:\Windows\system32&gt;</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tfowl  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            All it took was the first solution of running ADWCLEANER to remove the malicious changes made to my computer and it resolved the problem. &nbsp;See all the steps at http://malwaretips.com/blogs/unable-to-connect-to-the-proxy-server-removal/&nbsp;
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> michelleball  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p>i tried every suggestion here and nothing worked!!! </p>
+<p>
+</p><p>the fix is easy!! goto the link and follow the instructions. it only took a few minutes, just need to add one simple word to the registry! &nbsp;</p>
+<p>http://www.filecritic.com/how-to-fix-the-something-happened-0x80070002-0x20016-error-and-upgrade-to-windows-10/</p>
+<p>
+</p><p>took me allllll day for this simple fix lol. hope it helps someone.</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=install,_upgrade,_&#38;_activate">install,_upgrade,_&#38;_activate, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>GTA San Andreas Issue - Microsoft Community</title>
+<h3> tupac shakur 83  say:</h3>
+<h2>            GTA San Andreas Issue</h2>
+                    
+<p>Good morning,</p>
+<p>A couple of weeks ago I downloaded that game form marketplace original xbox with my microsoft points. Now, when I start playing in the menu screen of the game I get a message: impossible to load the game, dirty disc or disc disc not inserted in the reader.
+ How is it possible since the game is installed on the hard disk?</p>
+<p>P.S. i also tried to emptied the cache but without any result.</p>
+<p>Waiting for your answer</p>
+<p>Regards</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> rasengunz  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>reinstall?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> tifaparker  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p><span style="color: rgba(255, 0, 255, 1)">Hello tupac shakur 83,</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)">I'm sorry to hear that you're having an issue with this Original Xbox Game.</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)">There actully has been some on going issues with this paticular game.</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)">I have a few steps for you that might help.</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>1.</span> Clear system cache x2</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>2.</span> Redownload your GT</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>3.</span> Clear Marketplace Data (System settings&gt;Storage&gt;System Items)</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>4.</span> Delete the game in your storage (See if there's a corrupted symbol with a !)</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>5.</span> Go back into your DL History and redownload the game</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)"><span>6.</span> Powercycle your console (Turn if off and back on)</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)">If you're still having issues with it, please do contact Customer Support. They'll be able to determine the main issue, whether it's a corrupted profile/HDD/or just the game is corrupted.</span></p>
+<p><span style="color: rgba(255, 0, 255, 1)">Happy Gaming!</span></p>
+        </p>
+<a href="/search?q=gaming_and_xbox">gaming_and_xbox, </a> <br>
+<a href="/search?q=games_and_gaming">games_and_gaming, </a> <br>
+<a href="/search?q=xbox_series_x&#124;s_and_xbox_one">xbox_series_x&#124;s_and_xbox_one, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>My PC is slow after upgrading to Windows 10 - Microsoft Community</title>
+<h3> anduin95  say:</h3>
+<h2>            My PC is slow after upgrading to Windows 10</h2>
+                    <p>
+<span style="color: rgba(0, 0, 0, 1)">In August of last year,
+ I decided that my PC needed a needed format because it had been 5 years since I had installed Windows 7 Ultimate and also it was getting slower and slower. After the format, I decided to upgrade to Windows 10 because I wanted to try it as an OS and also knew
+ that Windows 7 support was going to end sometime soon. I contacted Microsoft support and was able to carry my Win7 license on to Windows 10.</span></p>
+<p>
+<span style="color: rgba(0, 0, 0, 1)">After the first boot,
+ I really liked the animations and overall elegance of the OS, but my PC has been getting slower and slower ever since. It used to power up in a matter of one minute but after the Win10 install, it takes at least 3 mins. And also my PC has started to lag a
+ lot. It takes ages to open a program, my disc usage is almost always at 100%. I have to wait at least 15 mins after powering up the PC for it to start working normally. There's always that noise inside my rig as if my PC is rendering a video, or doing some
+ other heavy activity, but in fact, only the Chrome is open. While I'm in the middle of a game Windows 10 decides it's a great time to start the update of a program or do something else in the background and stutter&amp;freeze my game. First I thought I might be
+ a victim of PC mining, but it seems like that's not the case.</span></p>
+<p>
+</p><p>
+<span style="color: rgba(0, 0, 0, 1)">I have Googled and
+ tried many things suggested by people to no luck. Any tips to speed up my PC will be appreciated.</span></p>
+<p>
+</p><p>My rig&nbsp;info:</p>
+<p>
+</p><p>Time of this report: 3/1/2019, 00:23:56</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Machine name: MYHOMEPC</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Operating System: Windows 10 Home 64-bit (10.0, Build 17763) (17763.rs5_release.180914-1434)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Language: English (Regional Setting: English)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;System Manufacturer: System manufacturer</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;System Model: System Product Name</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;BIOS: BIOS Date: 03/21/14 09:37:11 Ver: 14.02 (type: BIOS)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Processor: Intel(R) Core(TM) i5-3570K CPU @ 3.40GHz (4 CPUs), ~3.4GHz</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Memory: 8192MB RAM</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Available OS Memory: 8138MB RAM</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Page File: 6121MB used, 6369MB available</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Windows Dir: C:\WINDOWS</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;DirectX Version: DirectX 12</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;DX Setup Parameters: Not found</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;User DPI Setting: 96 DPI (100 percent)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;System DPI Setting: 96 DPI (100 percent)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;DWM DPI Scaling: Disabled</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Miracast: Available, no HDCP</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Microsoft Graphics Hybrid: Not Supported</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;DxDiag Version: 10.00.17763.0001 64bit Unicode</p>
+<p>
+</p><p>Display Devices</p>
+<p>---------------</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Card name: NVIDIA GeForce GTX 770</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Manufacturer: NVIDIA</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Chip type: GeForce GTX 770</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;DAC type: Integrated RAMDAC</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Device Type: Full Device (POST)</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Device Problem Code: No Problem</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Driver Problem Code: Unknown</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Display Memory: 6076 MB</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Dedicated Memory: 2007 MB</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Shared Memory: 4069 MB</p>
+<p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Current Mode: 1920 x 1080 (32 bit) (60Hz)</p>
+<p>
+</p><p>P.S. There's a lot of info in the dxdiag.txt document, but I thought these are the needed ones. If you need something else I might post it as well.</p>
+&nbsp;
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="MaritzaCapiro" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "MA"); this.style="display: inline-block";'
+<h3> maritzacapiro  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi,  anduin95
+<br />
+<br />My name is Maritza and I am an Independent Advisor.  I would be happy to help you today.
+<br />
+<br />What I can recommend is that you completely repair the operating system, but first you must backup your files, although with this method the data is not lost but it is a good idea to backup as a security measure, third-party applications if they are uninstalled, check this link.
+<br />
+<br /><a href="https://www.intowindows.com/repair-windows-10-install-without-losing-apps-data/" target="_blank" rel="noreferrer nofollow">https://www.intowindows.com/repair-windows-10-i...</a>
+<br />
+<br />Note: This is a non-Microsoft website. The page appears to be providing accurate, safe information. Watch out for ads on the site that may advertise products frequently classified as a PUP (Potentially Unwanted Products). Thoroughly research any product advertised on the site before you decide to download and install it. 
+<br />
+<br />Let us know if these steps help you to resolve the issue.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall" title="Inactive profile" role="img">
+<h3> a. user  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi, 
+<br />I am Ganesh Gandhi, an Independent Advisor. I am here to work with you on this problem. 
+<br />
+<br />Kindly follow these steps to boot-up-faster 
+<br /><a href="https://lifehacker.com/enable-this-setting-to-make-windows-10-boot-up-faster-1743697169" target="_blank" rel="noreferrer nofollow">https://lifehacker.com/enable-this-setting-to-m...</a>
+<br />
+<br />To Fix High RAM and CPU Usage ( reduce noise inside cpu) 
+<br />https://****/how-to-fix-high-ram-and-c...
+<br />
+<br />To make Windows 10 run faster in 9 easy steps
+<br /><a href="https://en.softonic.com/articles/how-to-make-windows-10-run-faster-in-9-easy-steps" target="_blank" rel="noreferrer nofollow">https://en.softonic.com/articles/how-to-make-wi...</a>
+<br />
+<br /><a href="https://www.computerworld.com/article/3029168/microsoft-windows/windows-10-quick-tips-10-ways-to-speed-up-your-pc.html" target="_blank" rel="noreferrer nofollow">https://www.computerworld.com/article/3029168/m...</a>
+<br />
+<br />To control updates 
+<br /><a href="https://www.easeus.com/todo-backup-resource/how-to-stop-windows-10-from-automatically-update.html" target="_blank" rel="noreferrer nofollow">https://www.easeus.com/todo-backup-resource/how...</a>
+<br />
+<br />Do let me know if you require any further help on this. I will keep working with you until it's resolved. 
+<br />______________________________________________ 
+<br />Standard Disclaimer: There are links to non-Microsoft websites. The pages appear to be providing accurate, safe information with reference. Thoroughly research products advertised on the sites before you decide to download and install it. Watch out for ads on the sites that may advertise products frequently classified as a PUP (Potentially Unwanted Products).       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="anduin95" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display teal3295 avatar-size-extrasmall"; this.setAttribute("alt", "AN"); this.style="display: inline-block";'
+<h3> anduin95  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Maritza,</p>
+<p>
+</p><p>thank you for your comment but I don't think my&nbsp;Windows installation needs any repairs.</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=performance_and_system_failures">performance_and_system_failures, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I have a combination wireless keyboard and mouse, need to replace - Microsoft Community</title>
+<h3> marina gertsberg  say:</h3>
+<h2>            I have a combination wireless keyboard and mouse, need to replace keyboard.</h2>
+                    <p>I have purchased Microsoft wireless mouse and keyboard combo that uses one blue tooth transmitter.</p>
+<p>Now I need to replace just the keyboard (planning to get same keyboard but standalone, not combo with mouse).</p>
+<p>I do not want to use up another usb port for another wireless keyboard.&nbsp; So would it be possible for existing blue tooth transmitter to work with my new keyboard (also from Microsoft)?</p>
+<p>Basically, want to continue to use combo but replace keyboard.</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Shenan Stanley" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue288 avatar-size-small"; this.setAttribute("alt", "SS"); this.style="display: inline-block";'
+<h3> shenan stanley  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Yeah - that has nothing to do with bluetooth - RF.</p>
+<p>&nbsp;&nbsp;</p>
+<p>I don't think Microsoft has a universal dongle.&nbsp; (Logitech calls theirs the "unifying receiver".)</p>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=other&#47;unknown">other&#47;unknown, </a> <br>
+<a href="/search?q=devices_&#38;_drivers">devices_&#38;_drivers, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Asus t100ta Realtek I2S output driver isn&#39;t working - Microsoft Community</title>
+<h3> ihddi  say:</h3>
+<h2>            Asus t100ta Realtek I2S output driver isn&#39;t working</h2>
+                    <span>Hey all! So, my 2-in-1 asus t100ta laptop has a problem. I haven't used it for a while, but I'm needing it now. Prior,
+                    <span>Hey all! So, my 2-in-1 asus t100ta laptop has a problem. I haven't used it for a while, but I'm needing it now. Prior,
+ it was mostly with Windows 8.1, I then upgraded it to Windows 10 for a bit, then just stopped using it, I can't recall if there was any issues, but I know audio was working fine. When I started to work on my windows 10, I decided to boot with Windows 10 media
+ creation ISO for a clean restart. Well, after all updated including the latest drivers from Asus driver list for my product, the Realtek I2S driver still insisted that there's no output audio driver… And embarrassingly while at the time I was unaware there
+ was actually a difference between tablet mode and desktop mode, I thought it was a bad glitch of some sort.. Yeah, yeah, laugh away, lol… but it was also blue screening with an error every 5 ~ 10 minutes and needing a restart,dunno what that was about. Anywho,
+ I decided to just boot with Windows 8.1 Media Creator Tool, updated everything with all the asus product drivers on their site and it was working well, including my Realtek I2S driver, but in my opinion, Windows 10 is much better. So then, I once again used
+ the Windows 10 media creation tool, but used the Upgrade mode rather than an ISO, After updating everything to the latest drivers and such, it was seeming to work perfectly until I noticed it was getting pretty sluggish and everything tending to be freezing
+ other than the cursor. Well, once again I just booted with Windows 10 media creation ISO and oh my goodness, I thought my SSD broke or something, it was amazingly slow, took around 7 hours for it to complete. Well, it's done and over,got everything updated
+ and working with no problem… ExExcept Realtek I2S driver… II tried to update from their manufacturer driver to no avail. So I deleted Realtek I2S driver and deleted the the device audio driver, then reinstalled the same driver to no avail. My laptop is working
+ perfectly except the audio again and I'm out of ideas. I'd really appreciate any response, thanks all!&nbsp;</span>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Darleen Pen" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> darleen pen  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>
+</p><p>Based on your description of the issue, there is a possibility that the audio driver you are installing is not compatible with the build or version of Windows 10 that is running on your device. For us to provide an accurate solution, we would need to know
+ which build and version of Windows 10 is installed on your PC. </p>
+<p>
+</p><p>In the meantime, it will be best to boot your computer into <strong><a href="https://support.microsoft.com/en-us/help/12376/windows-10-start-your-pc-in-safe-mode" target="_blank" rel="noreferrer nofollow">safe mode</a></strong> before installing the driver. This
+ is so software conflicts can be avoided during the installation process. If the same issue persists, install the audio driver on compatibility mode.
+</p>
+<p>
+</p><p>We are looking forward to your response. </p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ihddi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+<span>I have Version 1709 build 16299.192</span></p>
+<p><span>I tried the safe mode, deleted my audio driver then install it again on safe mode, still the same problem. I tried
+ the compatibility mode as well, and tried safe mode with compatibility mode at the same time, still wasn't working. Just for the heck of it, attempted to disable driver signature enforcement, still nothing. It works when I install Realtek I2S driver on the
+ real windows 8.1 then upgrade to windows 10, audio is fine, but then windows 10 upgrade has many &nbsp;problems, pretty unstabled. When I boot a fresh copy of windows 10,everything works well except audio output&nbsp;</span></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Darleen Pen" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> darleen pen  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thank you for your response with the current status of the issue. To further troubleshoot your concern, create a test user profile. This is for us to verify if the issue is isolated with one user profile or with multiple accounts.
+</p>
+<p>
+</p><p>To create a test user profile, follow these steps: </p>
+<p>
+</p><ol>
+<li>Using Cortana search, type Settings and then hit the Enter key. </li><li>In the Settings window, select Accounts. </li><li>Select Family &amp; other people. </li><li>Choose Add someone else to this PC. </li><li>Click I don't have this person's sign-in information. </li><li>Click Add a user without a Microsoft account. </li><li>Name the user as TEST and then provide a password. </li></ol>
+<p>
+</p><p>Keep us updated with the result.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> ihddi  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <span>I appreciate you trying to help me, but last night, I just decided to try again from scratch with a windows 8.1 Media
+ Creator ISO, install all drivers from my product’s website drivers, install windows 10 media creation upgrade and all works, including the audio. I don't know what I did wrong, however… I did exactly what I just said 3 days ago, the audio worked still, but
+ there was some type of errors… at least it's all working properly now *Knock on wood*</span>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Darleen Pen" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> darleen pen  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>We're glad to know that you were able to resolve the issue. If in case you'll be needing an assistance with your Microsoft products and services, don't hesitate to reach out to us.</p>
+<p>
+</p><p>Regards.</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=devices_and_drivers">devices_and_drivers, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 Upgrade license OEM vs Full - Microsoft Community</title>
+<h3> michael johnson mj  say:</h3>
+<h2>            Windows 10 Upgrade license OEM vs Full</h2>
+                    I am currently using Windows 7 OEM. &nbsp;After upgrading, will I have an OEM or Full license for Windows 10? &nbsp;I want to upgrade my CPU when Skylake comes out.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-small"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><strong>When I upgrade a preinstalled (OEM) or retail&nbsp;version of Windows 7 or Windows 8/8.1 license to Windows 10, does that license remain OEM or become a retail license?</strong></p>
+<p>If you upgrade from a OEM or retail version of Windows 7 or Windows 8/8.1 to the free Windows 10 upgrade this summer, the license is consumed into it. Because the free upgrade is derived from the base qualifying license, Windows 10 will carry that licensing
+ too.</p>
+<p>
+</p><p>If you upgrade from a retail version, it carries the rights of a retail version.</p>
+<p>If you upgrade from a OEM version, it carries the rights of a OEM version.</p>
+<p>
+</p><p><strong>Full version (Retail):</strong></p>
+<span>
+<p>
+</p><p>- Includes transfer rights to another computer.</p>
+<p>- Doesn't require a previous qualifying version of Windows.</p>
+<p>- Expensive</p>
+<p>
+</p><p><strong>Upgrade version (Retail):</strong></p>
+<span>
+<p>
+</p><p>- Includes transfer rights to another computer.</p>
+<p>- require a previous qualifying version of Windows.</p>
+<p>- Expensive, but cheaper than full version</p>
+<p>
+</p><p><strong>OEM :</strong></p>
+<span>
+<p>
+</p><p>OEM versions of Windows are identical to Full License Retail versions except for the following:</p>
+<p>- OEM versions do not offer any free Microsoft direct support from Microsoft support personnel</p>
+<p>- OEM licenses are tied to the very first computer you install and activate it on</p>
+<p>- OEM versions allow all hardware upgrades except for an upgrade to a different model motherboard</p>
+<p>- OEM versions cannot be used to directly upgrade from an older Windows operating system</p>
+<p>
+</p><p><strong>What happens if I change my motherboard?</strong></p>
+<p>As it pertains to&nbsp;the <strong>OEM licenses </strong>this will invalidate the Windows 10 upgrade license because it will no longer have a previous base qualifying license which is required for the free upgrade. You will then have to purchase a full retail
+ Windows 10 license. <strong>If the base qualifying license (Windows 7 or Windows 8.1)&nbsp;was a full retail version, then yes, you can transfer it.
+</strong></p>
+<p>
+</p><p><em>From the end user license agreement:</em></p>
+<p>15. UPGRADES. To use upgrade software, you must first be licensed for the software that is eligible for the upgrade. Upon upgrade, this agreement takes the place of the agreement for the software you upgraded from. After you upgrade, you may no longer use
+ the software you upgraded from.</p>
+<p>
+</p><p>17. TRANSFER TO ANOTHER COMPUTER. a. Software Other than Windows Anytime Upgrade. You may transfer the software and install it on another computer for your use. That computer becomes the licensed computer. You may not do so to share this license between
+ computers. </p>
+</span></span></span>
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=pc">pc, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to unmerge microsoft accounts&#63; - Microsoft Community</title>
+<h3> cadenjosey  say:</h3>
+<h2>            How to unmerge microsoft accounts&#63;</h2>
+                    Hi, me and my parents Microsoft accounts have the same email on two different computers, and somehow, they got merged. Is it at all possible to do this without changing accounts on the computers?
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Caden
+<br />
+<br />My name is Andre Da Costa; an Independent Consultant, Windows Insider MVP and Windows &amp; Devices for IT MVP.  I'm here to help you with your problem.
+<br />
+<br />Open Start &gt; Settings &gt; Accounts &gt; Your info
+<br />Click sign in with a local account instead
+<br />
+<br />Enter your current password
+<br />Click Next
+<br />
+<br />Enter a name, password, confirm it, enter a hint
+<br />Click Next
+<br />Click Sign out and Finish
+<br />
+<br />Sign into the account
+<br />
+<br />Open Start &gt; Settings &gt; Accounts &gt; Your info
+<br />
+<br />Click sign in with a Microsoft account instead
+<br />
+<br />Enter the email address of the account you want to use
+<br />Click Next
+<br />Enter your Microsoft Account password
+<br />Enter the current Local account password used to sign into the account
+<br />Click Next and you should be signed in with the new account.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Carmack - Windows MVP 2010-2020" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", "GC"); this.style="display: inline-block";'
+<h3> greg carmack - windows mvp 2010-2020  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Caden -<br /><br />Microsoft account cannot be merged. Are you referring to a Microsoft family account that you are a part of? You need to have the parents go into Microsoft Family Safety settings to remove your account.  <a href="https://www.tenforums.com/tutorials/34763-add-remove-child-member-microsoft-family-group-windows-10-a.html" target="_blank" rel="noreferrer nofollow">https://www.tenforums.com/tutorials/34763-add-r...</a><br /><br /> Otherwise you can change your Microsoft account on your PC to a local account in account settings under your info. This will only work if you are the administrator. Otherwise, ask your parents.<br /><a href="https://www.zdnet.com/article/windows-10-tip-switch-back-to-a-local-account-from-a-microsoft-account/" target="_blank" rel="noreferrer nofollow">https://www.zdnet.com/article/windows-10-tip-sw...</a>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cadenjosey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I don't have a sign into local account instead. Is there a way to get this?
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Are you sure Caden?<br /><img src="https://filestore.community.support.microsoft.com/api/images/634f4a59-90be-4d63-8cd2-ab67fd1a7921?upload=true" />
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> cadenjosey  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <a href="https://filestore.community.support.microsoft.com/api/images/6bbd9070-91c7-413b-8e8b-66b71dd2c90c?upload=true" target="_blank" rel="noreferrer nofollow"><img src="https://filestore.community.support.microsoft.com/api/images/6bbd9070-91c7-413b-8e8b-66b71dd2c90c?upload=true" style="margin-right: auto; margin-left: auto" /></a>Here
+ it is
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=family">family, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Wireless Adapter Deleted - Microsoft Community</title>
+<h3> nomadicintrospection  say:</h3>
+<h2>            Wireless Adapter Deleted</h2>
+                    <p>Hello everyone,</p>
+<p>
+</p><p>I have been trying to solve this issue for a few days now. Originally, my DNS server stopped working so I ran Windows Network Troubleshoot. This led to a solution of deleting the wireless adapter from Network And Sharing Center in favor of some virtual adapters.
+ So now my wireless adapter is gone, I still have the drivers installed as far as I can tell from looking at Devices and Drivers.</p>
+<p>
+</p><p>Basically, windows deleted my wireless adapter and now when I click the network icon on my toolbar, it only displays AIRPLANE mode and does not show network discovery or the ability to turn on and off wifi.</p>
+<p>
+</p><p>How do I bring it back? I've tried network resets and deleting drivers then rebooting, nothing has helped.</p>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bill Smithers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> bill smithers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi,</p>
+<p>
+</p><p>Do a System Restore to a date before you had this problem:</p>
+<p>
+</p><p>"<strong><span>How to Do a System Restore in Windows 8 and 8.1"</span></strong></p>
+<p><a href="http://www.eightforums.com/tutorials/4692-system-restore-how-do-windows-8-a.html" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">http://www.eightforums.com/tutorials/4692-system-restore-how-do-windows-8-a.html</span></a></p>
+<p>
+</p><p>_________________________________________________</p>
+<p>
+</p><p>Make sure that you have downloaded and installed the latest Wi-Fi Drivers for your Model Laptop and Operating System from the Laptop manufacturer's website.</p>
+<p>Go to their website &gt; Drivers/software/Support Downloads Section &gt; key in your Model Number and Operating System &gt; download and install the Wi-Fi Drivers for your operating system.</p>
+<p>_________________________________________________</p>
+<p>
+</p><p>Also read the Manual for your Model which you should be able to download there, too.</p>
+<p>_________________________________________________</p>
+<p>
+</p><p>"<span>How do I fix network adapter problems?"</span></p>
+<p><span><a href="http://windows.microsoft.com/en-au/windows/fix-network-adapter-problems#1TC=windows-8" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">http://windows.microsoft.com/en-au/windows/fix-network-adapter-problems#1TC=windows-8</span></a></span></p>
+<p>_________________________________________________</p>
+<p>
+</p><p>And some Laptops have a physical switch to turn on Wi-fi.</p>
+<p><a href="http://www.computerhope.com/issues/ch001410.htm" target="_blank" rel="noreferrer nofollow"><span style="color: rgba(0, 102, 204, 1)">http://www.computerhope.com/issues/ch001410.htm</span></a></p>
+<p>
+</p><p>Read under these different headers at the above link:</p>
+<p>
+</p><p>1. <strong>Enable with laptop Wi-Fi button</strong></p>
+<p>
+</p><p>2. <strong>Enable with laptop Fn and Function key</strong></p>
+<p>
+</p><p>3. <strong>Enable in Windows</strong></p>
+<p><span>Note:</span> In Windows 8, when you right-click the Wi-Fi icon, check to see if Airplane Mode is turned on. If it is, turn it off to enable the wireless network card.</p>
+<p>
+</p><p>4. <strong>Enable in Windows Device Manager.</strong></p>
+<p>
+</p><p>5. <strong>Enable in CMOS setup</strong></p>
+<p>
+</p><p>
+</p><p>Cheers.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> nomadicintrospection  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi Bill,&nbsp;</p>
+<p>
+</p><p>Thanks for the response! Unfortunately i cant do a system restore. I will look more into installing the drivers but ive done this numerous time with bo success.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bill Smithers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> bill smithers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>
+</p><blockquote>
+<p>Hi Bill,&nbsp;</p>
+<p>
+</p><p>Thanks for the response! Unfortunately i cant do a system restore.<strong> I will look more into installing the drivers but ive done this numerous time with bo success.</strong></p>
+</blockquote>
+<p>You've never done it the correct way:</p>
+<p>
+</p><p><em>I've tried network resets and deleting drivers then rebooting, nothing has helped.</em></p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> nomadicintrospection  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            I found an external Atheros Wifi adapter. I will use a USB to install its drivers onto my laptop and then once connected, i will check for an updated driver for my internal network card. If there isnt one, ill delete it and restart my PC, allowing windows
+ to reinstall it
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bill Smithers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> bill smithers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Use the computer you are on to get here to download/save the Wi-fi Drivers for it&gt; copy them to flash drive &gt; transfer and install them on the Laptop.
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> nomadicintrospection  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Thanks for the continuous help Bill,</p>
+<p>
+</p><p>I am having trouble finding the correct driver software for my adapter. My wifi adapter is an</p>
+<p>
+</p><p>Intel(R) Dual Band Wireless - AC 3160</p>
+<p>
+</p><p>I've gone to the dell site and put in my laptop code for a total software package list, which I then went under network and downloaded the WIFI ADAPTER software. However, this fails too. Is there simply a direct link to the exact driver file instead of General
+ Installer programs?</p>
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="6" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Bill Smithers" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display purple526 avatar-size-extrasmall"; this.setAttribute("alt", ""); this.style="display: inline-block";'
+<h3> bill smithers  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You know what model Laptop you have; we don't.</p>
+<p>
+</p><p>I suggest that you ask in the Dell Support forums as to which is the correct Driver for it:</p>
+<p>
+</p><p><a href="http://en.community.dell.com/support-forums/" target="_blank" rel="noreferrer nofollow">http://en.community.dell.com/support-forums/</a></p>
+<p>
+</p><p>Cheers.</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_8.1">windows_8.1, </a> <br>
+<a href="/search?q=network_&#38;_internet">network_&#38;_internet, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How to Remove a Xbox live account - Microsoft Community</title>
+<h3> glaringpit0883  say:</h3>
+<h2>            How to Remove a Xbox live account </h2>
+                    
+<p>Hey i some how ended up with this new xbox account on my new email and i want my old xbox account on this new email but i cant have 2 accounts on one email so how do i delete this account&nbsp; please help this is super anoying</p>
+
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Smwutches" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display lime362 avatar-size-extrasmall"; this.setAttribute("alt", "SM"); this.style="display: inline-block";'
+<h3> smwutches  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>You can't delete an account from the Live servers. You would have to change the email addresses on both accounts -
+<a href="http://support.xbox.com/en-US/billing-and-subscriptions/account-management/manage-live-id" target="_blank" rel="noreferrer nofollow">
+support.xbox.com/.../manage-live-id</a></p>
+        </p>
+<a href="/search?q=gaming_and_xbox">gaming_and_xbox, </a> <br>
+<a href="/search?q=devices_and_networking">devices_and_networking, </a> <br>
+<a href="/search?q=xbox_series_x&#124;s_and_xbox_one">xbox_series_x&#124;s_and_xbox_one, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Can i use &#34;Java&#34; and &#34;Blue J&#34; Program in Windows - Microsoft Community</title>
+<h3> vashish rathod  say:</h3>
+<h2>            Can i use &#34;Java&#34; and &#34;Blue J&#34; Program in Windows 7&#63;</h2>
+                    i use blue j in windows xp
+<div>and now i want to try windows 7</div>
+<div><br />
+</div>
+<div>i was informed that blue j does not work in Windows 7&nbsp;</div>
+<div><br />
+</div>
+<div>please help me</div>
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="Palcouk" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display red1807 avatar-size-small"; this.setAttribute("alt", "PA"); this.style="display: inline-block";'
+<h3> palcouk  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            <p><a href="http://www.bluej.org/download/download.html" target="_blank" rel="noreferrer nofollow">http://www.bluej.org/download/download.html</a></p>
+<p>But if they say it doesnt work on win7, possibly your only option is that you install virtual winxp from MS, provided you have win7 pro or Ultimate</p>
+        </p>
+<div  class="thread-message thread-message-answer shading thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Answers"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-small circular-display" role="img"
+           title="FoxFifth" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-small"; this.setAttribute("alt", "FO"); this.style="display: inline-block";'
+<h3> foxfifth  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            The download site says "Windows 2000, XP, Vista, or newer" so it may work: <a href="http://www.bluej.org/download/download.html" target="_blank" rel="noreferrer nofollow">
+http://www.bluej.org/download/download.html</a><br />
+<br />
+Also, there are a number of discussions in their Discussion Group mentioning Windows 7.&nbsp; You may want to post a question there or search there:&nbsp;
+<a href="http://groups.google.com/forum/?fromgroups#%21forum/bluej-discuss" target="_blank" rel="noreferrer nofollow">http://groups.google.com/forum/?fromgroups#!forum/bluej-discuss</a><br />
+        </p>
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_7">windows_7, </a> <br>
+<a href="/search?q=programs">programs, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>How do I stop WMI Provider Host&#63; - Microsoft Community</title>
+<h3> mustafaalesmail  say:</h3>
+<h2>            How do I stop WMI Provider Host&#63;</h2>
+                    Can someone please tell me how to stop WMI provider host, because it hogs up the cpu, which makes it go from 0% cpu to about 20% cpu usage. My computer started turning its fans faster when I am just browsing the web or watching youtube, it is very annoying
+ to have, can someone please tell me.
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Donna Men" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display green348 avatar-size-extrasmall"; this.setAttribute("alt", "DM"); this.style="display: inline-block";'
+<h3> donna men  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Hi MustafaAlesmail,</p>
+<p>
+</p><p>
+</p><p>WMI Provider Host is a system service, therefore, it cannot be permanently stopped or disabled. There are a few troubleshooting that you can perform to decrease its CPU usage, you can refer to the steps on this
+<strong><a href="https://answers.microsoft.com/en-us/windows/forum/windows_10-other_settings/wmi-provider-host-high-cpu-usage-and-laptop/44cb3953-a883-404a-a94f-ee4f363d3a4b?page=2">thread</a></strong>, which is similar to your
+ concern.</p>
+<p>
+</p><p>Prior to making any changes on your system, I recommend you to <strong><a href="https://support.microsoft.com/en-us/help/4027538/windows-create-a-system-restore-point" target="_blank" rel="noreferrer nofollow">create a system restore point</a></strong> to make it
+ easier for you to restore your settings if in case a failure or data corruption occurs.</p>
+<p>
+</p><p>Feel free to post on the thread if you need further assistance.</p>
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=performance_and_system_failures">performance_and_system_failures, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>I lost some of my symbols after recent windows 10 update - Microsoft Community</title>
+<h3> jimbiles  say:</h3>
+<h2>            I lost some of my symbols after recent windows 10 update</h2>
+                    <p>Hi</p>
+<p>
+</p><p>I use windows 10 and following the recent update i’ve lost some of my symbols. For example, the £ sign is now a # sign and others have been affected too. Can anyone help at all? I really need to use the £ sign for my work.</p>
+<p>
+</p><p>Thanks very much</p>
+<p>
+</p><p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Vijay A. Verma" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "VA"); this.style="display: inline-block";'
+<h3> vijay a. verma  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            You should do following - 
+<br />
+<br />Right click on Windows Start &gt; Windows Powershell (Admin) 
+<br />Copy and paste below and Enter in Powershell 
+<br />Set-WinUserLanguageList en-GB 
+<br />
+<br />This will make other languages disappear. (In case, you want to add again or other languages, you can add again from language settings) 
+<br />
+<br />Source - <a href="https://www.tenforums.com/windows-updates-activation/109340-windows-10-1803-update-added-extra-language-en-us-taskbar.html" target="_blank" rel="noreferrer nofollow">https://www.tenforums.com/windows-updates-activ...</a>
+<br />
+<br />Disclaimer - This is a non-Microsoft website. The page appears to be providing accurate, safe information. Watch out for ads on the site that may advertise products frequently classified as a PUP (Potentially Unwanted Products). Thoroughly research any product advertised on the site before you decide to download and install it.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="DaveM121" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "DA"); this.style="display: inline-block";'
+<h3> davem121  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Jim, this is a keyboard language issue, your language has been set to US English rather than UK English . .. there is a known bug in the 1803 version of Windows 10. Microsoft are aware of this issue and hopefully are working on a patch . . . 
+<br />
+<br />For the moment, please try this workaround to set your preferred input language:
+<br />
+<br />Right click your Start Button, choose Powershell (admin) 
+<br />
+<br />Run this command and hit Enter
+<br />
+<br />$1 = New-WinUserLanguageList en-GB
+<br />
+<br />Run this command and hit Enter
+<br />
+<br />Set-WinUserLanguageList $1 
+<br />
+<br />Close Powershell and restart your PC       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre for Directly" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue660 avatar-size-extrasmall"; this.setAttribute("alt", "AF"); this.style="display: inline-block";'
+<h3> andre for directly  say:</h3>
+<ul class="message-user-info-affiliations-list">
+    </ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            If you add a secondary language to Windows 10 version 1803 that shares the same base language as the Windows display language, neither language can be removed.
+<br />
+<br />For example: If English (United Kingdom) is the current Windows display language, and you then add English (India) to the Preferred languages list, afterwards neither English (United Kingdom) nor English (India) can be removed from the Preferred languages list.
+<br />
+<br />Note: The most notable effect of having multiple related languages in the Preferred languages list is additional entries in the text input selector. You can remove unwanted language list entries using these steps:
+<br />
+<br />1. From the Start menu, search for powershell.
+<br />
+<br />2. Right-click Windows Powershell in the search results and choose Run as administrator.
+<br />
+<br />3. Type or copy/paste the following command at the command prompt, and then press Enter. 
+<br />
+<br />Get-WinUserLanguageList
+<br />
+<br />After typing this command, make note of the “LanguageTag” listed for the language you wish to remove, as you will need it in the next step.
+<br />
+<br />4.  Type or copy/paste each of the following commands at the command prompt, and then press Enter. In the following commands, instead of typing &lt;languagecode&gt;, replace it with the language tag you wish to remove, such as en-in for English (India).
+<br />
+<br />$LangList = Get-WinUserLanguageList
+<br />$MarkedLang = $LangList | where LanguageTag -eq "&lt;languagecode&gt;"
+<br />$LangList.Remove($MarkedLang)
+<br />
+<br />Set-WinUserLanguageList $LangList -Force       
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=desktop,_start,_and_personalization">desktop,_start,_and_personalization, </a> <br>
+<a href="/search?q=general">general, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+    <title>Windows 10 ridiculously slow on brand new computer&#33; - Microsoft Community</title>
+<h3> bethspiers  say:</h3>
+<h2>            Windows 10 ridiculously slow on brand new computer&#33;</h2>
+                    <p><span>I have just bought a laptop with Windows 10. The internet speed is atrocious. I am running 2 laptops side by side on same network (my own private). One Lenovo ideapad 110-Win10 the other Macbook Pro-High Sierra.&nbsp; I
+ am getting Speedtest.net readings as follows:</span></p>
+<p><span>Win10&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</span></p>
+<p>&nbsp;PING - 103 ms<br />
+&nbsp;DOWNLOAD - 23.89 Mbps<br />
+&nbsp;UPLOAD - 0.90 Mbps</p>
+<p>
+</p><p>MBP</p>
+<p>&nbsp;PING - 20 ms</p>
+<p>&nbsp;DOWNLOAD - 119.02 Mbps</p>
+<p>&nbsp;UPLOAD&nbsp; - 11.81 Mbps</p>
+<p>
+</p><p>Now the MBP is 6-7 yrs old and the Win10 computer is less than 3 months old.</p>
+<p>
+</p><p>Also, when I look at the network connections, Wi-Fi Status properties, my wireless speed states it is running between 210-195 Mbps.&nbsp; So I know it is not hardware, the speed is getting to the computer.</p>
+<p>What gives Microsoft, what are you doing?&nbsp; I can't even get to some web sites!</p>
+<p>&nbsp;</p>
+<p />
+                </div>
+
+
+            <div role="alert" class="m-alert f-information">
+</button>
+</span>
+            <div id="threadBottomSection" class="">
+<div id="allRepliesLink" aria-expanded="false">
+            <h2 role="presentation">
+        </h2>
+<!--InFlight-->
+<div id="allReplies">
+    
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="0" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            What is the exact make and model of the Lenovo?
+<br />
+<br />Open Start, type: system information
+<br />Hit Enter
+<br />Click System summary
+<br />Look in the right pane
+<br />
+<br />Copy the system sku info into reply here.
+<br />
+<br />See example: <a href="https://imgur.com/qzektpA" target="_blank" rel="noreferrer nofollow">https://imgur.com/qzektpA</a>
+<br />
+<br />Open Start, type: CMD
+<br />Right click CMD
+<br />Click Run as administrator
+<br />
+<br />At the command prompt, type: 
+<br />
+<br />netsh int ip reset
+<br />
+<br />Hit Enter 
+<br />Exit the prompt then restart
+<br />
+<br />Open Start &gt; Settings &gt; Update &amp; security &gt; Troubleshoot
+<br />Scroll down
+<br />Click Network adapters
+<br />Click Run the Troubleshooter
+<br />
+<br />When complete, restart to see if the problem is resolved.
+<br />
+<br />If not, press Windows key + X
+<br />Click Device Manager
+<br />Expand Network adapters
+<br />
+<br />Right click your adapter
+<br />Click Uninstall
+<br />
+<br />Exit Device Manager, restart. Windows 10 should detect the network adapter then reinstall it. Check if you can connect and browse.
+<br />
+<br />also try:
+<br />
+<br />Open Start &gt; Settings &gt; Network &amp; Internet &gt; Status
+<br />
+<br />Scroll to the bottom then click Network reset.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="1" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Carmack - MVP 2010-2020" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "GC"); this.style="display: inline-block";'
+<h3> greg carmack - mvp 2010-2020  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Hi Beth.   I'm Greg, an installation specialist and 8 year Windows MVP, here to help you.  
+<br />
+<br />Go over this checklist to make sure the install is set up correctly, optimized for best performance, and any needed repairs get done:  <a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-performance/windows-10-performance-and-install-integrity/75529fd4-fac7-4653-893a-dd8cd4b4db00">http://answers.microsoft.com/en-us/windows/wiki...</a>
+<br />
+<br />Start with Step 4 to turn off Startup freeloaders which can conflict and cause issues, then Step 7 to check for infection the most thorough way, then step 10 to check for damaged System Files.  Then continue with the other steps to go over your install most thoroughly.  
+<br />
+<br />Update your drivers from the PC's Support Downloads web page, using the full model number, Serial Number or Dell Service Tag on sticker.  Compare the latest drivers available for download with the ones presently installed in Device Manager reached by right clicking the Start Menu.  Make sure you have the latest BIOS, Chipset, Display (Video), Sound, USB3, Bluetooth, Network and all other drivers, or else download and install the latest now.
+<br />
+<br />If nothing else helps then run a Repair Install by installing the Media Creation Tool and choosing from it to Upgrade Now.  This solves many problems and will also bring it up to the latest version which you need anyway and by the most stable method.   <a href="http://windows.microsoft.com/en-us/windows-10/media-creation-tool-install" target="_blank" rel="noreferrer nofollow">http://windows.microsoft.com/en-us/windows-10/m...</a>
+<br />
+<br />
+<br />There is also an automated Fresh Start that reinstalls WIndows while shedding corrupting factory bloatware, saves your files, but doesn't clear the drive to get it cleanest:  <a href="https://www.howtogeek.com/265054/how-to-easily-reinstall-windows-10-without-the-bloatware/" target="_blank" rel="noreferrer nofollow">https://www.howtogeek.com/265054/how-to-easily-...</a>
+<br />
+<br />For the best install of all which has zero complaints see this Clean Install which should get you past all difficulties as it has hundreds of thousands of others who have followed the steps in this link and never come back to report another problem:  <a href="http://answers.microsoft.com/en-us/windows/wiki/windows_10-windows_install/clean-reinstall-windows-10-upgradefactory-oem/1c426bdf-79b1-4d42-be93-17378d93e587">http://answers.microsoft.com/en-us/windows/wiki...</a>
+<br />
+<br />I hope this helps.  Feel free to ask back any questions and let us know how it goes.  I will keep working with you until it's resolved.       
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="2" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bethspiers  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>System SKU<span> </span>LENOVO_MT_80TR_BU_idea_FM_Lenovo ideapad 110-15AST</p>
+<p>The rest done, with no change.</p>
+<p>When to a know website this morning and it refused to open, did troubleshooter, reset wireless, troubleshooter said there were problems it could not fix.&nbsp; Then the page opened without doing anything else.&nbsp; It is definitely buggy.&nbsp; All of this started on
+ Friday after I had been using the computer for 5 days.&nbsp; It is 3 months old but has only been used in the last week.&nbsp; I have it as a backup computer.</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="3" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+            <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link circular-display avatar-size-extrasmall" role="img"
+<h3> bethspiers  say:</h3>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            
+<p>Not re-installing anything..brand new computer with less than 10 days service on it.</p>
+<p>
+</p><p>Thanks</p>
+        </p>
+<div  class="thread-message thread-message-enus"
+     pagepos="1" msgpos="4" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Andre Da Costa" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display blue286 avatar-size-extrasmall"; this.setAttribute("alt", "AD"); this.style="display: inline-block";'
+<h3> andre da costa  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Could you download then reinstall the following driver?
+<br />
+<br />WLAN Driver (Realtek, Atheros) for Windows 10 (64-bit) - ideapad 110-14AST, 110-15AST
+<br /><a href="https://download.lenovo.com/consumer/mobiles/d2lr03af.exe" target="_blank" rel="noreferrer nofollow">https://download.lenovo.com/consumer/mobiles/d2...</a>       
+        </p>
+<div id="LastReply" class="thread-message thread-message-enus"
+     pagepos="1" msgpos="5" msgsection="Replies"
+     translated-to=""
+     translated-from="">
+            
+        <div data-bi-id="message-username-image-link" class="message-user-image message-username-image-link avatar-size-extrasmall circular-display" role="img"
+           title="Greg Carmack - MVP 2010-2020" aria-label="Profile picture" >
+            <img onerror='this.className="default-avatar-profile circular-display magenta241 avatar-size-extrasmall"; this.setAttribute("alt", "GC"); this.style="display: inline-block";'
+<h3> greg carmack - mvp 2010-2020  say:</h3>
+<ul class="message-user-info-affiliations-list">
+</ul>
+            </span>
+            <!-- MessageHistoryPanel.cshtml loaded via ajax -->
+            
+            Beth, did you even read all the steps I gave you? Buried toward the end was the possibility of doing a clean install, yet that's the only step you refer to in rejecting them all! <br /><br />I have been doing this for 10 years helping almost a hundred thousand consumers in forums so I know what I am talking about.  If you want to remedy your problem just start working through the steps until the computer becomes more usable and to your liking.       
+        </p>
+<a href="/search?q=windows">windows, </a> <br>
+<a href="/search?q=windows_10">windows_10, </a> <br>
+<a href="/search?q=network_and_internet">network_and_internet, </a> <br>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+<br><br>------------------------------------<br>
+
