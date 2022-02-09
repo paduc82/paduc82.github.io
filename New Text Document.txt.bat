@@ -1,0 +1,1 @@
+move D:\MS\paduc82.githup.io\01\*.* D:\MS\paduc82.githup.io\00\
